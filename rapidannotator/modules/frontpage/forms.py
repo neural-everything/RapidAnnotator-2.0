@@ -48,13 +48,13 @@ class RegistrationForm(FlaskForm):
 
     fullname = StringField(
         label=_('Fullname'),
-        validators=[DataRequired(message=_('Fullname not provided.'))],
+
         filters=[strip_filter],
     )
 
     email = StringField(
         label=_('Email'),
-        validators=[DataRequired(message=_('Email not provided.')), Email()]
+        # validators=[DataRequired(message=_('Email not provided.')), Email()]
     )
 
     password = PasswordField(

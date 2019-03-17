@@ -267,7 +267,9 @@ def _editLabel():
 @blueprint.route('/_uploadFiles', methods=['POST','GET'])
 def _uploadFiles():
     from rapidannotator import app
+
     if request.method == 'POST':
+
         if 'file' not in request.files:
             flash('No file part')
             return redirect(request.url)
@@ -395,6 +397,7 @@ def _deleteFile():
                 'error' : "specified experiment doesn't have any file",
             }
             return jsonify(response)
+        
         currfile_name, currfile_extension = os.path.splitext(currFile.content)
         filePath = os.path.join(experimentDir, currfile_name + '_' + str(currFile.id) + currfile_extension)
         os.remove(filePath)
@@ -413,6 +416,7 @@ def _updateFileName():
     fileId = request.args.get('fileId', None)
     currentFile = File.query.filter_by(id=fileId).first()
     experiment = Experiment.query.filter_by(id=currentFile.experiment_id).first()
+    
     updatedName = secure_filename(request.args.get('name', currentFile.name))
     currentfile_name, currentfile_extension = os.path.splitext(currentFile.name)
     updatedfile_name, updatedfile_extension = os.path.splitext(updatedName)
