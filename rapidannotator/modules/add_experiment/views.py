@@ -406,9 +406,19 @@ def _updateFileName():
 
     fileId = request.args.get('fileId', None)
     currentFile = File.query.filter_by(id=fileId).first()
-    
+    experiment = Experiment.query.filter_by(id=currentFile.experiment_id).first()
+
     updatedName = secure_filename(request.args.get('name', currentFile.name))
 
+    if experiment.uploadType == 'manual' and experiment.category != 'text':	
+        experimentDir = os.path.join(app.config['UPLOAD_FOLDER'],	
+                                    str(currentFile.experiment_id))	
+
+        file_name, file_extension = os.path.splitext(updatedName)
+        currentFilePath = os.path.join(experimentDir, currentFile.content)	
+        currentFile.content = file_name + '_' + str(fileId) + file_extension
+        newFilePath = os.path.join(experimentDir, currentFile.content)	
+        os.rename(currentFilePath, newFilePath)
 
     currentFile.name = updatedName
 
