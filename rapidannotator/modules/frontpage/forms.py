@@ -48,7 +48,6 @@ class RegistrationForm(FlaskForm):
 
     fullname = StringField(
         label=_('Fullname'),
-
         filters=[strip_filter],
     )
 
