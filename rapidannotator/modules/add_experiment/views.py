@@ -305,23 +305,15 @@ def _uploadFiles():
                     if not os.path.exists(experimentDir):
                         os.makedirs(experimentDir)
 
-                    filePath = os.path.join(experimentDir, filename)
+                    file_name, file_extension = os.path.splitext(filename)
+                    obj = File.query.order_by(File.id.desc()).first()
+                    updatedName = secure_filename(file_name + '_' + str(obj.id) + file_extension)
+                    newFile.content = updatedName
+                    filePath = os.path.join(experimentDir, updatedName)
                     flaskFile.save(filePath)
-                    newFile.content = filename
 
 
                 db.session.commit()
-                if experiment.uploadType == 'manual' and experiment.category != 'text':
-                    currentFile = File.query.filter_by(id=newFile.id).first()
-                    file_name, file_extension = os.path.splitext(currentFile.name)
-                    updatedName = secure_filename(file_name + '_' + str(currentFile.id) + file_extension)
-                    print(updatedName)
-                    experimentDir = os.path.join(app.config['UPLOAD_FOLDER'],
-                                    str(currentFile.experiment_id))
-                    currentFilePath = os.path.join(experimentDir, currentFile.name)
-                    newFilePath = os.path.join(experimentDir, updatedName)
-                    os.rename(currentFilePath, newFilePath)
-                    db.session.commit()
 
                 response = {
                     'success' : True,
@@ -398,8 +390,7 @@ def _deleteFile():
             }
             return jsonify(response)
         
-        currfile_name, currfile_extension = os.path.splitext(currFile.content)
-        filePath = os.path.join(experimentDir, currfile_name + '_' + str(currFile.id) + currfile_extension)
+        filePath = os.path.join(experimentDir, currFile.content)
         os.remove(filePath)
 
     db.session.delete(currFile)
@@ -415,21 +406,9 @@ def _updateFileName():
 
     fileId = request.args.get('fileId', None)
     currentFile = File.query.filter_by(id=fileId).first()
-    experiment = Experiment.query.filter_by(id=currentFile.experiment_id).first()
     
     updatedName = secure_filename(request.args.get('name', currentFile.name))
-    currentfile_name, currentfile_extension = os.path.splitext(currentFile.name)
-    updatedfile_name, updatedfile_extension = os.path.splitext(updatedName)
 
-    if experiment.uploadType == 'manual' and experiment.category != 'text':
-        experimentDir = os.path.join(app.config['UPLOAD_FOLDER'],
-                                    str(currentFile.experiment_id))
-
-        currentFilePath = os.path.join(experimentDir, currentfile_name + '_' + str(currentFile.id) + currentfile_extension)
-        updated_name_id = secure_filename(updatedfile_name + '_' + str(currentFile.id) + updatedfile_extension)
-        newFilePath = os.path.join(experimentDir, updated_name_id)
-        os.rename(currentFilePath, newFilePath)
-        currentFile.content = updatedName
 
     currentFile.name = updatedName
 
