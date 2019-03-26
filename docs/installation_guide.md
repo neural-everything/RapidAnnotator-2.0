@@ -14,13 +14,19 @@ following command and then run the above command
 
 Install **python3-mysqldb**.
 
+Install [**virtualenv**](https://virtualenv.pypa.io/en/latest/) using the below command:
+
+`sudo pip3 install virtualenv`
+
 Run
 
 `git clone https://github.com/guptavaibhav18197/rapidannotator.git`
 
 `cd rapidannotator`
 
-`sudo su`
+`virtualenv -p python3 venv`
+
+`source venv/bin/activate`
 
 `pip3 install -r requirements.txt`
 
@@ -49,6 +55,9 @@ Add the following line to listen to port 8000 in `/etc/apache2/ports.conf`
 
 ```Listen 8000```
 
+In the _wsgi.py_ file in the `activate_this` replace the current path i.e.
+
+`[Path_to_virtual_environment]/bin/activate_this.py` to `/path/to/venv`
 
 Next, in _wsgi.py_ file in the rapidannotator replace the current path i.e.
 
