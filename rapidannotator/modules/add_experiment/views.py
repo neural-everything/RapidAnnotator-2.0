@@ -305,9 +305,12 @@ def _uploadFiles():
                     if not os.path.exists(experimentDir):
                         os.makedirs(experimentDir)
 
-                    filePath = os.path.join(experimentDir, filename)
+                    file_name, file_extension = os.path.splitext(filename)
+                    obj = File.query.order_by(File.id.desc()).first()
+                    updatedName = secure_filename(file_name + '_' + str(obj.id) + file_extension)
+                    newFile.content = updatedName
+                    filePath = os.path.join(experimentDir, updatedName)
                     flaskFile.save(filePath)
-                    newFile.content = filename
 
 
                 db.session.commit()
@@ -386,7 +389,7 @@ def _deleteFile():
                 'error' : "specified experiment doesn't have any file",
             }
             return jsonify(response)
-
+        
         filePath = os.path.join(experimentDir, currFile.content)
         os.remove(filePath)
 
@@ -407,12 +410,14 @@ def _updateFileName():
 
     updatedName = secure_filename(request.args.get('name', currentFile.name))
 
-    if experiment.uploadType == 'manual' and experiment.category != 'text':
-        experimentDir = os.path.join(app.config['UPLOAD_FOLDER'],
-                                    str(currentFile.experiment_id))
+    if experiment.uploadType == 'manual' and experiment.category != 'text':	
+        experimentDir = os.path.join(app.config['UPLOAD_FOLDER'],	
+                                    str(currentFile.experiment_id))	
 
-        currentFilePath = os.path.join(experimentDir, currentFile.name)
-        newFilePath = os.path.join(experimentDir, updatedName)
+        file_name, file_extension = os.path.splitext(updatedName)
+        currentFilePath = os.path.join(experimentDir, currentFile.content)	
+        currentFile.content = file_name + '_' + str(fileId) + file_extension
+        newFilePath = os.path.join(experimentDir, currentFile.content)	
         os.rename(currentFilePath, newFilePath)
 
     currentFile.name = updatedName
