@@ -580,6 +580,8 @@ def _discardAnnotations():
 
     experimentId = request.args.get('experimentId', None)
     annotationLevels = AnnotationLevel.query.filter_by(experiment_id=experimentId).all()
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    experiment.status = 'In Progress'
 
     '''
         ..  delete all the AnnotationInfo for all the levels
