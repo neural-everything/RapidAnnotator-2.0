@@ -46,7 +46,12 @@
                             <td>{{experiment.description}}</td>
                             <td style="text-transform:capitalize;">{{experiment.category}}</td>
                             <td>{{experiment.created_at | datetimeformat('%d-%m-%Y')}}</td>
-                            <td>{{experiment.status}}</td>
+                            {%- if (experiment.status == 'Completed') -%}
+                                <td style="color: green;"> {{experiment.status}}</td>
+                            {%- endif -%}
+                            {%- if (experiment.status == 'In Progress') -%}
+                                <td style="color: blue;"> {{experiment.status}}</td>
+                            {%- endif -%}
                             <td class="">
                                 <a  value="{{ experiment.id }}">
                                     <span class="deleteOwnerButton pull-right glyphicon glyphicon-trash btn-space"
@@ -83,7 +88,12 @@
                           <td>{{experiment.description}}</td>
                           <td>{{experiment.category}}</td>
                           <td>{{experiment.created_at | datetimeformat('%d-%m-%Y')}}</td>
-                          <td>{{experiment.status}}</td>
+                          {%- if (experiment.status == 'Completed') -%}
+                            <td style="color: green;"> {{experiment.status}}</td>
+                          {%- endif -%}
+                          {%- if (experiment.status == 'In Progress') -%}
+                            <td style="color: blue;"> {{experiment.status}} </td>
+                          {%- endif -%}
                       </tr>
                   {% endfor %}
 
