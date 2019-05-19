@@ -25,7 +25,7 @@ def strip_filter(text):
 class AddExperimentForm(FlaskForm):
     name = StringField(
         label=_('Experiment Name'),
-        description=_("Required. Name can't exceed 40 characters"),
+        description=_("Required. Experiment Name can't exceed 40 characters"),
         validators=[DataRequired(message=_('Experiment name not provided.')),
                     Length(max=40 ,message=_("Experiment name can't exceed 40 characters."))],
         filters=[strip_filter],

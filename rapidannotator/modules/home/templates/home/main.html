@@ -130,7 +130,7 @@
                     {% if field.widget.input_type == 'hidden' %}
                     {{ field() }}
                     {% else %}
-                    {{ render_field(field, autofocus=True, placeholder=field.label.text) }}
+                    <div style="line-height:110%">{{ render_field(field, autofocus=True, placeholder=field.label.text) }}</div>
                     {% endif %}
                 {% endfor %}
                 <div class="form-actions">

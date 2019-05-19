@@ -137,7 +137,7 @@
         <tbody>
 
             {% for file in experiment.files | reverse %}
-                <tr class="" value={{file.id}} data-href="">
+                <tr class="" value={{file.id}} id={{file.id}} data-href="">
                 <td style="width: 10.0%; text-align: center">
                     <img class="hidden-element" src="{{url_for('static', filename = 'img/uploading.gif')}}" alt="uploading images" style="width:35%; margin-left: 25%">
                     <center><i class="fa fa-check uploadedFileIcon"></i></center>
@@ -217,89 +217,49 @@
 
 <script charset="utf-8" type="text/javascript">
     var is_state_left_saving = 0
-    $(function() {
-        /* (TODO) prevent same file from getting uploaded */
-        /* ((TODO)) pop up on clicking */
-        /* ((TODO)) UPDATE IMAGE */
-        /* (TODO) change multipart_params TO params {if multipart_params is deprecated}*/
 
-        var chooseFilesButton = $('#chooseFiles');
+    // Function for saving names and description in database on a click outside the box without using any save button
+    $(function(){
+        'use-strict';
+        
+        // Gettig instances of td tag
+        var td1 = $('.fileName');
+        var td2 = $('.fileCaption');
 
-        var closeErrorButton = $('.errorLog').find(".container").find("button");
-        var deleteFileButton = '.deleteFileButton';
-        var currentDeleteFileId = -1;
-        var currentEditFileId = -1;
-        var deleteFileForm = $('#deleteFileForm');
-        var editing  = false;
-
-        if (document.getElementById && document.createElement) {
-            var butt = document.createElement('BUTTON');
-            butt.classList.add("saveEditButton");
-            var buttext = document.createTextNode('Save!');
-            butt.appendChild(buttext);
-            butt.onclick = saveEdit;
+        // Add event listeners to all td tags of fileName
+        for(var i=0;i<td1.length;i++) {
+            td1[i].addEventListener('click', change, false);
+            td1[i].addEventListener('blur', changeback, false);
         }
 
-        function catchIt(e) {
-            if (editing) return;
-            if (!document.getElementById || !document.createElement) return;
-            if (!e) var obj = window.event.srcElement;
-            else var obj = e.target;
-            while (obj.nodeType != 1) {
-                obj = obj.parentNode;
-            }
-            if (obj.tagName == 'TEXTAREA' || obj.tagName == 'A') return;
-            while (obj.nodeName != 'P' && obj.nodeName != 'HTML') {
-                obj = obj.parentNode;
-            }
-            if (obj.nodeName == 'HTML') return;
-            var x = obj.innerHTML;
-            var y = document.createElement('TEXTAREA');
-            y.style.width = obj.offsetWidth + "px";
-            y.style.height = obj.offsetHeight + "px";
-            var z = obj.parentNode;
-            z.insertBefore(y,obj);
-            z.insertBefore(butt,obj);
-            z.removeChild(obj);
-            y.value = x;
-            y.focus();
-            editing = true;
+        // Add event listeners to all td tags of fileCaptions
+        for(var i=0;i<td2.length;i++){
+            td2[i].addEventListener('click', change, false);
+            td2[i].addEventListener('blur',changeback,false);
+        }
+        
+        //listeners function when the event happened
+        // This function makes td editable
+        function change() {
+            this.contentEditable = true;
+            this.focus();
         }
 
-        function saveEdit() {
-            var area = document.getElementsByTagName('TEXTAREA')[0];
-            currentEditFileId = $("TEXTAREA").closest("tr").attr('value');
-            var parentClassList = area.parentNode.classList;
-            var y = document.createElement('P');
-            var z = area.parentNode;
-            y.innerHTML = area.value;
-            z.insertBefore(y,area);
-            z.removeChild(area);
-            z.removeChild(document.getElementsByClassName('saveEditButton')[0]);
-            if($.isNumeric(currentEditFileId)) {
-                parentClassList.forEach(function(key, value) {
-                    if(key == "fileName") {
-                        saveNameInDatabase(currentEditFileId, y.innerHTML);
-                    } else if(key == "fileCaption") {
-                        saveCaptionInDatabase(currentEditFileId, y.innerHTML);
-                    }
-                } );
+        // This function makes td again non-editable
+        function changeback() {
+            this.removeAttribute("contentEditable");
+            fileId = $(this).closest('tr').attr('id');
+            tdTag = $(this).attr("class");
+            if (tdTag == 'fileName'){
+                saveNameInDatabase(fileId);
             }
-            editing = false;
+            else{
+                saveCaptionInDatabase(fileId);                
+            }
         }
 
-        $(document).keydown(function(event) {
-            if(editing) {
-                var x = event.charCode || event.keyCode;
-                if( x == 13 || x == 27 ) { // code for enter key(13) and esc key(27)
-                    event.stopImmediatePropagation();
-                    event.preventDefault();
-                    saveEdit();
-                }
-            }
-        });
-
-        function saveNameInDatabase(fileId, caption) {
+        // Saves name of the file into database
+        function saveNameInDatabase(fileId) {
             var fileName = $('#fileTable tbody tr[value=' + fileId + '] .fileName p').text();
 
             var url = "{{ url_for('add_experiment._updateFileName')}}";
@@ -315,7 +275,8 @@
             });
         }
 
-        function saveCaptionInDatabase(fileId, caption) {
+        // saves fileCaption into database
+        function saveCaptionInDatabase(fileId) {
             var fileCaption = $('#fileTable tbody tr[value=' + fileId + '] .fileCaption p').text();
             if( fileCaption == 'No caption provided' || fileCaption == '') return;
 
@@ -334,8 +295,22 @@
             });
         }
 
-        document.onclick = catchIt;
+    }());
 
+    $(function() {
+        /* (TODO) prevent same file from getting uploaded */
+        /* ((TODO)) pop up on clicking */
+        /* ((TODO)) UPDATE IMAGE */
+        /* (TODO) change multipart_params TO params {if multipart_params is deprecated}*/
+
+        var chooseFilesButton = $('#chooseFiles');
+
+        var closeErrorButton = $('.errorLog').find(".container").find("button");
+        var deleteFileButton = '.deleteFileButton';
+        var currentDeleteFileId = -1;
+        var currentEditFileId = -1;
+        var deleteFileForm = $('#deleteFileForm');
+        
         deleteFileForm.on('submit', function(e) {
             e.stopImmediatePropagation();
             e.preventDefault();
