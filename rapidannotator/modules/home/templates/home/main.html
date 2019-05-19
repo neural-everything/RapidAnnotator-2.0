@@ -33,6 +33,7 @@
                         <th>{{('Type')}}</th>
                         <th>{{('Creation Date')}}</th>
                         <th>{{('Status')}}</th>
+                        <th>{{('Delete Project')}}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -43,9 +44,15 @@
                             data-href="{{ experiment_url }}">
                             <td>{{experiment.name}}</td>
                             <td>{{experiment.description}}</td>
-                            <td>{{experiment.category}}</td>
+                            <td style="text-transform:capitalize;">{{experiment.category}}</td>
                             <td>{{experiment.created_at | datetimeformat('%d-%m-%Y')}}</td>
                             <td>{{experiment.status}}</td>
+                            <td class="">
+                                <a  value="{{ experiment.id }}">
+                                    <span class="deleteOwnerButton pull-right glyphicon glyphicon-trash btn-space"
+                                        data-toggle="modal" data-target="#deleteOwnerModal" style="margin-right:80%"></span>
+                                </a>
+                            </td>
                         </tr>
                     {% endfor %}
 

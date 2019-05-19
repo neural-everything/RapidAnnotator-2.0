@@ -7,7 +7,7 @@ from flask_security.forms import email_required, email_validator, \
 from flask_wtf import FlaskForm
 from sqlalchemy.orm.exc import NoResultFound
 from wtforms import FormField, PasswordField, StringField, SubmitField, \
-    BooleanField, SelectField
+    BooleanField, SelectField, TextAreaField
 from wtforms.validators import DataRequired, EqualTo, StopValidation, \
     ValidationError, Email, Length
 
@@ -25,13 +25,13 @@ def strip_filter(text):
 class AddExperimentForm(FlaskForm):
     name = StringField(
         label=_('Experiment Name'),
-        description=_("Required. Experiment name can't exceed 40 characters"),
+        description=_("Required. Name can't exceed 40 characters"),
         validators=[DataRequired(message=_('Experiment name not provided.')),
                     Length(max=40 ,message=_("Experiment name can't exceed 40 characters."))],
         filters=[strip_filter],
     )
 
-    description = StringField(
+    description = TextAreaField(
         label=_('Experiment description'),
         description=_("A short description, can't exceed 320 characters"),
         validators=[Length(max=320 ,message=_("Experiment description can't exceed 320 characters."))],
@@ -41,10 +41,10 @@ class AddExperimentForm(FlaskForm):
     category = SelectField(
         label=_('Type of experiment'),
         description=_("Select the type of files that your experiment has."),
-        choices=[   ('text', 'text'),
-                    ('image', 'image'),
-                    ('audio', 'audio'),
-                    ('video', 'video')],
+        choices=[   ('text', 'Text'),
+                    ('image', 'Image'),
+                    ('audio', 'Audio'),
+                    ('video', 'Video')],
     )
 
     uploadType = SelectField(

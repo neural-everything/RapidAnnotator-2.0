@@ -24,18 +24,14 @@
     <div style="display: inline-block">
         <h3 style="display: inline"><b>{{ experiment.name }}</b></h3>
     </div>
-
+    <hr class="horizontal-line">
     <div class="pull-right" style="display: inline-block">
-
         <button type="button" data-toggle="modal" data-target="#addAnnotationLevelModal"
             class="btn btn-primary btn-group btn-group-inline btn-space">{{ ('Add Annotation Level') }}</button>
-
-        <a href="{{ url_for('add_experiment.index', experimentId = experiment.id) }}" class="btn btn-success btn-group btn-group-inline btn-space">{{ ('Done') }}</a>
-
-        </div>
-
-        <hr class="horizontal-line">
-
+        <a href="{{ url_for('add_experiment.index', experimentId = experiment.id) }}" 
+            class="btn btn-success btn-group btn-group-inline btn-space">{{ ('Done') }}
+        </a>
+    </div>
 </div>
 
 
@@ -45,17 +41,10 @@
                 data-level={{annotation_level.level_number}}>
                 <div class="col-xs-12">
                     <div class="annotationDescriptionGrp">
-                        <span class="col-xs-2 h5 wrapWord annotationName"><b>{{ annotation_level.name }}</b></span>
-                        <span class="col-xs-7 h5 annotationDescription">{{ annotation_level.description }}</span>
-                        <span class="col-xs-2 container-fluid addMoreButtonClass">
-                            {%- if annotation_level.labels -%}
-                                <button type="button" data-toggle="modal" data-target="#addLabelModal"
-                                    class="addLabelButton btn btn-group btn-group-inline btn-space btn-sm">
-                                Add More Labels</button>
-                            {%- endif -%}
-                        </span>
+                        <span class="col-xs-4 h5 wrapWord annotationName"><b>Annotation Level Name:</b> {{ annotation_level.name }}</span>
+                        <span class="col-xs-7 h5 annotationDescription"><b>Description: </b>{{ annotation_level.description }}</span>
                         <span class="col-xs-1 pull-right glyphicon glyphicon-pencil edit-button-margin"
-                            data-toggle="modal" data-target="#editAnnotationLevelModal"></span>
+                            data-toggle="modal" data-target="#editAnnotationLevelModal" title="Edit/Delete Annotation level"></span>
                     </div>
                 </div>
 
@@ -68,20 +57,35 @@
                 </div>
 
                 <div class="col-xs-12 container-fluid labelCollection">
+                    <span class="col-xs-5 h5 labelName"><b>Label Name</b></span>
+                    <span class="col-xs-3 h5 pull-left labelKey"><b>Key binding</b></span>
+                    <span class="col-xs-2"><b>Delete Label</b></span>
+                    <span class="col-xs-2"><b>Edit Label</b></span>
+                    <hr style="width:98%"> 
                     {% for label in annotation_level.labels %}
                     <span class="labels" value={{label.id}}>
-                        <span class="col-xs-6 h5 labelName">{{ label.name }}</span>
-                        <span class="col-xs-2 h5 pull-left labelKey">{%- if label.key_binding -%} {{ label.key_binding }} {%- else -%} {{('default')}} {%- endif -%}</span>
+                        <span class="col-xs-5 h5 labelName">{{ label.name }}</span>
+                        <span class="col-xs-3 h5 pull-left labelKey">{%- if label.key_binding -%} {{ label.key_binding }} {%- else -%} {{('default')}} {%- endif -%}</span>
                         <span class="col-xs-2 glyphicon glyphicon-trash edit-button-margin"
-                            data-toggle="modal" data-target="#deleteLabelModal"></span>
+                            data-toggle="modal" data-target="#deleteLabelModal" title="Delete label"></span>
                         <span class="col-xs-2 glyphicon glyphicon-pencil edit-button-margin"
-                            data-toggle="modal" data-target="#editLabelModal"></span>
+                            data-toggle="modal" data-target="#editLabelModal" title="Edit label"></span>
                     </span>
                     {% endfor %}
                 </div>
+                <div>&nbsp;</div>
+                <div>
+                    <span class="col-xs-5 container-fluid addMoreButtonClass" style="margin-left:45%">
+                        {%- if annotation_level.labels -%}
+                            <button type="button" data-toggle="modal" data-target="#addLabelModal"
+                                class="addLabelButton btn btn-group btn-group-inline btn-space btn-sm">
+                            Add More Labels</button>
+                        {%- endif -%}
+                    </span>
+                </div>
 
             </div>
-            <hr value={{annotation_level.id}}>
+            <hr class="horizontal-line" value={{annotation_level.id}}>
     {% endfor %}
 </div>
 
@@ -227,7 +231,7 @@
                 <b>Label Name</b>
                 <input type="text" name="labelName" id="labelName" maxlength="32" minlength="1"
                     class="form-control validate" placeholder="Label Name" required>
-                <span class="help-block"><small>Label Name (should be precise and unambiguous). Max length : 32</small></span>
+                <span class="help-block"><div style="line-height:110%"><small>Label Name (should be precise & unambiguous). Max length : 32</div></small></span>
 
                 <b>Key Binding</b>
                 <input type="text" name="labelKey" id="labelKey"
@@ -253,7 +257,7 @@
     aria-labelledby="addAnnotationLevelModal" aria-hidden="true">
   <div class="modal-dialog modal-sm">
     <!-- Modal content-->
-    <div class="modal-content">
+    <div class="modal-content" style="width: 100%">
       <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal">&times;</button>
         <h4 class="modal-title">Enter Level Details</h4>
@@ -264,7 +268,7 @@
                     {% if field.widget.input_type == 'hidden' %}
                     {{ field() }}
                     {% else %}
-                    {{ render_field(field, autofocus=True, placeholder=field.label.text) }}
+                    <div style="line-height:110%">{{ render_field(field, autofocus=True, placeholder=field.label.text) }}</div>
                     {% endif %}
                 {% endfor %}
                 <div class="form-actions">
