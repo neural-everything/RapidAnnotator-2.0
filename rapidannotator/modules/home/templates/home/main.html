@@ -40,22 +40,21 @@
                     {% for experiment in myExperiments %}
                         {%- set experiment_url = url_for('add_experiment.index', experimentId = experiment.id) %}
 
-                        <tr class='clickable-row'
-                            data-href="{{ experiment_url }}">
-                            <td>{{experiment.name}}</td>
-                            <td>{{experiment.description}}</td>
-                            <td style="text-transform:capitalize;">{{experiment.category}}</td>
-                            <td>{{experiment.created_at | datetimeformat('%d-%m-%Y')}}</td>
+                        <tr>
+                            <td onClick="document.location.href='{{ experiment_url }}';">{{experiment.name}}</td>
+                            <td onClick="document.location.href='{{ experiment_url }}';">{{experiment.description}}</td>
+                            <td onClick="document.location.href='{{ experiment_url }}';" style="text-transform:capitalize;">{{experiment.category}}</td>
+                            <td onClick="document.location.href='{{ experiment_url }}';">{{experiment.created_at | datetimeformat('%d-%m-%Y')}}</td>
                             {%- if (experiment.status == 'Completed') -%}
-                                <td style="color: green;"> {{experiment.status}}</td>
+                                <td style="color: green;" onClick="document.location.href='{{ experiment_url }}';"> {{experiment.status}}</td>
                             {%- endif -%}
                             {%- if (experiment.status == 'In Progress') -%}
-                                <td style="color: blue;"> {{experiment.status}}</td>
+                                <td style="color: blue;" onClick="document.location.href='{{ experiment_url }}';"> {{experiment.status}}</td>
                             {%- endif -%}
                             <td class="">
-                                <a  value="{{ experiment.id }}">
+                                <a  value="{{ experiment.id }}" onclick="setExperimentId({{experiment.id}});">
                                     <span class="deleteOwnerButton pull-right glyphicon glyphicon-trash btn-space"
-                                        data-toggle="modal" data-target="#deleteOwnerModal" style="margin-right:80%"></span>
+                                        data-toggle="modal" data-target="#deleteProjectModal" style="margin-right:80%"></span>
                                 </a>
                             </td>
                         </tr>
@@ -146,7 +145,36 @@
   </div>
 </div>
 
+<!-- Delete-Project-Modal -->
+<div class="modal fade" id="deleteProjectModal" role="dialog" tabindex="-1"
+    aria-labelledby="deleteProjectModal" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title"><strong>Want to delete this Project? </strong><br><b>Note: </b>once deleted the project can not be recovered by any means.</h4>
+      </div>
+        <div class="modal-body">
+            <form method="POST" id="deleteProjectForm" name="deleteProjectForm">
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-danger"> {{ ('Delete') }}</button>
+                    <button type="button" class="btn btn-default pull-right" data-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+        </div>
+    </div>
+  </div>
+</div>
+
 <script type="text/javascript">
+
+    var ExperimentId = -1;
+    function setExperimentId(id){
+        ExperimentId = id;
+        console.log(ExperimentId);
+    };
     $(window).on('load',function(){
         var errors = "{{errors}}";
 
@@ -158,6 +186,24 @@
             window.location.href = $(this).data("href");
         });
 
+    });
+
+    $(function(){
+        $('#deleteProjectForm').on('submit', function(e) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            var url = "{{ url_for('add_experiment._deleteExperiment')}}";
+            var data = {
+                'experimentId' : ExperimentId,
+            };
+
+            $.getJSON(url , data, function(response) {
+                if(response.success) {
+                    window.location.replace("{{url_for('home.index')}}");
+                } else {
+                }
+            });
+        })
     });
 </script>
 
