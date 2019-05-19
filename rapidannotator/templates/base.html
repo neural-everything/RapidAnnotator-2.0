@@ -98,7 +98,7 @@
       <ul class="nav navbar-nav navbar-right">
           {% if current_user.is_authenticated %}
           <li data-toggle="modal" data-target="#logoutModalId">
-              <a href="#">{{ ('Logout') }}</a>
+              <a href="#"><span class="glyphicon glyphicon-log-out"></span> {{ ('Logout') }}</a>
           </li>
           {% else %}
               <li data-toggle="modal" data-target="#registrationModalId">
@@ -128,7 +128,7 @@
         <div class="modal-body">
             <form method="POST" name="logout_form" action = "{{ url_for('home.logout') }}">
                 <div class="form-actions">
-                    <button type="submit" name="submit" class="btn btn-primary"><i class="fa fa-check"></i> {{ ('Log Out') }}</button>
+                    <button type="submit" name="submit" class="btn btn-primary">Yes</button>
                     <button type="button" class="btn btn-default pull-right" data-dismiss="modal">Close</button>
                 </div>
             </form>
