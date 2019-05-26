@@ -18,7 +18,7 @@ Rapid Annotator is built using
 * Javascript (+ Html5 / css3 / bootstrap) 
 
 ## Installation and User Guide
-* For installation guide refer [here](https://github.com/RedHenLab/RapidAnnotator-2.0/blob/master/docs installation_guide.md).
+* For installation guide refer [here](https://github.com/RedHenLab/RapidAnnotator-2.0/blob/master/docs/installation_guide.md).
 * For user guide refer [here](https://github.com/guptavaibhav18197/rapidannotator/blob/master/docs/user_guide.md).
 
 Last Year, Vaibhav Gupta have made a GSoC blog, please refer to it for all GSoC blogposts about the progress which has been done so far. Blog link: https://guptavaibhav18197.github.io/GSoC-Blog/
