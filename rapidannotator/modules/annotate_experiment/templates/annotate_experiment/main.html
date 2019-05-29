@@ -24,6 +24,11 @@
     <div class="pull-right" style="display: inline-block">
         <button type="button" class="undoButton btn btn-warning btn-group btn-group-inline btn-space">Undo</button>
     </div>
+    <div class="pull-right" style="display:inline-block">
+        <button type="button" class="doneButton btn btn-success btn-group btn-group-inline btn-space" title="if clicked cannot undo!"> 
+            Done 
+        </button>
+    </div>
 
     <div class="pull-right" style="display: inline-block">
         {%- if (experiment.category == 'video') or (experiment.category == 'audio') -%}
@@ -130,10 +135,8 @@
     $(window).on('load', function() {
 
         var undoButton = $('.undoButton');
-        if({{currentFileIndex}} > {{lastFile}}) {
-            displayEnd();
-            return;
-        }
+        var doneButton = $('.doneButton');
+        
 
         var file = $('.file');
         loopingButton = $('.toggleLooping');
@@ -167,17 +170,36 @@
         /* TODO! take care of same names */
 
         /*level indexing is 1 based*/
+        var last_previous = 0   // Used for Undoing the Last annotation 
         var currentLevel = 1;
         var labelButton = $('.labelButton');
         var selectedLabel = -1;
-        var annotations = {};
-        var totalAnnotationLevels = {{ totalAnnotationLevels }};
-        currentFileIndex = {{ currentFileIndex }};
-        var keyBindingDict = {{keyBindingDict | safe}};
-
         var preLoadLimit = 5;
         var currentLoadedFile = 0; // index of the div currently displayed
         var preLoadedTill = 0;
+        var annotations = {};
+        var totalAnnotationLevels = {{ totalAnnotationLevels }};
+        var keyBindingDict = {{keyBindingDict | safe}};
+        currentFileIndex = {{ currentFileIndex }};
+
+        console.log(currentFileIndex, {{lastFile}});
+
+        if(currentFileIndex <= {{lastFile}}) {
+            doneButton.addClass('hidden-element');
+        }
+
+        if(currentFileIndex > {{lastFile}}) {
+            last_previous = 0;
+            currentFileIndex = currentFileIndex - 1;
+            console.log(currentFileIndex);
+            $('.annotationArea').removeClass('hidden-element');
+            $('.thanksNote').removeClass('hidden-element');
+            undoButton.removeClass('hidden-element');
+            doneButton.removeClass('hidden-element');
+            // displayEnd();
+            // return;
+        }
+
 
         function preLoadFiles() {
             var excessFiles = (preLoadedTill - currentLoadedFile + preLoadLimit) % preLoadLimit;
@@ -235,14 +257,22 @@
         }
 
         function previousLevel() {
-            if (currentLevel == 1) {
-                loadPreviousFile();
-            } else {
-                currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
-                currentLevelBody.addClass('hidden-element');
-                currentLevel = currentLevel - 1;
-                currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
-                currentLevelBody.removeClass('hidden-element');
+            if(last_previous == 1){
+                last_previous = 0 // Set again so that we can undo the last annotation again
+                $('.annotationArea').removeClass('hidden-element');
+                $('.thanksNote').addClass('hidden-element');
+                doneButton.addClass('hidden-element');
+            }
+            else{
+                if (currentLevel == 1) {
+                    loadPreviousFile();
+                } else {
+                    currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+                    currentLevelBody.addClass('hidden-element');
+                    currentLevel = currentLevel - 1;
+                    currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+                    currentLevelBody.removeClass('hidden-element');
+                }
             }
         }
 
@@ -251,6 +281,27 @@
             undoAnnotation();
             window.setTimeout(function() {
                 undoButton.removeAttr("disabled");
+            }, [500]);
+        });
+
+        doneButton.on('click', function(){
+            
+            alert("Once clicked you cannot perform undo operation !")
+            doneButton.attr("disabled", "disabled");
+            
+            displayEnd();
+            currentLevel = -1;
+            currentFileIndex = -1;
+            
+            if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
+                if( "{{ experiment.uploadType }}" === "manual" ) {
+                }
+                    var f = $(".file[data-index='" + currentLoadedFile + "']");
+                    f.find(".clip")[0].pause();
+            }
+
+            window.setTimeout(function() {
+                doneButton.removeAttr("disabled");
             }, [500]);
         });
 
@@ -270,6 +321,7 @@
             $('.annotationArea').addClass('hidden-element');
             $('.thanksNote').removeClass('hidden-element');
             undoButton.addClass('hidden-element');
+            doneButton.addClass('hidden-element');
         }
 
         function loadPreviousFile() {
@@ -328,16 +380,19 @@
                 if(response.success) {
                     annotations = {};
                     if(currentFileIndex == {{lastFile}}) {
-                        displayEnd();
-                        currentFileIndex = -1;
-                        currentLevel = -1;
+                        last_previous = 1
+                        doneButton.removeClass('hidden-element');
+                        $('.annotationArea').addClass('hidden-element');
+                        $('.thanksNote').removeClass('hidden-element');
+
                         if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
                             if( "{{ experiment.uploadType }}" === "manual" ) {
                             }
                                 var f = $(".file[data-index='" + currentLoadedFile + "']");
                                 f.find(".clip")[0].pause();
                         }
-                    } else {
+                    } 
+                    else {
                         if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
                             stopThisClip(currentLoadedFile);
                         }
