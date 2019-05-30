@@ -43,7 +43,7 @@ def index(experimentId):
     else:
         currentFile = []
 
-
+    is_done = int(experiment.is_done)
     ''' TODO! move current back to original value if any file was deleted '''
 
     return render_template('annotate_experiment/main.html',
@@ -53,6 +53,7 @@ def index(experimentId):
         lastFile = lastFile,
         firstFile = firstFile,
         keyBindingDict = keyBindingDict,
+        is_done = is_done,
     )
 
 def makeKeyBindingDict(experimentId):
@@ -146,7 +147,7 @@ def deleteAnnotation():
 
     experimentId = request.form.get('experimentId', None)
     fileId = request.form.get('fileId', None)
-    fileId = int(fileId) - 1
+    # fileId = int(fileId) - 1
 
     AnnotationInfo.query.filter(and_(AnnotationInfo.user_id==current_user.id, \
                                     AnnotationInfo.file_id==fileId)\
@@ -224,6 +225,7 @@ def checkStatus():
     experimentId = request.form.get('experimentId', None)
     experiment = Experiment.query.filter_by(id=experimentId).first()
     experiment.status = 'Completed'
+    experiment.is_done = 1
     db.session.commit()
     response = {}
     response['success'] = True

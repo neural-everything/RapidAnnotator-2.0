@@ -195,6 +195,15 @@ class Experiment(db.Model):
         nullable=False,
     )
 
+    """ Flag indicating whether the has completely done or not.
+    ..  Used for checking the undo operation of last annotation.
+    """
+    is_done = db.Column(
+        db.Boolean(name='is_done'),
+        nullable=False,
+        server_default='0',
+    )
+
     """ One to One relation
     ..  For Audio / Video Experiments:
     ..  details of duration of the display time of the audio / video.

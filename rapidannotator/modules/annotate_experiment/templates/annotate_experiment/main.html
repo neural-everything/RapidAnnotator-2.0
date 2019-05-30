@@ -182,23 +182,26 @@
         var keyBindingDict = {{keyBindingDict | safe}};
         currentFileIndex = {{ currentFileIndex }};
 
-        console.log(currentFileIndex, {{lastFile}});
+        console.log(currentFileIndex, {{lastFile}}, {{is_done}});
 
         if(currentFileIndex <= {{lastFile}}) {
             doneButton.addClass('hidden-element');
         }
 
-        if(currentFileIndex > {{lastFile}}) {
-            last_previous = 0;
-            currentFileIndex = currentFileIndex - 1;
-            console.log(currentFileIndex);
-            $('.annotationArea').removeClass('hidden-element');
-            $('.thanksNote').removeClass('hidden-element');
-            undoButton.removeClass('hidden-element');
-            doneButton.removeClass('hidden-element');
-            // displayEnd();
-            // return;
+        if(currentFileIndex > {{lastFile}}){
+            if({{is_done}} == 1){
+                displayEnd();
+                return;
+            }
+            if({{is_done}} == 0){
+                currentFileIndex= currentFileIndex - 1;
+                last_previous = 1;
+                console.log(currentFileIndex);
+                $('.annotationArea').addClass('hidden-element');
+                $('.thanksNote').removeClass('hidden-element');
+            }
         }
+
 
 
         function preLoadFiles() {
@@ -259,21 +262,22 @@
         function previousLevel() {
             if(last_previous == 1){
                 last_previous = 0 // Set again so that we can undo the last annotation again
+                currentFileIndex = currentFileIndex + 1;
                 $('.annotationArea').removeClass('hidden-element');
                 $('.thanksNote').addClass('hidden-element');
                 doneButton.addClass('hidden-element');
             }
-            else{
-                if (currentLevel == 1) {
-                    loadPreviousFile();
-                } else {
-                    currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
-                    currentLevelBody.addClass('hidden-element');
-                    currentLevel = currentLevel - 1;
-                    currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
-                    currentLevelBody.removeClass('hidden-element');
-                }
+            // else{
+            if (currentLevel == 1) {
+                loadPreviousFile();
+            } else {
+                currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+                currentLevelBody.addClass('hidden-element');
+                currentLevel = currentLevel - 1;
+                currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+                currentLevelBody.removeClass('hidden-element');
             }
+            // }
         }
 
         undoButton.on('click', function() {
