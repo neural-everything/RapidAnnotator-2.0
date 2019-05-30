@@ -169,7 +169,7 @@
 </div>
 
 
-    {% with messages = get_flashed_messages() %}
+    <!-- {% with messages = get_flashed_messages() %}
     {% if messages %}
         <div class ="alert alert-dismissible fixed alert-success">
             {% for message in messages %}
@@ -181,22 +181,22 @@
             {% endfor %}
         </div>
     {% endif %}
-    {% endwith %}
+    {% endwith %} -->
 
 
-    <!-- <div class ="container-fluid">
+    <div class ="container-fluid msg1">
         {%  with messages = get_flashed_messages() %}
         {% if messages %}
             {% for message in messages %}
-            <div class ="alert alert-warning alert-dismissible fade in" role="alert">
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span></button>
-                <strong>{{ message }}</strong>
-            </div>
+                <div class ="alert alert-success alert-dismissible fade in" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span></button>
+                    <strong>{{ message }}</strong>
+                </div>
             {% endfor %}
         {% endif %}
         {% endwith %}
-    </div> -->
+    </div>
 
 <!--
     <div class ="container-fluid">
@@ -265,6 +265,8 @@
                     });
 
                 })
+
+                $( "div.msg1" ).fadeIn(600).delay(3000).fadeOut(700);
 
             });
         </script>
