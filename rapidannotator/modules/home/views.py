@@ -24,11 +24,23 @@ def index():
     myExperiments = current_user.my_experiments.all()
     annotatorAssociation = current_user.experiments_to_annotate
     experimentsToAnnotate = [association.experiment for association in annotatorAssociation]
+    
+    totalExperiments = Experiment.query.all()
+    othersExperiments = []
+    for experiment in totalExperiments:
+        owners = experiment.owners
+        if (current_user in owners) and (owners.count() == 1):
+            continue
+        othersExperiments.append(experiment)
+    
+    is_admin = int(current_user.is_admin())
 
     return render_template('home/main.html',
         addExperimentForm = addExperimentForm,
         myExperiments = myExperiments,
         experimentsToAnnotate = experimentsToAnnotate,
+        othersExperiments = othersExperiments,
+        is_admin = is_admin,
         )
 
 @blueprint.route('/addExperiment', methods=['POST'])

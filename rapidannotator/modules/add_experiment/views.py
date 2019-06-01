@@ -12,7 +12,7 @@ from rapidannotator import bcrypt
 
 from flask_login import current_user, login_required
 from flask_login import login_user, logout_user, current_user
-from .api import isOwner
+from .api import isPerimitted
 
 from sqlalchemy import and_
 import os
@@ -30,7 +30,7 @@ def before_request():
 
 
 @blueprint.route('/a/<int:experimentId>')
-@isOwner
+@isPerimitted
 def index(experimentId):
     users = User.query.all()
     experiment = Experiment.query.filter_by(id=experimentId).first()
@@ -115,7 +115,7 @@ def _addAnnotator():
 
 
 @blueprint.route('/labels/<int:experimentId>')
-@isOwner
+@isPerimitted
 def editLabels(experimentId):
 
     experiment = Experiment.query.filter_by(id=experimentId).first()
@@ -444,7 +444,7 @@ def _updateFileCaption():
     return jsonify(response)
 
 @blueprint.route('/viewSettings/<int:experimentId>')
-@isOwner
+@isPerimitted
 def viewSettings(experimentId):
 
     users = User.query.all()
@@ -551,7 +551,7 @@ def _deleteExperiment():
 
 
 @blueprint.route('/viewResults/<int:experimentId>')
-@isOwner
+@isPerimitted
 def viewResults(experimentId):
 
     experiment = Experiment.query.filter_by(id=experimentId).first()
