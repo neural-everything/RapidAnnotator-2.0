@@ -194,7 +194,8 @@
                 return;
             }
             if({{is_done}} == 0){
-                currentFileIndex= currentFileIndex - 1;
+                // currentFileIndex= currentFileIndex - 1;
+                console.log(currentFileIndex, {{lastFile}}, {{is_done}});
                 last_previous = 1;
                 console.log(currentFileIndex);
                 $('.annotationArea').addClass('hidden-element');
@@ -261,6 +262,7 @@
 
         function previousLevel() {
             if(last_previous == 1){
+                console.log('--------- Test Ok -----------------------');
                 last_previous = 0 // Set again so that we can undo the last annotation again
                 currentFileIndex = currentFileIndex + 1;
                 $('.annotationArea').removeClass('hidden-element');
@@ -332,6 +334,7 @@
             annotations = {};
 
             var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
+            console.log(currentFileId);
             var data = {
                 'experimentId' :    {{experiment.id}},
                 'fileId' :          currentFileId,
