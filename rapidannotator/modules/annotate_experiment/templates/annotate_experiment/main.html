@@ -194,7 +194,7 @@
                 return;
             }
             if({{is_done}} == 0){
-                // currentFileIndex= currentFileIndex - 1;
+                currentFileIndex= currentFileIndex - 1;
                 console.log(currentFileIndex, {{lastFile}}, {{is_done}});
                 last_previous = 1;
                 console.log(currentFileIndex);
@@ -263,15 +263,14 @@
         function previousLevel() {
             if(last_previous == 1){
                 console.log('--------- Test Ok -----------------------');
-                last_previous = 0 // Set again so that we can undo the last annotation again
                 currentFileIndex = currentFileIndex + 1;
+                // last_previous = 0 // Set again so that we can undo the last annotation again
                 $('.annotationArea').removeClass('hidden-element');
                 $('.thanksNote').addClass('hidden-element');
                 doneButton.addClass('hidden-element');
             }
-            // else{
             if (currentLevel == 1) {
-                loadPreviousFile();
+                loadPreviousFile(last_previous);
             } else {
                 currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
                 currentLevelBody.addClass('hidden-element');
@@ -279,7 +278,9 @@
                 currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
                 currentLevelBody.removeClass('hidden-element');
             }
-            // }
+            if(last_previous == 1){
+                last_previous = 0
+            }
         }
 
         undoButton.on('click', function() {
@@ -312,6 +313,7 @@
         });
 
         function undoAnnotation() {
+            console.log("Value of last previous is ;" + last_previous.toString());
             previousLevel();
         }
 
@@ -330,14 +332,15 @@
             doneButton.addClass('hidden-element');
         }
 
-        function loadPreviousFile() {
+        function loadPreviousFile(load_previous) {
             annotations = {};
 
             var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
             console.log(currentFileId);
             var data = {
-                'experimentId' :    {{experiment.id}},
+                'lp': last_previous,
                 'fileId' :          currentFileId,
+                'experimentId' :    {{experiment.id}},
             };
             $.ajax({
                 url: "{{ url_for('annotate_experiment.deleteAnnotation')}}",

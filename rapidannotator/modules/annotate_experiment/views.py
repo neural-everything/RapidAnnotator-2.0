@@ -147,8 +147,11 @@ def deleteAnnotation():
 
     experimentId = request.form.get('experimentId', None)
     fileId = request.form.get('fileId', None)
+    lp = request.form.get('lp', None)
+    print("Value of lp is: {}".format(lp))
+    if int(lp) == 0:
+        fileId = int(fileId) - 1           
     print("The file Id to delete  is : {}".format(fileId))
-    fileId = int(fileId) - 1
 
     AnnotationInfo.query.filter(and_(AnnotationInfo.user_id==current_user.id, \
                                     AnnotationInfo.file_id==fileId)\
