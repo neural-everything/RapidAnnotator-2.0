@@ -609,10 +609,12 @@ def _exportResults(experimentId):
     # experimentId = request.args.get('experimentId', None)
     experiment = Experiment.query.filter_by(id=experimentId).first()
 
+
     excel_file = xlwt.Workbook()
     sheet = excel_file.add_sheet('results')
     sheet.col(0).width = 256 * 40
     row, col = 0, 0
+    sheet.write(row, col, 'File Name')
     allLables, columnNumber = {}, {}
 
     annotationLevels = AnnotationLevel.query.filter_by(experiment_id=\
@@ -625,6 +627,11 @@ def _exportResults(experimentId):
             col += 1
             columnNumber[label.id] = col
             sheet.write(row, col, label.name)
+    col += 1
+    sheet.write(row, col, 'Caption')
+    if experiment.uploadType == 'viaSpreadsheet':
+        col += 1
+        sheet.write(row, col, 'Video Link')
 
     row, col = 0, 0
     for f in experiment.files:
@@ -644,6 +651,14 @@ def _exportResults(experimentId):
             sheet.write(row, columnNumber[key], allLables[key])
             col += 1
             allLables[key] = 0
+    
+        if f.caption == '':
+            sheet.write(row, col, 'No Caption Provided')
+        else:
+            sheet.write(row, col, f.caption)
+        if experiment.uploadType == 'viaSpreadsheet':
+            col += 1
+            sheet.write(row, col, f.content)
 
     filename = str(experimentId) + '.xls'
 
