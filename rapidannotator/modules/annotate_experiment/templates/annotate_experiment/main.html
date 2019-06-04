@@ -177,6 +177,7 @@
         var preLoadLimit = 5;
         var currentLoadedFile = 0; // index of the div currently displayed
         var preLoadedTill = 0;
+        var space_pressed = 0;
         var annotations = {};
         var totalAnnotationLevels = {{ totalAnnotationLevels }};
         var keyBindingDict = {{keyBindingDict | safe}};
@@ -245,6 +246,18 @@
             if(event.ctrlKey && y == 'z') {
                 undoAnnotation();
             }
+
+            if(x == 32){
+                if(space_pressed == 0){
+                    stopThisClip(currentLoadedFile);
+                    space_pressed = (space_pressed + 1)%2;
+                }
+                else{
+                    playThisClip(currentLoadedFile);
+                    space_pressed = (space_pressed + 1)%2;
+                }
+            }
+
         });
 
         function nextLevel(label) {
@@ -435,6 +448,13 @@
             var f = $(".file[data-index='" + divIndex + "']");
             if (f.length != 0) {
                 f.find(".clip")[0].pause();
+            }
+        }
+        
+        function playThisClip(divIndex) {
+            var f = $(".file[data-index='" + divIndex + "']");
+            if (f.length != 0) {
+                f.find(".clip")[0].play();
             }
         }
 
