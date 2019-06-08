@@ -311,9 +311,13 @@ def _addImportedLevels():
     experiment = Experiment.query.filter_by(id=importExperimentId).first()
 
     annotation_levels = AnnotationLevel.query.filter_by(experiment_id=exportExperimentId).all()
+    msg_already_imported = 0
+
     for level in annotation_levels:
         labels = Label.query.filter_by(annotation_id=level.id).all()
-        
+        cnt = AnnotationLevel.query.filter_by(experiment_id=importExperimentId, level_number=level.level_number).count()
+        if cnt > 0:
+            continue
         new_annotation_level = AnnotationLevel(experiment_id=importExperimentId, name=level.name, \
             description=level.description, level_number=level.level_number)
         experiment.annotation_levels.append(new_annotation_level)
@@ -326,9 +330,12 @@ def _addImportedLevels():
             new_label = Label(annotation_id=new_annotation_level_id, name=label.name, key_binding=label.key_binding)
             new_annotation_level.labels.append(new_label)
             db.session.commit()
+        
+        msg_already_imported = 1
 
     response = {}
     response['success'] = True
+    response['msg_already_imported'] = msg_already_imported
 
     return jsonify(response)
 
