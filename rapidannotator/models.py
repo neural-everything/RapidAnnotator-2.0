@@ -204,6 +204,15 @@ class Experiment(db.Model):
         server_default='0',
     )
 
+    """ Flag indicating whether the user has made annotation level 
+        globel or not.
+    """
+    is_global = db.Column(
+        db.Boolean(name='is_global'),
+        nullable=False,
+        server_default='0',
+    )
+
     """ One to One relation
     ..  For Audio / Video Experiments:
     ..  details of duration of the display time of the audio / video.

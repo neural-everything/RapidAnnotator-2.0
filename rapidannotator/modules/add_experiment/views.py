@@ -263,6 +263,74 @@ def _editLabel():
 
     return jsonify(response)
 
+@blueprint.route('/_togglePrivate', methods=['POST','GET'])
+def _togglePrivate():
+
+    experimentId = request.args.get('experimentId', None)
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    
+    experiment.is_global = not experiment.is_global
+    db.session.commit()
+
+    response = {}
+    response['success'] = True
+
+    return jsonify(response)
+
+@blueprint.route('/_importAnnotationtLevel/<int:experimentId>')
+@isPerimitted
+def _importAnnotationtLevel(experimentId):
+
+    import_experiment = Experiment.query.filter_by(id=experimentId).first()
+    # print(experiment.id)
+
+    global_annotation_level = []
+    owners = []
+    import_id = []
+    myExperiments = Experiment.query.all()
+
+    for experiment in myExperiments:
+        if experiment.is_global:
+            annotation_levels = experiment.annotation_levels
+            global_annotation_level.append(annotation_levels)
+            owners.append(experiment.owners)
+            import_id.append(experiment.id)
+
+    return render_template('add_experiment/import.html',
+        global_annotation_level= global_annotation_level,
+        import_experiment=import_experiment,
+        owners=owners,
+        import_id=import_id,
+    )
+
+@blueprint.route('/_addImportedLevels', methods=['POST','GET'])
+def _addImportedLevels():
+    
+    exportExperimentId = request.args.get('exportExperimentId', None)
+    importExperimentId = request.args.get('importExperimentId', None)
+    experiment = Experiment.query.filter_by(id=importExperimentId).first()
+
+    annotation_levels = AnnotationLevel.query.filter_by(experiment_id=exportExperimentId).all()
+    for level in annotation_levels:
+        labels = Label.query.filter_by(annotation_id=level.id).all()
+        
+        new_annotation_level = AnnotationLevel(experiment_id=importExperimentId, name=level.name, \
+            description=level.description, level_number=level.level_number)
+        experiment.annotation_levels.append(new_annotation_level)
+        db.session.commit()
+
+        new_annotation_level_id = AnnotationLevel.query.order_by(AnnotationLevel.id.desc()).first().id
+        print(new_annotation_level_id)
+        
+        for label in labels:
+            new_label = Label(annotation_id=new_annotation_level_id, name=label.name, key_binding=label.key_binding)
+            new_annotation_level.labels.append(new_label)
+            db.session.commit()
+
+    response = {}
+    response['success'] = True
+
+    return jsonify(response)
 
 @blueprint.route('/_uploadFiles', methods=['POST','GET'])
 def _uploadFiles():

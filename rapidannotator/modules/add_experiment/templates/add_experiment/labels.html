@@ -26,6 +26,17 @@
     </div>
     <hr class="horizontal-line">
     <div class="pull-right" style="display: inline-block">
+        <button class="togglePrivate btn btn-warning btn-group btn-group-inline btn-space"
+            type="button" value={{experiment.is_global}}>
+            {%- if experiment.is_global -%}
+                {{ ('Make Private') }}
+            {%- else -%}
+                {{ ('Make Global') }}
+                {%- endif -%}
+        </button>
+        <a href="{{ url_for('add_experiment._importAnnotationtLevel', experimentId = experiment.id) }}" 
+            class="btn btn-danger btn-group btn-group-inline btn-space">{{ ('Import Existing Level') }}
+        </a>
         <button type="button" data-toggle="modal" data-target="#addAnnotationLevelModal"
             class="btn btn-primary btn-group btn-group-inline btn-space">{{ ('Add Annotation Level') }}</button>
         <a href="{{ url_for('add_experiment.index', experimentId = experiment.id) }}" 
@@ -308,6 +319,27 @@
         var selectedAnnotationId = -1;
         var selectedLabelId = -1;
         var addAnotherLevel = false;
+
+        var privateGlobalButton = $('.togglePrivate');
+
+        privateGlobalButton.on('click', function() {
+            var url = "{{ url_for('add_experiment._togglePrivate')}}";
+            var data = {'experimentId': {{experiment.id}}};
+
+            $.getJSON(url, data, function(response) {
+                var globalVal = privateGlobalButton.val();
+                var newText = "";
+                if(globalVal == "True") {
+                    newText = "Make Global";
+                    privateGlobalButton.val("False");
+                } else {
+                    newText = "Make Private";
+                    privateGlobalButton.val("True");
+                }
+                privateGlobalButton.text(newText);
+            });
+
+        });
 
 
         /* (TODO) change request method types */
