@@ -311,7 +311,7 @@ def _addImportedLevels():
     experiment = Experiment.query.filter_by(id=importExperimentId).first()
 
     annotation_levels = AnnotationLevel.query.filter_by(experiment_id=exportExperimentId).all()
-    msg_already_imported = 0
+    msg_already_imported = 1
 
     for level in annotation_levels:
         labels = Label.query.filter_by(annotation_id=level.id).all()
@@ -331,7 +331,7 @@ def _addImportedLevels():
             new_annotation_level.labels.append(new_label)
             db.session.commit()
         
-        msg_already_imported = 1
+        msg_already_imported = 0
 
     response = {}
     response['success'] = True

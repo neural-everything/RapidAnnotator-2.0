@@ -57,24 +57,44 @@
       </tbody>
     </table>
   </div>
-
+  <div id="snackbar1"><strong>Annotation Levels already Imported!</strong></div>
+  <div id="snackbar2"><strong>Annotation Levels Imported Successfully !</strong></div>
   <script charset="utf-8" type="text/javascript">
+    
+    function importLevels(exportExperimentId){
+      var data = {
+        'exportExperimentId' :  exportExperimentId,
+        'importExperimentId' : {{import_experiment.id}},
+      };
+      var url = "{{url_for('add_experiment._addImportedLevels')}}";
+      console.log(data);
+      $.getJSON(url , data, function(response) {
+        if(response.success) {
+            if(response.msg_already_imported){
+              alreadyImportedFeedback();
+            }
+            else{
+              importedFeedback();
+            }
+        }
+        else {
+        }
+      });
+    };
 
-	function importLevels(exportExperimentId){
-		var data = {
-			'exportExperimentId' :  exportExperimentId,
-			'importExperimentId' : {{import_experiment.id}},
-		};
-		var url = "{{url_for('add_experiment._addImportedLevels')}}";
-		console.log(data);
-		$.getJSON(url , data, function(response) {
-			if(response.success) {
-				console.log("--------Test Ok ----------------- ")
-			}
-			else {
-			}
-		});
-	};
+    // Function for giving the feedback if annotation levels are already Imported
+    function alreadyImportedFeedback() {
+        var x = document.getElementById("snackbar1");
+        x.className = "show";
+        setTimeout(function(){ x.className = x.className.replace("show", ""); }, 2000);
+    }
+
+    // Function for giving the feedback if annotations levels imported successfully
+    function importedFeedback() {
+        var x = document.getElementById("snackbar2");
+        x.className = "show";
+        setTimeout(function(){ x.className = x.className.replace("show", ""); }, 2500);
+    }
 
   </script>
 
