@@ -129,6 +129,10 @@
     <h3>No more files to annotate. Thanks</h3>
 </div>
 
+<div class="alert alert-danger alert-dismissible labelWarning hidden-element" style="width: 35%; position: fixed; z-index: 1; margin-left: 60%; margin-top: 2%">
+    <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+    <strong>Warning!</strong> Labels have been changed! <b>Please refresh the screen.</b>
+</div>
 
 
 <script type="text/javascript">
@@ -434,8 +438,8 @@
                     }
                 }
                 else{
-                    console.log('Labels have been changed ! Please refresh the scren');
-                    alert('Labels have been changed ! Please refresh the scren');
+                    $('.labelWarning').removeClass('hidden-element');
+                    
                 }
             });
         }
