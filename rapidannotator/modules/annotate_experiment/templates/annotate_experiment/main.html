@@ -306,23 +306,29 @@
 
         doneButton.on('click', function(){
             
-            alert("Once clicked you cannot perform undo operation !")
-            doneButton.attr("disabled", "disabled");
-            
-            displayEnd();
-            currentLevel = -1;
-            currentFileIndex = -1;
-            
-            if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
-                if( "{{ experiment.uploadType }}" === "manual" ) {
-                }
-                    var f = $(".file[data-index='" + currentLoadedFile + "']");
-                    f.find(".clip")[0].pause();
-            }
+            if (confirm("Press OK to Submit Annotations! Once submitted, cannot perform Undo operation.")){
 
-            window.setTimeout(function() {
-                doneButton.removeAttr("disabled");
-            }, [500]);
+                // alert("Once clicked you cannot perform undo operation !")
+                doneButton.attr("disabled", "disabled");
+                
+                displayEnd();
+                currentLevel = -1;
+                currentFileIndex = -1;
+                
+                if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
+                    if( "{{ experiment.uploadType }}" === "manual" ) {
+                    }
+                        var f = $(".file[data-index='" + currentLoadedFile + "']");
+                        f.find(".clip")[0].pause();
+                }
+
+                window.setTimeout(function() {
+                    doneButton.removeAttr("disabled");
+                }, [500]);
+            }
+            else{
+
+            }
         });
 
         function undoAnnotation() {
@@ -397,6 +403,7 @@
             var data = {
                 'fileId' :          currentFileId,
                 'annotations' :     annotations,
+                'labelCount' :     {{labelCount}}, 
             };
             data = JSON.stringify(data);
             $.getJSON(url , data, function(response) {
@@ -425,6 +432,10 @@
                         preLoadFiles();
                         showCurrentFile(currentLoadedFile);
                     }
+                }
+                else{
+                    console.log('Labels have been changed ! Please refresh the scren');
+                    alert('Labels have been changed ! Please refresh the scren');
                 }
             });
         }

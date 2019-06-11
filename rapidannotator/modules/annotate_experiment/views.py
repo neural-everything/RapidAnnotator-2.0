@@ -46,6 +46,14 @@ def index(experimentId):
     is_done = int(experiment.is_done)
     ''' TODO! move current back to original value if any file was deleted '''
 
+    ''' For displaying a warning if the labels got changed at any time'''
+    labelCount = 0
+
+    annotationLevels = AnnotationLevel.query.filter_by(experiment_id=experimentId).all()
+    for level in annotationLevels:
+        labels = Label.query.filter_by(annotation_id=level.id)
+        labelCount += labels.count()
+
     return render_template('annotate_experiment/main.html',
         experiment = experiment,
         currentFile = currentFile,
@@ -54,6 +62,7 @@ def index(experimentId):
         firstFile = firstFile,
         keyBindingDict = keyBindingDict,
         is_done = is_done,
+        labelCount = labelCount,
     )
 
 def makeKeyBindingDict(experimentId):
@@ -148,10 +157,8 @@ def deleteAnnotation():
     experimentId = request.form.get('experimentId', None)
     fileId = request.form.get('fileId', None)
     lp = request.form.get('lp', None)
-    print("Value of lp is: {}".format(lp))
     if int(lp) == 0:
-        fileId = int(fileId) - 1           
-    print("The file Id to delete  is : {}".format(fileId))
+        fileId = int(fileId) - 1
 
     AnnotationInfo.query.filter(and_(AnnotationInfo.user_id==current_user.id, \
                                     AnnotationInfo.file_id==fileId)\
@@ -188,6 +195,22 @@ def _addAnnotationInfo():
 
     fileId = arguments.get('fileId', None)
     annotations = arguments.get('annotations')
+    prevLabelCount = arguments.get('labelCount', None)
+
+    ''' For displaying a warning if the labels got changed at any time'''
+    labelCount = 0
+
+    experimentId = File.query.filter_by(id=fileId).first().experiment_id
+    
+    annotationLevels = AnnotationLevel.query.filter_by(experiment_id=experimentId).all()
+    for level in annotationLevels:
+        labels = Label.query.filter_by(annotation_id=level.id)
+        labelCount += labels.count()
+
+    if labelCount != prevLabelCount:
+        response = {}
+        response['success'] = False
+        return jsonify(response)
 
     for annotationLevelId in annotations:
         labelId = annotations[annotationLevelId]
@@ -199,7 +222,6 @@ def _addAnnotationInfo():
         )
         db.session.add(annotationInfo)
 
-    experimentId = File.query.filter_by(id=fileId).first().experiment_id
     annotatorInfo = AnnotatorAssociation.query.filter_by(user_id=current_user.id).\
                     filter_by(experiment_id=experimentId).first()
     annotatorInfo.current = annotatorInfo.current + 1
