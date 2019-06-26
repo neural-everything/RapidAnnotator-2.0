@@ -213,6 +213,11 @@ class Experiment(db.Model):
         server_default='0',
     )
 
+    """ countLabel
+    ... For giving the warning if the labels have been changed
+    """
+    countLabel = db.Column(db.Integer, nullable=False, server_default='-1')
+
     """ One to One relation
     ..  For Audio / Video Experiments:
     ..  details of duration of the display time of the audio / video.
@@ -450,6 +455,11 @@ class File(db.Model):
     ..  the maximum table row size allowed is 65535 including storing overheads.
     '''
     content = db.Column(db.String(10001), nullable=False, server_default='')
+
+    ''' isSelected 
+    ..  Flag for if the file is selected in the random order or not 
+    '''
+    isSelected = db.Column(db.Integer, nullable=False, server_default='0')
 
     """ One to Many relation
     ..  For File:

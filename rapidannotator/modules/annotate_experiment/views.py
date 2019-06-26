@@ -47,12 +47,25 @@ def index(experimentId):
     ''' TODO! move current back to original value if any file was deleted '''
 
     ''' For displaying a warning if the labels got changed at any time'''
+        
     labelCount = 0
+    labelWarning = 0
 
     annotationLevels = AnnotationLevel.query.filter_by(experiment_id=experimentId).all()
     for level in annotationLevels:
         labels = Label.query.filter_by(annotation_id=level.id)
         labelCount += labels.count()
+ 
+    if experiment.countLabel != labelCount and experiment.countLabel != -1 and labelCount != 0:
+        labelWarning = 1
+    
+    if labelCount == 0:
+        experiment.countLabel = -1
+        db.session.commit()
+    else:
+        experiment.countLabel = labelCount
+        db.session.commit()
+
 
     return render_template('annotate_experiment/main.html',
         experiment = experiment,
@@ -63,6 +76,7 @@ def index(experimentId):
         keyBindingDict = keyBindingDict,
         is_done = is_done,
         labelCount = labelCount,
+        labelWarning = labelWarning,
     )
 
 def makeKeyBindingDict(experimentId):
