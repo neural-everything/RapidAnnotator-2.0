@@ -67,6 +67,11 @@ def index(experimentId):
         experiment.countLabel = labelCount
         db.session.commit()
 
+    if lastFile == -1:
+        progress_width = 0
+    else:
+        progress_width = (currentFileIndex/ (lastFile  + 1))*100
+
 
     return render_template('annotate_experiment/main.html',
         experiment = experiment,
@@ -78,6 +83,7 @@ def index(experimentId):
         is_done = is_done,
         labelCount = labelCount,
         labelWarning = labelWarning,
+        progress_width = progress_width,
     )
 
 def makeKeyBindingDict(experimentId):
@@ -168,12 +174,11 @@ def updateCurrentFileIndex():
 def deleteAnnotation():
 
     ''' in DELETE request data is received in request.form '''
-
     experimentId = request.form.get('experimentId', None)
     fileId = request.form.get('fileId', None)
     lp = request.form.get('lp', None)
-    if int(lp) == 0:
-        fileId = int(fileId) - 1
+    # if int(lp) == 0:
+        # fileId = int(fileId) - 1
 
     AnnotationInfo.query.filter(and_(AnnotationInfo.user_id==current_user.id, \
                                     AnnotationInfo.file_id==fileId)\

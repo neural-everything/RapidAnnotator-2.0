@@ -21,6 +21,11 @@
     <div style="display: inline-block">
         <h3 style="display: inline"><b>{{ experiment.name }}</b></h3>
     </div>
+
+    <div style="display: inline; margin-left: 35%; margin-right: 40%">
+        <b id="prg" style="font-size: 18px;"> Progress: {{currentFileIndex}} / {{lastFile + 1}}</b>
+    </div>
+
     <div class="pull-right" style="display: inline-block">
         <button type="button" class="undoButton btn btn-warning btn-group btn-group-inline btn-space">Undo</button>
     </div>
@@ -44,6 +49,13 @@
             {%- endif -%}
         {%- endif -%}
     </div>
+
+    <div class="progress" style="width:26%; margin-left: 30%; margin-right: 70%">
+        <div class="progress-bar progress-bar-striped active" id = "progress-bar" role="progressbar" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100" style="width: {{progress_width}}%">
+                <div id="preview"> {{progress_width}} %</div>
+        </div>
+    </div>
+
     <hr class="horizontal-line">
 </div>
 
@@ -189,11 +201,11 @@
         var preLoadedTill = 0;
         var space_pressed = 0;
         var annotations = {};
+        var progress_num = 0;
         var totalAnnotationLevels = {{ totalAnnotationLevels }};
         var keyBindingDict = {{keyBindingDict | safe}};
         currentFileIndex = {{ currentFileIndex }};
 
-        console.log(currentFileIndex, {{lastFile}}, {{is_done}});
 
         if(currentFileIndex <= {{lastFile}}) {
             doneButton.addClass('hidden-element');
@@ -208,7 +220,6 @@
                 currentFileIndex= currentFileIndex - 1;
                 console.log(currentFileIndex, {{lastFile}}, {{is_done}});
                 last_previous = 1;
-                console.log(currentFileIndex);
                 $('.annotationArea').addClass('hidden-element');
                 $('.thanksNote').removeClass('hidden-element');
             }
@@ -285,9 +296,7 @@
 
         function previousLevel() {
             if(last_previous == 1){
-                console.log('--------- Test Ok -----------------------');
                 currentFileIndex = currentFileIndex + 1;
-                // last_previous = 0 // Set again so that we can undo the last annotation again
                 $('.annotationArea').removeClass('hidden-element');
                 $('.thanksNote').addClass('hidden-element');
                 doneButton.addClass('hidden-element');
@@ -307,7 +316,20 @@
         }
 
         undoButton.on('click', function() {
+            // console.log(currentFileIndex);
             undoButton.attr("disabled", "disabled");
+            if(last_previous == 1){
+                progress_num = currentFileIndex;
+            }
+            else{
+                progress_num = currentFileIndex - 1;
+            }
+            progress_value = 'Progress: ' + progress_num.toString() + ' / ' + ({{lastFile}} + 1).toString()
+            $("#prg").text(progress_value);                                                
+            var prog_width = (progress_num/({{lastFile}} + 1))*100
+            $("#progress-bar").width(prog_width.toString() + '%');
+            $('#preview').text(prog_width.toString() + '%');
+            
             undoAnnotation();
             window.setTimeout(function() {
                 undoButton.removeAttr("disabled");
@@ -342,7 +364,6 @@
         });
 
         function undoAnnotation() {
-            console.log("Value of last previous is ;" + last_previous.toString());
             previousLevel();
         }
 
@@ -363,9 +384,8 @@
 
         function loadPreviousFile(load_previous) {
             annotations = {};
-
             var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
-            console.log(currentFileId);
+            console.log(currentFileId, last_previous);
             var data = {
                 'lp': last_previous,
                 'fileId' :          currentFileId,
@@ -420,6 +440,15 @@
                 if(response.success) {
                     annotations = {};
                     if(currentFileIndex == {{lastFile}}) {
+
+                        //  Code for Progress bar
+                        progress_value = 'Progress: ' + (currentFileIndex + 1).toString() + ' / ' + ({{lastFile}}  + 1).toString()
+                        $("#prg").text(progress_value);                        
+                        var prog_width = ((currentFileIndex + 1)/({{lastFile}} + 1))*100
+                        $("#progress-bar").width(prog_width.toString() + '%');
+                        $('#preview').text(prog_width.toString() + '%');
+                        // Code for Progress bar Ends
+
                         last_previous = 1
                         doneButton.removeClass('hidden-element');
                         $('.annotationArea').addClass('hidden-element');
@@ -441,7 +470,14 @@
                         currentLoadedFile = (currentLoadedFile + 1) % preLoadLimit;
                         preLoadFiles();
                         showCurrentFile(currentLoadedFile);
+
+                        progress_value = 'Progress: ' + (currentFileIndex).toString() + ' / ' + ({{lastFile}} + 1).toString()
+                        $("#prg").text(progress_value);                                                
+                        var prog_width = (currentFileIndex/({{lastFile}} + 1))*100
+                        $("#progress-bar").width(prog_width.toString() + '%');
+                        $('#preview').text(prog_width.toString() + '%');
                     }
+                    console.log(currentFileIndex);
                 }
                 else{
                     $('.labelWarning').removeClass('hidden-element');
@@ -494,7 +530,6 @@
             /*
                     clip[0].addEventListener("timeupdate", function(){
                         if (clip[0].currentTime == 0) {
-                            // console.log(":asdf");
                             clip[0].currentTime = clip[0].currentTime + "{{experiment.display_time.before_time}}";
                         }
                     });
