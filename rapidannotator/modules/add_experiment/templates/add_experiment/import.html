@@ -24,7 +24,7 @@
       <thead>
         <tr>
           <th>Serial No.</th>
-          <th>Annotation Level Name</th>
+          <th>Global Name</th>
           <th>Owner</th>
           <th>Import</th>
         </tr>
@@ -34,13 +34,14 @@
           <tr >
             <td> {{loop.index}} </td>
             <td>
-              <select>
+              <!-- <select>
                 {% for level in annotation_levels %}
                   <optgroup label="Description: {{level.description}}">
                     <option value="{{level.name}}">{{level.name}}</option>
                   </optgroup>
                 {% endfor %}
-              </select>
+              </select> -->
+              {{global_names[loop.index -1 ]}}
             </td>
             <td>
                 <select>

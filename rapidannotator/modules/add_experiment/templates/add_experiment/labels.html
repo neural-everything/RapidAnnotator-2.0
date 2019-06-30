@@ -26,16 +26,19 @@
     </div>
     <hr class="horizontal-line">
     <div class="pull-right" style="display: inline-block">
-        <button class="togglePrivate btn btn-warning btn-group btn-group-inline btn-space"
-            type="button" value={{experiment.is_global}}>
-            {%- if experiment.is_global -%}
+        <!-- <button type="button" data-toggle="modal" data-target="#addGlobalNameModal"  -->
+            <!-- class="togglePrivate btn btn-warning btn-group btn-group-inline btn-space" value={{experiment.is_global}}> -->
+            <button type="button"
+                class="togglePrivate1 btn btn-warning btn-group btn-group-inline btn-space" value={{experiment.is_global}}>
                 {{ ('Make Private') }}
-            {%- else -%}
+            </button>
+            <button type="button" data-toggle="modal" data-target="#addGlobalNameModal" 
+                class="togglePrivate2 btn btn-warning btn-group btn-group-inline btn-space" value={{experiment.is_global}}>
                 {{ ('Make Global') }}
-                {%- endif -%}
-        </button>
+            </button>
+        <!-- </button> -->
         <a href="{{ url_for('add_experiment._importAnnotationtLevel', experimentId = experiment.id) }}" 
-            class="btn btn-danger btn-group btn-group-inline btn-space">{{ ('Import Existing Level') }}
+            class="btn btn-primary btn-group btn-group-inline btn-space">{{ ('Import Existing Levels') }}
         </a>
         <button type="button" data-toggle="modal" data-target="#addAnnotationLevelModal"
             class="btn btn-primary btn-group btn-group-inline btn-space">{{ ('Add Annotation Level') }}</button>
@@ -53,8 +56,8 @@
                 data-level={{annotation_level.level_number}}>
                 <div class="col-xs-12">
                     <div class="annotationDescriptionGrp">
-                        <span class="col-xs-4 h5 wrapWord annotationName"><b>Annotation Level Name:</b> {{ annotation_level.name }}</span>
-                        <span class="col-xs-7 h5 annotationDescription"><b>Description: </b>{{ annotation_level.description }}</span>
+                        <span class="col-xs-4 h5 wrapWord annotationName"> {{ annotation_level.name }}</span>
+                        <span class="col-xs-7 h5 annotationDescription">{{ annotation_level.description }}</span>
                         <span class="col-xs-1 pull-right glyphicon glyphicon-pencil edit-button-margin"
                             data-toggle="modal" data-target="#editAnnotationLevelModal" title="Edit/Delete Annotation level"></span>
                     </div>
@@ -135,6 +138,13 @@
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
         <h4 class="modal-title">Edit Label</h4>
+        {%- if annotationCount > 0 -%}
+            <div style="line-height:70%">&nbsp;</div>
+            <div class="alert alert-danger alert-dismissible labelWarning" 
+                style="width: 100%; margin-bottom: 1px; height: 45px; line-height:30px; padding:5px 15px;">
+                <div style="line-height:130%; font-size:95%;"><strong> Warning! </strong>Annotations are in progress. Editing labels may effect it.</div>
+            </div>
+        {%- endif -%}
       </div>
         <div class="modal-body">
             <form id="editLabelForm" name="editLabelForm">
@@ -170,6 +180,13 @@
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
         <h4 class="modal-title">Edit / Delete Annotation Level</h4>
+        {%- if annotationCount > 0 -%}
+            <div style="line-height:70%">&nbsp;</div>
+            <div class="alert alert-danger alert-dismissible labelWarning" 
+                style="width: 100%; margin-bottom: 1px; height: 55px; line-height:30px; padding:5px 15px;">
+                <div style="line-height:130%; font-size:92%;"><strong> Warning! </strong>Annotations are in progress. Editing/Deleting Annotation Level may effect it.</div>
+            </div>
+        {%- endif -%}
       </div>
         <div class="modal-body">
             <form id="editAnnotationLevelForm" name="editAnnotationLevelForm">
@@ -214,6 +231,13 @@
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
         <h4 class="modal-title">Are you sure you want to delete it?</h4>
+        {%- if annotationCount > 0 -%}
+            <div style="line-height:70%">&nbsp;</div>
+            <div class="alert alert-danger alert-dismissible labelWarning" 
+                style="width: 100%; margin-bottom: 1px; height: 45px; line-height:30px; padding:5px 15px;">
+                <div style="line-height:130%; font-size:95%;"><strong> Warning! </strong>Annotations are in progress. Deleting labels may effect it.</div>
+            </div>
+        {%- endif -%}
       </div>
         <div class="modal-body">
             <form method="POST" id="deleteLabelForm" name="deleteLabelForm">
@@ -238,6 +262,13 @@
       <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal">&times;</button>
         <h4 class="modal-title">Enter Label Details</h4>
+        {%- if annotationCount > 0 -%}
+            <div style="line-height:70%">&nbsp;</div>
+            <div class="alert alert-danger alert-dismissible labelWarning" 
+                style="width: 100%; margin-bottom: 1px; height: 45px; line-height:30px; padding:5px 15px;">
+                <div style="line-height:130%; font-size:95%;"><strong> Warning! </strong>Annotations are in progress. Adding more labels may effect it.</div>
+            </div>
+        {%- endif -%}
       </div>
         <div class="modal-body">
             <form method="POST" id="addLabelForm" name="addLabelForm">
@@ -297,6 +328,37 @@
   </div>
 </div>
 
+
+<!-- Adding-Global-Annotation-Level-Name-Modal -->
+<div class="modal fade" id="addGlobalNameModal" role="dialog" tabindex="-1"
+    aria-labelledby="addGlobalNameModal" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <!-- Modal content-->
+    <div class="modal-content" style="width: 100%">
+      <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Enter the Global Name for all the Annotation Levels</h4>
+      </div>
+        <div class="modal-body">
+            <form method="POST" id="addGlobalNameForm" name="addGlobalNamelForm">
+
+                <b>Global Annotation Levels Name</b>
+                <input type="text" name="globalName" id="globalName" maxlength="42" minlength="1"
+                    class="form-control validate" placeholder="Global Name" required>
+                <span class="help-block"><div style="line-height:110%"><small>Global Name (should be precise & unambiguous)</div></small></span>
+
+                <div class="form-actions">
+                    <button type="submit" name="submit" value="" class="btn btn-primary"> {{ ('Submit') }}</button>
+                    <button type="button" id="" class="btn btn-default pull-right" data-dismiss="modal">{{ ('Cancel') }}</button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+        </div>
+    </div>
+  </div>
+</div>
+
 <script charset="utf-8" type="text/javascript">
     $(function() {
 
@@ -315,28 +377,64 @@
         var deleteLabelButton = '.labels .glyphicon-trash';
         var editLabelButton = '.labels .glyphicon-pencil';
         var editLabelForm = $('#editLabelForm');
+        var addGlobalNameForm = $('#addGlobalNameForm')
 
         var selectedAnnotationId = -1;
         var selectedLabelId = -1;
         var addAnotherLevel = false;
 
-        var privateGlobalButton = $('.togglePrivate');
+        var privateGlobalButton1 = $('.togglePrivate1');
+        var privateGlobalButton2 = $('.togglePrivate2');
 
-        privateGlobalButton.on('click', function() {
+        if({{is_global}}){
+            $('.togglePrivate1').removeClass('hidden-element');
+            $('.togglePrivate2').addClass('hidden-element');
+        }
+        else{
+            $('.togglePrivate2').removeClass('hidden-element');
+            $('.togglePrivate1').addClass('hidden-element');
+        }
+
+        privateGlobalButton1.on('click', function() {
             var url = "{{ url_for('add_experiment._togglePrivate')}}";
             var data = {'experimentId': {{experiment.id}}};
 
             $.getJSON(url, data, function(response) {
-                var globalVal = privateGlobalButton.val();
-                var newText = "";
-                if(globalVal == "True") {
-                    newText = "Make Global";
-                    privateGlobalButton.val("False");
-                } else {
-                    newText = "Make Private";
-                    privateGlobalButton.val("True");
+                $('.togglePrivate2').removeClass('hidden-element');
+                $('.togglePrivate1').addClass('hidden-element');
+            });
+
+        });
+
+        privateGlobalButton2.on('click', function() {
+            var url = "{{ url_for('add_experiment._togglePrivate')}}";
+            var data = {'experimentId': {{experiment.id}}};
+
+            $.getJSON(url, data, function(response) {
+                $('.togglePrivate1').removeClass('hidden-element');
+                $('.togglePrivate2').addClass('hidden-element');
+            });
+
+        });
+
+        addGlobalNameForm.on('submit', function(e) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            var globalName = addGlobalNameForm.find('input[name="globalName"]').val();
+            var data = {
+                "globalName" : globalName,
+                'experimentId': {{experiment.id}},
+            };
+
+            var url = "{{ url_for('add_experiment._addGlobalName')}}";
+
+            $.getJSON(url , data, function(response) {
+                if(response.success) {
+                    $('input[name="globalName"]').val(globalName);
+                    $('#addGlobalNameModal').modal('hide');
                 }
-                privateGlobalButton.text(newText);
+                else {
+                }
             });
 
         });
@@ -357,6 +455,8 @@
         });
 
         $("body").on("click", editLabelButton, function() {
+            $('.labelWarning').removeClass('hidden-element');
+            console.log('-----Test Ok ----------------');
             selectedLabel = $(this).closest('.labels');
             selectedLabelId = selectedLabel.attr('value');
 

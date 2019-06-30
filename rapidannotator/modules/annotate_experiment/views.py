@@ -57,7 +57,8 @@ def index(experimentId):
         labelCount += labels.count()
  
     if experiment.countLabel != labelCount and experiment.countLabel != -1 and labelCount != 0:
-        labelWarning = 1
+        if currentFileIndex > 0:
+            labelWarning = 1
     
     if labelCount == 0:
         experiment.countLabel = -1

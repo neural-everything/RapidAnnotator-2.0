@@ -55,7 +55,7 @@ def index(experimentId):
     )
 
 @blueprint.route('/_addDisplayTimeDetails', methods=['GET','POST'])
-def _addDisplayTimeDetails():
+def _addDisplayTimeDetails():   
 
     beforeTime = request.args.get('beforeTime', None)
     afterTime = request.args.get('afterTime', None)
@@ -121,11 +121,17 @@ def editLabels(experimentId):
     experiment = Experiment.query.filter_by(id=experimentId).first()
     annotation_levels = experiment.annotation_levels
     annotationLevelForm = AnnotationLevelForm(experimentId = experimentId)
-
+    annotationInfo = AnnotatorAssociation.query.filter_by(experiment_id=experimentId, user_id=current_user.id)
+    if annotationInfo.count() > 0:
+        annotationCount = annotationInfo.current
+    else:
+        annotationCount = 0
     return render_template('add_experiment/labels.html',
         experiment = experiment,
         annotation_levels = annotation_levels,
         annotationLevelForm = annotationLevelForm,
+        annotationCount = annotationCount,
+        is_global = (experiment.is_global)*1,
     )
 
 @blueprint.route('/_addAnnotationLevel', methods=['POST'])
@@ -277,16 +283,30 @@ def _togglePrivate():
 
     return jsonify(response)
 
+@blueprint.route('/_addGlobalName', methods=['POST', 'GET'])
+def _addGlobalName():
+    
+    globalName = request.args.get('globalName', None)
+    experimentId = request.args.get('experimentId', None)
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    experiment.globalName = globalName
+    db.session.commit()
+
+    response = {}
+    response['success'] = True
+
+    return jsonify(response)
+
 @blueprint.route('/_importAnnotationtLevel/<int:experimentId>')
 @isPerimitted
 def _importAnnotationtLevel(experimentId):
 
     import_experiment = Experiment.query.filter_by(id=experimentId).first()
-    # print(experiment.id)
 
     global_annotation_level = []
     owners = []
     import_id = []
+    global_names = []
     myExperiments = Experiment.query.all()
 
     for experiment in myExperiments:
@@ -295,12 +315,14 @@ def _importAnnotationtLevel(experimentId):
             global_annotation_level.append(annotation_levels)
             owners.append(experiment.owners)
             import_id.append(experiment.id)
+            global_names.append(experiment.globalName)
 
     return render_template('add_experiment/import.html',
-        global_annotation_level= global_annotation_level,
-        import_experiment=import_experiment,
-        owners=owners,
-        import_id=import_id,
+        global_annotation_level = global_annotation_level,
+        import_experiment = import_experiment,
+        owners = owners,
+        import_id = import_id,
+        global_names = global_names,
     )
 
 @blueprint.route('/_addImportedLevels', methods=['POST','GET'])

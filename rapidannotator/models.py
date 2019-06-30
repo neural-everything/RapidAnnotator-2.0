@@ -213,6 +213,9 @@ class Experiment(db.Model):
         server_default='0',
     )
 
+    """ Global name for all Annotation levels in an experiment """
+    globalName = db.Column(db.String(255), nullable=False, server_default='')
+
     """ countLabel
     ... For giving the warning if the labels have been changed
     """
