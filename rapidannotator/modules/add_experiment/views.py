@@ -123,6 +123,7 @@ def editLabels(experimentId):
     annotationLevelForm = AnnotationLevelForm(experimentId = experimentId)
     annotationInfo = AnnotatorAssociation.query.filter_by(experiment_id=experimentId, user_id=current_user.id)
     if annotationInfo.count() > 0:
+        annotationInfo = AnnotatorAssociation.query.filter_by(experiment_id=experimentId, user_id=current_user.id).first()
         annotationCount = annotationInfo.current
     else:
         annotationCount = 0
@@ -307,6 +308,7 @@ def _importAnnotationtLevel(experimentId):
     owners = []
     import_id = []
     global_names = []
+    experiment_disp = []
     myExperiments = Experiment.query.all()
 
     for experiment in myExperiments:
@@ -314,6 +316,7 @@ def _importAnnotationtLevel(experimentId):
             annotation_levels = experiment.annotation_levels
             global_annotation_level.append(annotation_levels)
             owners.append(experiment.owners)
+            experiment_disp.append(experiment)
             import_id.append(experiment.id)
             global_names.append(experiment.globalName)
 
@@ -323,6 +326,7 @@ def _importAnnotationtLevel(experimentId):
         owners = owners,
         import_id = import_id,
         global_names = global_names,
+        experiment_disp = experiment_disp,
     )
 
 @blueprint.route('/_addImportedLevels', methods=['POST','GET'])
@@ -378,6 +382,11 @@ def _uploadFiles():
         if flaskFile:
             experimentId = request.form.get('experimentId', None)
             experiment = Experiment.query.filter_by(id=experimentId).first()
+            if experiment.is_done:
+                experiment.is_done = not experiment.is_done
+                experiment.status = 'In Progress'
+                db.session.commit()
+
             if experiment.uploadType == 'viaSpreadsheet':
                 addFilesViaSpreadsheet(experimentId, flaskFile)
             else:

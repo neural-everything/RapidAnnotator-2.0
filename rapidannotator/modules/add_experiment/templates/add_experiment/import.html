@@ -24,6 +24,7 @@
       <thead>
         <tr>
           <th>Serial No.</th>
+          <th>Experiment Name</th>
           <th>Global Name</th>
           <th>Owner</th>
           <th>Import</th>
@@ -33,6 +34,7 @@
         {% for annotation_levels in global_annotation_level%}
           <tr >
             <td> {{loop.index}} </td>
+            <td>{{experiment_disp[loop.index - 1].name}}</td>
             <td>
               <!-- <select>
                 {% for level in annotation_levels %}
@@ -45,7 +47,8 @@
             </td>
             <td>
                 <select>
-                  <optgroup label="Owners">
+                  <option>Owners</option>
+                  <optgroup label="" disabled>
                     {% for owner in owners[loop.index - 1]%}
                       <option value="1">{{owner.username}}</option>
                     {% endfor %}
