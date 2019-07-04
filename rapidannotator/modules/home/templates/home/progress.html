@@ -90,19 +90,31 @@
 		function drawChart() {
 			// Define the chart to be drawn.
 			var data = google.visualization.arrayToDataTable(dataVis);
-			var ht = 0;
-			if(size > 1){
-				ht = 90*size; 
+			var ht = 350, wdth = 570;
+			var brs = 'horizontal';
+			if(charId != 'experimentProgress'){
+				brs = 'vertical';
+				if(size > 1){
+					wdth = 160*size;
+				}
+				else{
+					wdth = 200;
+				}
 			}
 			else{
-				ht = 125;
+				if(size > 1){
+					ht = 90*size; 
+				}
+				else{
+					ht = 125;
+				}
 			}
 			var options = {
 				title: 'Progress (in percentage)',
 				legend: { position: 'Top' },
 				bar: { groupWidth: '22%' },
-				bars: 'horizontal',
-				width: 570,
+				bars: brs,
+				width: wdth,
 				height: ht,
 			}; 
 
