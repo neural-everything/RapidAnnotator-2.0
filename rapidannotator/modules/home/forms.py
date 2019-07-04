@@ -11,7 +11,8 @@ from wtforms import FormField, PasswordField, StringField, SubmitField, \
 from wtforms.validators import DataRequired, EqualTo, StopValidation, \
     ValidationError, Email, Length
 
-from rapidannotator.models import Experiment
+from rapidannotator.models import Experiment, User
+from rapidannotator.validators import USERNAME_RULES, validate_username
 
 
 def strip_filter(text):
@@ -58,6 +59,48 @@ class AddExperimentForm(FlaskForm):
         experiment = Experiment.query.filter_by(name=name.data).first()
         if experiment is not None:
             raise ValidationError(_('Experiment name already taken!'))
+
+class UpdateInfoForm(FlaskForm):
+    username = StringField(
+        label=_('Username'),
+        description=_('Required. %(username_rules)s',
+                      username_rules=USERNAME_RULES),
+        validators=[DataRequired(message=_('Username not provided.'))],
+        filters=[strip_filter],
+    )
+
+    fullname = StringField(
+        label=_('Fullname'),
+        filters=[strip_filter],
+    )
+
+    email = StringField(
+        label=_('Email'),
+        validators=[DataRequired(message=_('Email not provided.')), Email()]
+    )
+
+    password = PasswordField(
+        label=_('Password'),
+        validators=[DataRequired(message=_('Password not provided.'))],)
+    
+    def validate_username(self, username):
+        """Wrap username validator for WTForms."""
+        try:
+            validate_username(username.data)
+        except ValueError as e:
+            raise ValidationError(_('Invalid Username'))
+
+        user = User.query.filter_by(username=username.data).first()
+
+        if user.id != current_user.id:
+            if user is not None:
+                raise ValidationError(_('Username already taken or earlier Name is Provided!'))
+
+    def validate_email(self, email):
+        user = User.query.filter_by(email=email.data).first()
+        if user.id != current_user.id and user is not None:
+            raise ValidationError(_('Email address already registered.'))
+
 
 class DummyForm(FlaskForm):
     """A Dummy form for testing and debugging."""

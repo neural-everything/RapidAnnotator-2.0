@@ -7,7 +7,7 @@ from rapidannotator import db
 from rapidannotator import bcrypt
 from rapidannotator.models import User, Experiment, RightsRequest
 from rapidannotator.modules.home import blueprint
-from rapidannotator.modules.home.forms import AddExperimentForm
+from rapidannotator.modules.home.forms import AddExperimentForm, UpdateInfoForm
 
 @blueprint.before_request
 def before_request():
@@ -106,3 +106,40 @@ def checkRights():
 def logout():
     logout_user()
     return redirect(url_for('frontpage.index'))
+
+@blueprint.route('/updateInfo', methods=['GET', 'POST'])
+def updateInfo():
+
+    user = current_user
+    updateForm = UpdateInfoForm(obj=user)
+    updateForm.populate_obj(user)
+    
+    if request.method == 'GET':
+        return render_template('home/settings.html', updateForm = updateForm,\
+            user = current_user)
+    elif request.method == 'POST':
+        updateForm1 = UpdateInfoForm()
+        print(updateForm1.username.data)
+        if updateForm1.validate_on_submit():
+            user = User.query.filter_by(id=current_user.id).first()
+            user.username = updateForm.username.data
+            user.fullname = updateForm.fullname.data
+            user.email = updateForm.email.data
+            if updateForm.password.data is not None:
+                hashedPassword = bcrypt.generate_password_hash(\
+                    updateForm.password.data).decode('utf-8')
+                user.password = hashedPassword
+            db.session.commit()
+            flash(_('Information updated successfully'))
+            return render_template('home/settings.html', updateForm = updateForm1, \
+                user = current_user)    
+
+        errors = "UpdateErrors"
+        return render_template('home/settings.html',
+            updateForm = updateForm1,
+            user = current_user,
+            errors = errors,)
+
+@blueprint.route('/checkProgress', methods=['GET', 'POST'])
+def checkProgress():
+    return render_template('home/progress.html')

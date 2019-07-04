@@ -97,9 +97,24 @@
       {% endif %}
       <ul class="nav navbar-nav navbar-right">
           {% if current_user.is_authenticated %}
-          <li data-toggle="modal" data-target="#logoutModalId">
-              <a href="#"><span class="glyphicon glyphicon-log-out"></span> {{ ('Logout') }}</a>
-          </li>
+            <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#" style="width:100%; margin-left:-42%">  <span class="glyphicon
+                glyphicon-user"></span> Account <span class="caret"></span></a>
+                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    <li><a class="dropdown-item" href="{{url_for('home.updateInfo')}}"> 
+                        <span class="glyphicon glyphicon-cog"></span> Settings
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{{url_for('home.checkProgress')}}" >
+                            <span class="glyphicon glyphicon-check"></span> Check Progress 
+                        </a>
+                    </li>
+                    <li><div class="dropdown-divider"></div></li>
+                    <li data-toggle="modal" data-target="#logoutModalId">
+                        <a href="#"><span class="glyphicon glyphicon-log-out"></span> {{ ('Logout') }}</a>
+                    </li>
+                </ul>
+            </li>
           {% else %}
               <li data-toggle="modal" data-target="#registrationModalId">
                   <a href="#"><span class="glyphicon glyphicon-user"></span>Sign Up</a>
