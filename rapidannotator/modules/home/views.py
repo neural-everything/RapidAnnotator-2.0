@@ -5,7 +5,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 
 from rapidannotator import db
 from rapidannotator import bcrypt
-from rapidannotator.models import User, Experiment, RightsRequest
+from rapidannotator.models import User, Experiment, RightsRequest, AnnotatorAssociation
 from rapidannotator.modules.home import blueprint
 from rapidannotator.modules.home.forms import AddExperimentForm, UpdateInfoForm
 
@@ -140,6 +140,51 @@ def updateInfo():
             user = current_user,
             errors = errors,)
 
-@blueprint.route('/checkProgress', methods=['GET', 'POST'])
+@blueprint.route('/checkProgress', methods=['GET'])
 def checkProgress():
-    return render_template('home/progress.html')
+    experiments = current_user.my_experiments.all()
+    return render_template('home/progress.html',
+        experiments = experiments,)
+
+@blueprint.route('/getExperimentProgressData', methods=['GET', 'POST'])
+def getExperimentProgressData():
+    
+    experimentName = request.args.get('experimentName', None)
+    experiment = Experiment.query.filter_by(name=experimentName).first()
+    annotators = experiment.annotators
+    filesLength = experiment.files.count()
+    if filesLength != 0:
+        filesLength = (100/filesLength)
+    
+    chartInfo = []
+    chartInfo.append(['Annotator Name', 'Progress'])
+    for association in annotators:
+        user = User.query.filter_by(id=association.user_id).first()
+        chartInfo.append([user.username, (association.current*filesLength)])
+
+    response = {}
+    response['success'] = True
+    response['chartInfo'] = chartInfo
+    response['size'] = len(chartInfo) - 1
+
+    return jsonify(response)
+
+@blueprint.route('/getUserProgressData', methods=['GET', 'POST'])
+def getUserProgressData():
+    
+    associations = AnnotatorAssociation.query.filter_by(user_id=current_user.id).all()
+    chartInfo = []
+    chartInfo.append(['Experiment Name', 'Progress'])
+    for association in associations:
+        experiment = Experiment.query.filter_by(id=association.experiment_id).first()
+        filesLength = experiment.files.count()
+        if filesLength != 0:
+            filesLength = (100/filesLength)
+        chartInfo.append([experiment.name, (association.current*filesLength)])
+    
+    response = {}
+    response['success'] = True
+    response['chartInfo'] = chartInfo
+    response['size'] = len(chartInfo) - 1
+
+    return jsonify(response)
