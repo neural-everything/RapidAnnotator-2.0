@@ -445,9 +445,9 @@ class File(db.Model):
 
     ''' caption
     ..  a small description of the text.
-    ..  size is limited to 320 characters
+    ..  size is limited to 1500 characters
     '''
-    caption = db.Column(db.String(320), nullable=False, server_default='')
+    caption = db.Column(db.String(1500), nullable=False, server_default='')
 
     ''' content
     ..  actual text to be annotated for Text experiments.

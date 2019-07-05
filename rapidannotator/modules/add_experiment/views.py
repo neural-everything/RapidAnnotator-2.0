@@ -86,7 +86,7 @@ def _addOwner():
     response = {
         'success' : True,
         'ownerId' : user.id,
-        'ownerFullname' : user.fullname,
+        'ownerUsername' : user.username,
     }
 
     return jsonify(response)
@@ -108,7 +108,7 @@ def _addAnnotator():
     response = {
         'success' : True,
         'annotatorId' : user.id,
-        'annotatorFullname' : user.fullname,
+        'annotatorUsername' : user.username,
     }
 
     return jsonify(response)

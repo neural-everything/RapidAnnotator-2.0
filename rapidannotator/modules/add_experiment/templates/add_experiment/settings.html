@@ -83,7 +83,7 @@
                     {% for obj in annotatorDetails %}
                         <a value="{{ obj.annotator.id }}" class="list-group-item annotator"
                             data-start={{ obj.start }} data-end={{ obj.end }}>
-                            <span>{{ obj.annotator.fullname }}</span>
+                            <span>{{ obj.annotator.username }}</span>
                             <span class="deleteAnnotatorButton pull-right glyphicon glyphicon-trash btn-space"
                                 data-toggle="modal" data-target="#deleteAnnotatorModal"></span>
                             <span class="editAnnotatorButton pull-right glyphicon glyphicon-cog btn-space"
@@ -97,7 +97,7 @@
                 <div class="list-group col-6" id="owners">
                     {% for user in owners %}
                         <a class="list-group-item owner" value="{{ user.id }}">
-                            <span>{{ user.fullname }}</span>
+                            <span>{{ user.username }}</span>
                             <span class="deleteOwnerButton pull-right glyphicon glyphicon-trash btn-space"
                                 data-toggle="modal" data-target="#deleteOwnerModal"></span>
                         </a>
@@ -475,7 +475,7 @@
             $.getJSON(url , data, function(response) {
                 if(response.success) {
                     currentSelected.remove();
-                    addOwnerToList(response.ownerId, response.ownerFullname);
+                    addOwnerToList(response.ownerId, response.ownerUsername);
                 }
                 else {
                     /*do something here*/
@@ -497,7 +497,7 @@
             $.getJSON(url , data, function(response) {
                 if(response.success) {
                     currentSelected.remove();
-                    addAnnotatorToList(response.annotatorId, response.annotatorFullname);
+                    addAnnotatorToList(response.annotatorId, response.annotatorUsername);
                 }
                 else {
                     /*do something here*/
