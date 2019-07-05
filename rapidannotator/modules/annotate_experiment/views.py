@@ -70,7 +70,7 @@ def index(experimentId):
     if lastFile == -1:
         progress_width = 0
     else:
-        progress_width = (currentFileIndex/ (lastFile  + 1))*100
+        progress_width = round((currentFileIndex/ (lastFile  + 1))*100, 2)
 
 
     return render_template('annotate_experiment/main.html',
@@ -269,10 +269,17 @@ def _toggleLooping():
 @blueprint.route('/checkStatus', methods=['POST'])
 def checkStatus():
     experimentId = request.form.get('experimentId', None)
+    associations = AnnotatorAssociation.query.filter_by(experiment_id=experimentId).all()
+    associationsCount = AnnotatorAssociation.query.filter_by(experiment_id=experimentId).count()
     experiment = Experiment.query.filter_by(id=experimentId).first()
-    experiment.status = 'Completed'
-    experiment.is_done = 1
-    db.session.commit()
+    fileCount = experiment.files.count()
+    tot = 0
+    for association in associations:
+        tot += association.current
+    if (fileCount*associationsCount) == tot:
+        experiment.status = 'Completed'
+        experiment.is_done = 1
+        db.session.commit()
     response = {}
     response['success'] = True
     return jsonify(response)
