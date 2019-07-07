@@ -184,6 +184,12 @@ def _addLabels():
     labelName = request.args.get('labelName', None)
     labelKey = request.args.get('labelKey', None)
 
+    if labelKey == ' ':
+        response = {
+            'error' : 'Invalid Key',
+        }
+        return jsonify(response)
+
     annotationLevel = AnnotationLevel.query.filter_by(id=annotationId).first()
     annotationLabels = Label.query.filter_by(annotation_id=annotationId).all()
 
