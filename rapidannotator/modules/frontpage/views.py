@@ -7,7 +7,7 @@ from rapidannotator import db
 from rapidannotator import bcrypt
 from rapidannotator.models import User
 from rapidannotator.modules.frontpage import blueprint
-from rapidannotator.modules.frontpage.forms import LoginForm, RegistrationForm
+from rapidannotator.modules.frontpage.forms import LoginForm, RegistrationForm, ForgotPasswordForm
 
 @blueprint.route('/')
 def index():
@@ -15,9 +15,12 @@ def index():
         return redirect(url_for('home.index'))
     loginForm = LoginForm()
     registrationForm = RegistrationForm()
+    forgotPasswordForm = ForgotPasswordForm()
+
     return render_template('frontpage/main.html',
         loginForm = loginForm,
-        registrationForm = registrationForm)
+        registrationForm = registrationForm,
+        forgotPasswordForm = forgotPasswordForm)
 
 @blueprint.route('/login', methods=['POST'])
 def login():
@@ -26,6 +29,7 @@ def login():
 
     loginForm = LoginForm()
     registrationForm = RegistrationForm()
+    forgotPasswordForm = ForgotPasswordForm()
 
     if loginForm.validate_on_submit():
         user = User.query.filter_by(username=loginForm.username.data).first()
@@ -41,6 +45,7 @@ def login():
     return render_template('frontpage/main.html',
         loginForm = loginForm,
         registrationForm = registrationForm,
+        forgotPasswordForm = forgotPasswordForm,
         errors = errors,)
 
 @blueprint.route('/register', methods=['POST'])
@@ -49,6 +54,7 @@ def register():
         return redirect(url_for('home.index'))
     loginForm = LoginForm()
     registrationForm = RegistrationForm()
+    forgotPasswordForm = ForgotPasswordForm()
 
     if registrationForm.validate_on_submit():
         hashedPassword = bcrypt.generate_password_hash(
@@ -74,4 +80,36 @@ def register():
     return render_template('frontpage/main.html',
         loginForm = loginForm,
         registrationForm = registrationForm,
+        forgotPasswordForm = forgotPasswordForm,
+        errors = errors,)
+
+@blueprint.route('/forgotPassword', methods=['POST'])
+def forgotPassword():
+    if current_user.is_authenticated:
+        return redirect(url_for('home.index'))
+    
+    forgotPasswordForm = ForgotPasswordForm()
+    loginForm = LoginForm()
+    registrationForm = RegistrationForm()
+
+    if forgotPasswordForm.validate_on_submit():
+        user = User.query.filter_by(username=forgotPasswordForm.username.data, email=forgotPasswordForm.email.data).first()
+        hashedPassword = bcrypt.generate_password_hash(
+            forgotPasswordForm.password.data).decode('utf-8')
+        user.password = hashedPassword
+        db.session.commit()
+
+        flash(_('Password has been Changed Successfully. \
+                Please Login to continue.'))
+
+        return render_template('frontpage/main.html',
+            loginForm = loginForm,
+            registrationForm = registrationForm,
+            forgotPasswordForm = forgotPasswordForm)
+
+    errors = "forgotPasswordErrors"
+    return render_template('frontpage/main.html',
+        loginForm = loginForm,
+        registrationForm = registrationForm,
+        forgotPasswordForm = forgotPasswordForm,
         errors = errors,)

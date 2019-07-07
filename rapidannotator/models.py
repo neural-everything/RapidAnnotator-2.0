@@ -508,7 +508,7 @@ class DisplayTime(db.Model):
     ..  and before time is 13 then the actual time when the video
     ..  will start will be 1553 (1540 + 13)
     '''
-    before_time = db.Column(db.Integer, nullable=False, server_default="0")
+    before_time = db.Column(db.Float, nullable=False, server_default="0")
 
     ''' after_time
     ..  the time relative to the time given in the link
@@ -518,7 +518,7 @@ class DisplayTime(db.Model):
     ..  will end will be 1567 (1540 + 27).
     ..  Default value(-1) implies the video will be played till the end.
     '''
-    after_time = db.Column(db.Integer, nullable=False, server_default="-1")
+    after_time = db.Column(db.Float, nullable=False, server_default="-1")
 
     def __str__(self):
         """Representation."""

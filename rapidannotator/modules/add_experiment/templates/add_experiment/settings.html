@@ -135,12 +135,12 @@
             <form method="POST" id="displayTimeForm" name="displayTimeForm">
 
                 <b>Before Time</b>
-                <input type="number" name="beforeTime" id="beforeTime" class="form-control validate"
+                <input type="number" name="beforeTime" id="beforeTime" step="0.01" class="form-control validate"
                 value="{{experiment.display_time.before_time}}" placeholder="{{experiment.display_time.before_time}}">
                 <span class="help-block"><small>The time relative to the time given in the link to before which the clip will start.</small></span>
 
                 <b>After Time</b>
-                <input type="number" name="afterTime" id="afterTime" class="form-control validate"
+                <input type="number" name="afterTime" id="afterTime" step="0.01" class="form-control validate"
                 value="{{experiment.display_time.after_time}}" placeholder="{{experiment.display_time.after_time}}">
                 <span class="help-block"><small>The time relative to the time given in the link till which the clip will be played.</small></span>
 
