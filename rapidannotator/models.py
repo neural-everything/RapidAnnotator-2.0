@@ -41,6 +41,15 @@ class User(UserMixin, db.Model):
     """User password."""
     password = db.Column(db.String(300))
 
+    """ Date of Registration for a User """
+    registeredOn = db.Column(db.DateTime, server_default=func.now())
+
+    """ Check to see if a user is authentic or not."""
+    confirmed = db.Column(db.Boolean, nullable=False, default=False)
+
+    """Confirmation Date of confirming the email"""
+    confirmedOn = db.Column(db.DateTime, nullable=True)
+
     """ There are 3 levels of user hierarchy,
      User can be any one / more of
     ..  Annotator,

@@ -1,4 +1,5 @@
 from flask import Flask
+
 app = Flask(__name__)
 app.config.from_object('rapidannotator.config.DevelopmentConfig')
 
@@ -9,6 +10,10 @@ login.login_view = 'frontpage.index'
 
 from rapidannotator.models import db
 db.init_app(app)
+
+from flask_mail import Mail
+mail = Mail(app)
+
 '''
     .. for creating all the required tables
 '''

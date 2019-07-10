@@ -7,7 +7,11 @@ from rapidannotator import db
 from rapidannotator import bcrypt
 from rapidannotator.models import User
 from rapidannotator.modules.frontpage import blueprint
+from rapidannotator.token import generate_confirmation_token, confirm_token
 from rapidannotator.modules.frontpage.forms import LoginForm, RegistrationForm, ForgotPasswordForm
+import datetime
+from rapidannotator.email import send_email
+
 
 @blueprint.route('/')
 def index():
@@ -64,10 +68,20 @@ def register():
             username=registrationForm.username.data,
             fullname=registrationForm.fullname.data,
             email=registrationForm.email.data,
-            password=hashedPassword
+            password=hashedPassword,
+            confirmed=False
         )
         db.session.add(user)
         db.session.commit()
+
+        token = generate_confirmation_token(user.email)
+        print("The token is :{}".format(token))
+        confirm_url = url_for('frontpage.confirm_email', token=token, _external=True)
+        print("The Url is :{}".format(confirm_url))
+        html = render_template('frontpage/activate.html', confirm_url=confirm_url)
+        print(html)
+        subject = "Please confirm your email"
+        send_email(registrationForm.email.data, subject, html)
 
         flash(_('Thank you, you are now a registered user. \
                 Please Login to continue.'))
@@ -113,3 +127,22 @@ def forgotPassword():
         registrationForm = registrationForm,
         forgotPasswordForm = forgotPasswordForm,
         errors = errors,)
+
+@blueprint.route('/confirm/<token>')
+def confirm_email(token):
+    try:
+        email = confirm_token(token)
+    except:
+        flash('The confirmation link is invalid or has expired.', 'danger')
+        return redirect(url_for('frontpage.index'))
+
+    user = User.query.filter_by(email=email).first_or_404()
+    if user.confirmed:
+        flash('Account already confirmed. Please login.', 'success')
+    else:
+        user.confirmed = True
+        user.confirmedOn = datetime.datetime.now()
+        db.session.add(user)
+        db.session.commit()
+        flash('You have confirmed your account. Thanks!', 'success')
+    return redirect(url_for('frontpage.index'))
