@@ -50,6 +50,9 @@ class User(UserMixin, db.Model):
     """Confirmation Date of confirming the email"""
     confirmedOn = db.Column(db.DateTime, nullable=True)
 
+    """Usere Secret Key."""
+    secKey = db.Column(db.String(120), nullable=True, unique=True)
+
     """ There are 3 levels of user hierarchy,
      User can be any one / more of
     ..  Annotator,

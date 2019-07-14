@@ -93,15 +93,6 @@ class ForgotPasswordForm(FlaskForm):
         validators=[DataRequired(message=_('Email not provided.')), Email()]
     )
 
-    password = PasswordField(
-        label=_('Password'),
-        validators=[DataRequired(message=_('Password not provided.'))],)
-
-    password2 = PasswordField(
-        label=_('Confirm Password'),
-        validators=[DataRequired(message=_('Confirmation password not provided.')),
-                    EqualTo('password')])
-
     def validate_username(self, username):
         """Wrap username validator for WTForms."""
         try:
@@ -113,7 +104,7 @@ class ForgotPasswordForm(FlaskForm):
         if user is None:
             raise ValidationError(_('Username does not exist !'))
 
-    def validate_email1(self, email):
+    def validate_email(self, email):
         user = User.query.filter_by(email=email.data).first()
         if user is None:
             raise ValidationError(_('Email does not exist !'))
