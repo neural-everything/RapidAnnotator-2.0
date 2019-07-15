@@ -2,13 +2,13 @@ from flask import render_template, flash, redirect, url_for, request, jsonify, \
     current_app, g
 from flask_babelex import lazy_gettext as _
 from flask_login import current_user, login_required, login_user, logout_user
-
 from rapidannotator import db
 from rapidannotator import bcrypt
 from rapidannotator.models import User
 from rapidannotator.modules.frontpage import blueprint
 from rapidannotator.token import generate_confirmation_token, confirm_token
-from rapidannotator.modules.frontpage.forms import LoginForm, RegistrationForm, ForgotPasswordForm
+from rapidannotator.modules.frontpage.forms import LoginForm, RegistrationForm, \
+    ForgotPasswordForm
 import datetime, os, base64
 import onetimepass as otp
 from rapidannotator.email import send_email
@@ -121,7 +121,7 @@ def forgotPassword():
     registrationForm = RegistrationForm()
 
     if forgotPasswordForm.validate_on_submit():
-        user = User.query.filter_by(username=forgotPasswordForm.username.data, email=forgotPasswordForm.email.data).first()
+        user = User.query.filter_by(username=forgotPasswordForm.usernameForgot.data, email=forgotPasswordForm.emailForgot.data).first()
         if not user.confirmed:
             flash(_('Your Account is not Validated! Please confirm your email'))
             return redirect(url_for('frontpage.index'))
@@ -131,7 +131,8 @@ def forgotPassword():
                 loginForm = loginForm,
                 registrationForm = registrationForm,
                 forgotPasswordForm = forgotPasswordForm,
-                otpShow = 1)
+                otpShow = 1,
+                email = forgotPasswordForm.emailForgot.data)
 
     errors = "forgotPasswordErrors"
     return render_template('frontpage/main.html',
@@ -146,7 +147,6 @@ def verifyOTP():
     
     token = request.args.get('otp', None)
     email = request.args.get('email', None)
-    print(email)
     
     user  = User.query.filter_by(email=email).first()
     is_valid = otp.valid_hotp(token=token, secret=user.secKey)
@@ -179,3 +179,20 @@ def confirm_email(token):
         db.session.commit()
         flash('You have confirmed your account. Thanks!  Please Login to continue.', 'success')
     return redirect(url_for('frontpage.index'))
+
+@blueprint.route('/updatePassword', methods=['GET', 'POST'])
+def updatePassword():
+    if current_user.is_authenticated:
+        return redirect(url_for('home.index'))
+
+    email = request.args.get('email', None)
+    passwd = request.args.get('passwd', None)
+
+    user = User.query.filter_by(email=email).first()
+    hashedPassword = bcrypt.generate_password_hash(passwd).decode('utf-8')
+    user.password = hashedPassword
+    db.session.commit()
+    
+    response = {}
+    response['success'] = True
+    return jsonify(response)
