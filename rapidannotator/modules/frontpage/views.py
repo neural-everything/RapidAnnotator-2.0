@@ -187,12 +187,18 @@ def updatePassword():
 
     email = request.args.get('email', None)
     passwd = request.args.get('passwd', None)
+    confirm_passwd = request.args.get('confirm_passwd', None)
 
+    response = {}
+    
+    if passwd != confirm_passwd:
+        response['success'] = False
+        return jsonify(response)
+    
     user = User.query.filter_by(email=email).first()
     hashedPassword = bcrypt.generate_password_hash(passwd).decode('utf-8')
     user.password = hashedPassword
     db.session.commit()
     
-    response = {}
     response['success'] = True
     return jsonify(response)

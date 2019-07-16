@@ -146,17 +146,26 @@
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
         <h4 class="modal-title">Enter Password</h4>
+        <div style="line-height:70%">&nbsp;</div>
+        <div class="alert alert-danger alert-dismissible hidden-element updatePasswordWarning" 
+                style="width: 100%; margin-bottom: 1px; margin-top: 3px; height: 32px; line-height:30px; padding:5px 15px;">
+            <div style="line-height:130%; font-size:100%;"><strong> Password doesn't Match! </strong></div>
+        </div>
+        <div class="alert alert-success alert-dismissible hidden-element updatePasswordSuccess" style="width: 100%; margin-top: 1px; margin-bottom: -2px; height: 70px;">
+            <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+            <strong> Thanks, Password updated Successfully ! </strong>
+        </div>
       </div>
 
         <div class="modal-body">
             <form method="POST" name="updatePasswordForm" id="updatePasswordForm">
                 <b>Password</b>
                 <input type="password" name="password" id="password"
-                    class="form-control validate" placeholder="Password" required onkeyup="check();" >
+                    class="form-control validate" placeholder="Password" required>
                 <span class="help-block"><div style="line-height:110%"></div></span>
                 <b>Confirm Password</b>
                 <input type="password" name="confirm_password" id="confirm_password"
-                    class="form-control validate" placeholder="Confirm Password" onkeyup="check();" required>
+                    class="form-control validate" placeholder="Confirm Password" required>
                 <span class="help-block"><div style="line-height:110%"></div></span>
                 <br>
                 <div class="message" id='message'></div>         
@@ -170,6 +179,7 @@
 </div>
 
 
+
 <script type="text/javascript">
 
     var otpShow = "{{otpShow}}";
@@ -177,7 +187,7 @@
     var updatePasswordForm = $("#updatePasswordForm");
     var email = "";
     
-    $(window).on('load',function(){
+    $(window).on('load',function(){    
         var errors = "{{errors}}";
 
         if( "{{ errors }}" == "LogInErrors") {
@@ -230,33 +240,30 @@
         });
     });
 
-    var check = function() {
-        if (document.getElementById('password').value == document.getElementById('confirm_password').value) {
-            console.log("fedfdfd");
-            document.getElementById('message').style.color = 'green';
-            document.getElementById('message').innerHTML = 'matching';
-        }else{
-            console.log("dedfd");
-      	    document.getElementById('message').style.color = 'red';
-            document.getElementById('message').innerHTML = 'not matching';
-        }
-    }
-
     updatePasswordForm.on('submit', function(e) {
         e.stopImmediatePropagation();
         e.preventDefault();
         var passwd = updatePasswordForm.find('input[name="password"]').val();
+        var confirm_passwd = updatePasswordForm.find('input[name="confirm_password"]').val();
         var url = "{{ url_for('frontpage.updatePassword')}}";
         var data = {
             "passwd" : passwd,
-            "email" : email
+            "email" : email,
+            "confirm_passwd" : confirm_passwd
         };
         $.getJSON(url , data, function(response) {
             if(response.success){
-                window.location.href = '/frontpage'
+                $('.updatePasswordWarning').addClass('hidden-element');
+                $('#updatePasswordModalId').modal('show');
+                $('.updatePasswordSuccess').removeClass('hidden-element');
+                setTimeout(function(){
+                    window.location.href = '/frontpage';
+                }, 2100);
             }
             else{
-                // Do something
+                $('#updatePasswordModalId').modal('show');
+                $('.updatePasswordSuccess').addClass('hidden-element');
+                $('.updatePasswordWarning').removeClass('hidden-element');
             }
         });
     });
