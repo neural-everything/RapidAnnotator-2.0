@@ -121,7 +121,7 @@ def forgotPassword():
     registrationForm = RegistrationForm()
 
     if forgotPasswordForm.validate_on_submit():
-        user = User.query.filter_by(username=forgotPasswordForm.usernameForgot.data, email=forgotPasswordForm.emailForgot.data).first()
+        user = User.query.filter_by(username=forgotPasswordForm.username.data, email=forgotPasswordForm.email.data).first()
         if not user.confirmed:
             flash(_('Your Account is not Validated! Please confirm your email'))
             return redirect(url_for('frontpage.index'))
@@ -132,7 +132,7 @@ def forgotPassword():
                 registrationForm = registrationForm,
                 forgotPasswordForm = forgotPasswordForm,
                 otpShow = 1,
-                email = forgotPasswordForm.emailForgot.data)
+                email = forgotPasswordForm.email.data)
 
     errors = "forgotPasswordErrors"
     return render_template('frontpage/main.html',
