@@ -63,37 +63,40 @@
     <div class="row">
 
         {% for i in range(5) %}
-        <div class="file col-xs-5 hidden-element" data-index={{loop.index0}} data-fileid=1>
-            {%- if experiment.category == 'video' -%}
-                {%- if experiment.uploadType == 'NOTviaSpreadsheet' -%}
-                <a href="" target="_blank">Click here</a>
-                {%- else -%}
-                <video class="clip" width="400" controls>
-                    <source src="" type="video/mp4">
-                    Your browser does not support HTML5 video.
-                </video>
+            <div class="file col-xs-5 hidden-element" data-index={{loop.index0}} data-fileid=1>
+                {%- if experiment.category == 'video' -%}
+                    {%- if experiment.uploadType == 'NOTviaSpreadsheet' -%}
+                        <a href="" target="_blank">Click here</a>
+                    {%- else -%}
+                    <video class="clip" width="400" controls>
+                        <source src="" type="video/mp4">
+                        Your browser does not support HTML5 video.
+                    </video>
+                    <br>
+                    <a href="##" id="sourceLink" target="_blank" style="margin-left:30%">Source Link</a>
+                    {%- endif -%}
+                {%- elif experiment.category == 'audio' -%}
+                    {%- if experiment.uploadType == 'NOTviaSpreadsheet' -%}
+                        <a href="" target="_blank">Click here</a>
+                    {%- else -%}
+                    <audio class="clip" width="400" controls muted="">
+                        <source src="" type="audio/mp3">
+                        Your browser does not support HTML5 audio.
+                    </audio>
+                    <a href="##" id="sourceLink" target="_blank" style="margin-left:30%">Source Link</a>
+                    {%- endif -%}
+                {%- elif experiment.category == 'image' -%}
+                    <img class="annotationWindow" src="" alt="">
+                {%- elif experiment.category == 'text' -%}
+                    <pre>
+                    </pre>
                 {%- endif -%}
-            {%- elif experiment.category == 'audio' -%}
-                {%- if experiment.uploadType == 'NOTviaSpreadsheet' -%}
-                <a href="" target="_blank">Click here</a>
-                {%- else -%}
-                <audio class="clip" width="400" controls muted="">
-                    <source src="" type="audio/mp3">
-                    Your browser does not support HTML5 audio.
-                </audio>
-                {%- endif -%}
-            {%- elif experiment.category == 'image' -%}
-                <img class="annotationWindow" src="" alt="">
-            {%- elif experiment.category == 'text' -%}
-                <pre>
-                </pre>
-            {%- endif -%}
 
-            <div class="caption hidden-element">
-                <h4></h4>
+                <div class="caption hidden-element">
+                    <h4></h4>
+                </div>
+
             </div>
-
-        </div>
         {% endfor %}
 
         {% for level in experiment.annotation_levels | sort(attribute='level_number')%}
@@ -553,10 +556,13 @@
             
             var loadedDiv = $(".file[data-index='" + index + "']");
 
-            if( "{{ experiment.uploadType }}" === "viaSpreadsheet" )
+            if( "{{ experiment.uploadType }}" === "viaSpreadsheet" ){
                 var url = fileToLoad.content;
-            else
+                $("#sourceLink").attr('href', url);
+            }
+            else{
                 var url = "/annotate_experiment/uploads/" + {{experiment.id}} + "/" + fileToLoad.content;
+            }
 
             if( "{{ experiment.category }}" === "image") {
                 loadedDiv.find('img').attr('src', url);
