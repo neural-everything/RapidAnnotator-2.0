@@ -621,6 +621,40 @@ def _editAnnotator():
 
     return jsonify(response)
 
+@blueprint.route('/_equalDataParition', methods=['POST','GET'])
+def _equalDataParition():
+
+    annotators = request.args.get('annotatorsDict', None)
+    annotators = annotators.split(',')
+    experimentId = request.args.get('experimentId', None)
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    numAnnotators = len(annotators)
+    numFiles = experiment.files.count()
+
+    response = {}
+    response['success'] = True
+
+    return jsonify(response)
+
+    start, step = 0,0
+
+    for annotator in annotators:
+        annotatorId = User.query.filter_by(username=annotator).first()
+        annotatorDetails = AnnotatorAssociation.query.filter_by(experiment_id=experimentId,\
+            user_id=annotatorId).first()
+        step = numFiles // numAnnotators
+        annotatorDetails.start = start
+        annotatorDetails.end = start + step
+        db.session.commit()
+        start = step
+        numFiles = numFiles - step
+        numAnnotators = numAnnotators - 1
+   
+    response = {}
+    response['success'] = True
+
+    return jsonify(response)
+
 @blueprint.route('/_deleteOwner', methods=['POST','GET'])
 def _deleteOwner():
 

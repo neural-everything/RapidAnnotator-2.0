@@ -4,9 +4,22 @@
 {% block title %} Add Experiment Page {% endblock title %}
 {% block head %}
   {{ super() }}
-  <style type="text/css">
-    .important { color: #336699; }
-  </style>
+    <style type="text/css">
+        .important { color: #336699; }
+    </style>
+    <style type="text/css">
+        select {
+            width: 150px;
+            margin: 5px;
+        }
+        select:focus {
+            min-width: 150px;
+            width: auto;
+        } 
+        .bootstrap-tagsinput {
+            width: 100%;
+        }   
+    </style>
 {% endblock head %}
 
 {% block experiment_body %}
@@ -51,8 +64,9 @@
                 <span class="caret"></span></button>
                 <ul class="dropdown-menu scrollable-dropdown" id="addAnnotatorsMenu" role="menu" aria-labelledby="addAnnotators">
                     {% for user in notAnnotators %}
-                    <li role="presentation"><a role="menuitem" tabindex="-1" href="#"><span>{{user.username}}</span></a></li>
+                        <li role="presentation"><a role="menuitem" tabindex="-1" href="#"><span>{{user.username}}</span></a></li>
                     {% endfor %}
+                    
                 </ul>
             </div>
 
@@ -109,7 +123,14 @@
 </div>
 
 
+
 <div class="container">
+    <button class="btn btn-primary dropdown-toggle" type="button" id="dataPartition"
+        data-target="#dataPartitionModal" data-toggle="modal">
+        Data Partition
+    </button>
+
+    &nbsp;&nbsp;
     <button class="btn btn-danger dropdown-toggle pull-right" type="button" id="addAnnotators"
         data-target="#deleteProjectModal" data-toggle="modal">
         Delete Project
@@ -262,15 +283,57 @@
   </div>
 </div>
 
+<!-- Data Partition-Modal -->
+<div class="modal fade" id="dataPartitionModal" role="dialog" tabindex="-1"
+    aria-labelledby="dataPartitionModal" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Select the Annotators for equal partitions of data among them </h4>
+      </div>
+        <div class="modal-body">
+            <form name="dataPartitionForm" id="dataPartitionForm">
+                <div style="margin-bottom:20px">
+                    <input class="tagtest" type="text" value="" data-role="tagsinput"/>
+                </div>
+                <div> 
+                    <b>Select the Annotators from the List</b>
+                    <br><br>
+                    <select class="annotatorSelect" name="annotatorSelect">
+                        {% for user in annotatorDetails %}
+                            <option> {{user.annotator.username}} </option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-primary addTag" type="button" style="font-size:12px; padding: 3px 5px;">Add</button>
+                </div>
+                <div>&nbsp;</div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary"> {{ ('Done') }}</button>
+                    <button type="button" class="btn btn-default pull-right" data-dismiss="modal">Close</button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+        </div>
+    </div>
+  </div>
+</div>
 
 <script charset="utf-8" type="text/javascript">
     $(function() {
 
         var selectedAnnotatorButton = '.deleteAnnotatorButton, .editAnnotatorButton';
         var editAnnotatorForm = $('#editAnnotatorForm');
+        var dataPartitionForm = $('#dataPartitionForm');
         var selectedOwnerButton = '.deleteOwnerButton';
         var currentAnnotator = -1;
         var currentOwner = -1;
+
+
+        $('.addTag').click(function() {
+            $(".tagtest").tagsinput('add', $('.annotatorSelect').val());
+        });
 
         $("body").on("click", selectedOwnerButton, function() {
             currentOwner = $(this).parent().attr('value');
@@ -282,7 +345,7 @@
             e.preventDefault();
             var url = "{{ url_for('add_experiment._deleteExperiment')}}";
             var data = {
-                'experimentId' : {{ experiment.id }},
+                'experimentId' : "{{ experiment.id }}",
             };
 
             $.getJSON(url , data, function(response) {
@@ -300,7 +363,7 @@
             var url = "{{ url_for('add_experiment._deleteOwner')}}";
             var data = {
                 'ownerId' : currentOwner,
-                'experimentId' : {{ experiment.id }},
+                'experimentId' : "{{ experiment.id }}",
             };
             /* (TODO) break into functions */
             $.getJSON(url , data, function(response) {
@@ -343,7 +406,7 @@
             currentAnnotator = $(this).parent().attr('value');
             var startFileNumber = $(this).parent().data('start');
             var endFileNumber = $(this).parent().data('end');
-            endFileNumber = endFileNumber == -1 ? {{totalFiles}} : endFileNumber;
+            endFileNumber = endFileNumber == -1 ? "{{totalFiles}}" : endFileNumber;
             editAnnotatorForm.find('input[name="startNumber"]').val(startFileNumber);
             editAnnotatorForm.find('input[name="endNumber"]').val(endFileNumber);
         });
@@ -364,7 +427,7 @@
             var url = "{{ url_for('add_experiment._editAnnotator')}}";
             var data = {
                 annotatorId :   currentAnnotator,
-                experimentId :  {{ experiment.id }},
+                experimentId :  "{{ experiment.id }}",
                 start :         start,
                 end :           end,
             };
@@ -388,7 +451,7 @@
             var url = "{{ url_for('add_experiment._deleteAnnotator')}}";
             var data = {
                 'annotatorId' : currentAnnotator,
-                'experimentId' : {{ experiment.id }},
+                'experimentId' : "{{ experiment.id }}",
             };
 
             $.getJSON(url , data, function(response) {
@@ -449,7 +512,7 @@
             var data = {
                 'beforeTime' : beforeTime,
                 'afterTime' : afterTime,
-                'experimentId' : {{ experiment.id }},
+                'experimentId' : "{{ experiment.id }}",
             };
 
             $.getJSON(url , data, function(response) {
@@ -469,7 +532,7 @@
             var url = "{{ url_for('add_experiment._addOwner')}}";
             var data = {
                 'userName' : userName,
-                'experimentId' : {{ experiment.id }},
+                'experimentId' : "{{ experiment.id }}",
             };
 
             $.getJSON(url , data, function(response) {
@@ -491,7 +554,7 @@
             var url = "{{ url_for('add_experiment._addAnnotator')}}";
             var data = {
                 'userName' : userName,
-                'experimentId' : {{ experiment.id }},
+                'experimentId' : "{{ experiment.id }}",
             };
 
             $.getJSON(url , data, function(response) {
@@ -552,7 +615,7 @@
                 "class" :          "list-group-item annotator",
                 "value" :           id,
                 "data-start" :      0,
-                "data-end" :      {{ totalFiles }},
+                "data-end" :      "{{ totalFiles }}",
             };
 
             var aToAdd = $("<a/>", aAttributeDict);
@@ -561,6 +624,27 @@
             editIconSpan.appendTo(aToAdd);
             aToAdd.appendTo('#annotators');
         }
+
+        dataPartitionForm.on('submit', function(e) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            var tagsinputValue = $(".tagtest").tagsinput('items');
+            console.log(tagsinputValue);
+            var url = "{{ url_for('add_experiment._equalDataParition')}}";
+            var data = {
+                'annotatorsDict' : String(tagsinputValue),
+                'experimentId' : "{{ experiment.id }}",
+            };
+
+            $.getJSON(url , data, function(response) {
+                if(response.success) {
+                    $(".tagtest").tagsinput('removeAll');
+                }
+                else {
+                    /*do something here*/
+                }
+            });
+        });
 
         // Function to display feedback when user is added as annotator of the experiment
         function addAnnotatorFeedback(userName){
@@ -582,5 +666,4 @@
 
     });
 </script>
-
 {% endblock experiment_body %}
