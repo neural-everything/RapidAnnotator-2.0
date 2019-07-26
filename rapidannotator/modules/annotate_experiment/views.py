@@ -36,10 +36,10 @@ def index(experimentId):
         lastFile = experiment.files.count()
 
     ''' It is to make compatible with 0-based indexing '''
-    lastFile -= 1
+    lastFile = lastFile - firstFile - 1
 
     if currentFileIndex <= lastFile:
-        currentFile = _getFile(experimentId, currentFileIndex)
+        currentFile = _getFile(experimentId, currentFileIndex, firstFile)
     else:
         currentFile = []
 
@@ -124,9 +124,9 @@ def getDefaultKey(keySet):
         experimentId: id of the experiment
         fileIndex: index of the file to fetch
 '''
-def _getFile(experimentId, fileIndex):
+def _getFile(experimentId, fileIndex, start):
     experiment = Experiment.query.filter_by(id=experimentId).first()
-    currentFile = experiment.files.order_by(File.id)[fileIndex]
+    currentFile = experiment.files.order_by(File.id)[fileIndex + start]
 
     currentFile = {
         'id' : currentFile.id,
@@ -198,7 +198,8 @@ def deleteAnnotation():
 def _getFileDetails():
     experimentId = request.args.get('experimentId', None)
     currentFileIndex = request.args.get('currentFileIndex', None)
-    currentFile = _getFile(experimentId, int(currentFileIndex))
+    firstFile = request.args.get('firstFile', None)
+    currentFile = _getFile(experimentId, int(currentFileIndex), int(firstFile))
     return jsonify(currentFile)
 
 ''' (TODO) correct names '''

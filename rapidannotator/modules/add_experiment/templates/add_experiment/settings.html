@@ -18,7 +18,8 @@
         } 
         .bootstrap-tagsinput {
             width: 100%;
-        }   
+        }
+ 
     </style>
 {% endblock head %}
 
@@ -93,7 +94,7 @@
         <div class="col-xs-14">
             <div class="col-xs-3">
                 <h3>Annotators</h3>
-                <div class="list-group col-6" id="annotators">
+                <div class="list-group col-8" id="annotators">
                     {% for obj in annotatorDetails %}
                         <a value="{{ obj.annotator.id }}" class="list-group-item annotator"
                             data-start={{ obj.start }} data-end={{ obj.end }}>
@@ -295,7 +296,7 @@
         <div class="modal-body">
             <form name="dataPartitionForm" id="dataPartitionForm">
                 <div style="margin-bottom:20px">
-                    <input class="tagtest" type="text" value="" data-role="tagsinput"/>
+                    <input type="text" readonly="readonly" class="tagtest" value="" data-role="tagsinput">
                 </div>
                 <div> 
                     <b>Select the Annotators from the List</b>
@@ -329,7 +330,6 @@
         var selectedOwnerButton = '.deleteOwnerButton';
         var currentAnnotator = -1;
         var currentOwner = -1;
-
 
         $('.addTag').click(function() {
             $(".tagtest").tagsinput('add', $('.annotatorSelect').val());

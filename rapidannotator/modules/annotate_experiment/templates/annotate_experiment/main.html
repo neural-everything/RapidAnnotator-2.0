@@ -393,7 +393,7 @@
             var data = {
                 'lp': last_previous,
                 'fileId' :          currentFileId,
-                'experimentId' :    {{experiment.id}},
+                'experimentId' :    "{{experiment.id}}",
             };
             $.ajax({
                 url: "{{ url_for('annotate_experiment.deleteAnnotation')}}",
@@ -404,14 +404,14 @@
             if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
                 stopThisClip(currentLoadedFile);
             }
-            if(currentFileIndex == {{firstFile}}) {
+            if(currentFileIndex == 0) {
                 /* do something if required */
             } else {
 
                 currentFileIndex -= 1;
                 var data = {
                     'currentFileIndex' :    currentFileIndex,
-                    'experimentId' :        {{experiment.id}},
+                    'experimentId' :        "{{experiment.id}}",
                 };
 
                 $.ajax({
@@ -496,7 +496,8 @@
             var url = "{{ url_for('annotate_experiment._getFileDetails')}}";
             var data = {
                 'currentFileIndex' :    fileIndex,
-                'experimentId' :        {{experiment.id}},
+                'experimentId' :        "{{experiment.id}}",
+                'firstFile' : "{{firstFile}}",
             };
 
             $.getJSON(url , data, function(newFile) {
