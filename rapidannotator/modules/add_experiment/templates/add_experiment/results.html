@@ -55,8 +55,9 @@
                     <th style="width: 10%"> {{( 'File' )}} </th>
 
                     {% set width = 90 / levelCount %}
+                    {% set padLeft = 20 / levelCount %}
                     {% for level in experiment.annotation_levels %}
-                        <th style="width: {{ width }}%">{{ level.name }}</th>
+                        <th style="width: {{ width }}%; padding-left: {{padLeft}}%">{{ level.name }}</th>
                     {% endfor %}
                 </tr>
             </thead>
@@ -65,10 +66,33 @@
                 {% for file in experiment.files %}
                     <tr>
                         <td>
-                            {{ file.name }}
+                            {%- if experiment.uploadType == 'manual' or experiment.uploadType == 'viaSpreadsheet' -%}
+                                {%- if experiment.category == 'image' -%}
+                                    <img class="{{file.id}}" id="{{file.id}}" src=""  alt="Red Hen Logo" width="99%">
+                                    {{ file.name }}
+                                {%- else -%}
+                                    {%- if experiment.category == 'video' -%}
+                                        <video class="clip" id="{{file.id}}" width="170" height="90" controls>
+                                            <source src="" type="video/mp4">
+                                            Your browser does not support HTML5 video.
+                                        </video>
+                                        &nbsp;&nbsp;&nbsp;&nbsp;{{ file.name }}
+                                    {%- else -%}
+                                        {%- if experiment.category == 'audio' -%}
+                                            <audio class="clip" id="{{file.id}}" width="10px" controls>
+                                                <source src="" type="audio/mp3">
+                                                Your browser does not support HTML5 audio.
+                                            </audio>
+                                            &nbsp;&nbsp;&nbsp;&nbsp;{{ file.name }}
+                                        {%- endif -%}
+                                    {%- endif -%}    
+                                {%- endif -%}
+                            {%- else -%}
+                                &nbsp;&nbsp;&nbsp;&nbsp;{{ file.name }}
+                            {%- endif -%}
                          </td>
                          {% for level in experiment.annotation_levels %}
-                             <td>
+                             <td style="padding-left: {{padLeft}}%">
                                  {% for label in level.labels %}
                                      {{ label.name }} : &nbsp;
                                      {%- if annotations[file.id][level.id] -%}
@@ -84,6 +108,10 @@
                                  {% endfor %}
                              </td>
                          {% endfor %}
+                        <td>
+                            <button class="deleteAnnotationButton pull-right close" type="button"
+                            data-toggle="modal" data-target="#deleteAnnotationModal" onclick="passFile('{{file.id}}')">&times;</button>
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -94,6 +122,30 @@
         <h3> You haven't added any annotation levels to the experiment yet. </h3>
     </div>
     {%- endif -%}
+</div>
+
+<!--Delete Single Annotation Model -->
+<div class="modal fade" id="deleteAnnotationModal" role="dialog" tabindex="-1"
+    aria-labelledby="deleteAnnotationModal" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Delete this Annotation?</h4>
+      </div>
+        <div class="modal-body">
+            <form method="POST" id="deleteAnnotationForm" name="deleteAnnotationForm">
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary"> {{ ('Delete') }}</button>
+                    <button type="button" class="btn btn-default pull-right" data-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+        </div>
+    </div>
+  </div>
+</div>
 </div>
 
 <!-- Delete-Annotations-Modal -->
@@ -121,8 +173,46 @@
 
 
 <script charset="utf-8" type="text/javascript">
-    $(function() {
 
+    $(document).ready(function(){
+        
+        var url = "{{ url_for('add_experiment._showResultImages')}}";
+        var data = {
+            'experimentId' : "{{ experiment.id }}",
+        };
+        $.getJSON(url , data, function(response) {
+            if(response.success) {
+                var files = response.files;
+                var arrayLength = files.length;
+                for (var i = 0; i < arrayLength; i++) {
+                    file_content = files[i][0]
+                    file_id = files[i][1]
+                    if(response.category != 'text'){
+                        if(response.uploadType == 'manual'){
+                            var url = "/annotate_experiment/uploads/" + "{{experiment.id}}" + "/" + file_content;
+                            $('#' + file_id).attr("src", url);
+                        }
+                        else{
+                            var url = file_content;
+                            $('#' + file_id).attr("src", url);
+                        }
+                    }
+
+                }
+            } else {
+            }
+        });
+    });
+    
+    var fileId = -1;
+    function passFile(val) {
+        fileId = val;
+        e.stopImmediatePropagation();
+        e.preventDefault();
+    };
+
+    $(function() {
+        deleteAnnotationForm = $('#deleteAnnotationForm');
         discardAnnotationsForm = $('#discardAnnotationsForm');
 
         discardAnnotationsForm.on('submit', function(e) {
@@ -130,7 +220,7 @@
             e.preventDefault();
             var url = "{{ url_for('add_experiment._discardAnnotations')}}";
             var data = {
-                'experimentId' : {{ experiment.id }},
+                'experimentId' : "{{ experiment.id }}",
             };
 
             $.getJSON(url , data, function(response) {
@@ -141,6 +231,26 @@
                 }
             });
 
+        });
+
+        deleteAnnotationForm.on('submit', function(e) {
+            
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            
+            var url = "{{ url_for('add_experiment._discardSingleAnnotation')}}";
+            var data = {
+                'experimentId' : "{{ experiment.id }}",
+                'fileId' : fileId, 
+            };
+
+            $.getJSON(url , data, function(response) {
+                if(response.success) {
+                    $('deleteAnnotationModal').modal('hide');
+                    location.reload();
+                } else {
+                }
+            }); 
         });
 
     });

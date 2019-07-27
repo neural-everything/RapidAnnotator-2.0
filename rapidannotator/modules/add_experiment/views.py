@@ -737,13 +737,66 @@ def _discardAnnotations():
 
     annotatorsInfo = AnnotatorAssociation.query.filter_by(experiment_id=experimentId).all()
     for annotatorInfo in annotatorsInfo:
-        annotatorInfo.current = annotatorInfo.start
+        annotatorInfo.current = 0
 
     db.session.commit()
     response = {}
     response['success'] = True
 
     return jsonify(response)
+
+@blueprint.route('/_discardSingleAnnotation', methods=['POST','GET'])
+def _discardSingleAnnotation():
+    
+    experimentId = request.args.get('experimentId', None)
+    fileId = request.args.get('fileId', None)
+
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    experiment.status = 'In Progress'
+    annotationLevels = AnnotationLevel.query.filter_by(experiment_id=experimentId).all()
+
+    '''
+        ..  delete the AnnotationInfo for all the levels
+            of this file.
+        .. check if the file is annotated or not
+        ..  decrease the current pointer of the
+            annotation.
+    '''
+    is_annotated = 0
+    
+    for level in annotationLevels:
+        is_annotated = AnnotationInfo.query.filter_by(user_id=current_user.id,\
+            annotationLevel_id=level.id, file_id = fileId).delete()
+    
+    if is_annotated == 1:
+        annotatorsInfo = AnnotatorAssociation.query.filter_by(experiment_id=experimentId).all()
+        for annotatorInfo in annotatorsInfo:
+            annotatorInfo.current = annotatorInfo.current - 1
+
+    db.session.commit()
+    response = {}
+    response['success'] = True
+
+    return jsonify(response)
+
+@blueprint.route('/_showResultImages', methods=['POST','GET'])
+def _showResultImages():
+    
+    experimentId = request.args.get('experimentId', None)
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    files = []
+    for f in experiment.files:
+        files.append((f.content, f.id))
+
+    print(files)
+    response = {}
+    response['success'] = True
+    response['files'] = files
+    response['category'] = experiment.category
+    response['uploadType'] = experiment.uploadType
+
+    return jsonify(response)
+
 
 @blueprint.route('/_exportResults/<int:experimentId>', methods=['POST','GET'])
 def _exportResults(experimentId):
