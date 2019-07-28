@@ -42,7 +42,7 @@
         </a>
         <button type="button" data-toggle="modal" data-target="#addAnnotationLevelModal"
             class="btn btn-primary btn-group btn-group-inline btn-space">{{ ('Add Annotation Level') }}</button>
-        <a href="{{ url_for('add_experiment.index', experimentId = experiment.id) }}" 
+        <a href="{{ url_for('add_experiment.index', experimentId = experiment.id, page='1') }}" 
             class="btn btn-success btn-group btn-group-inline btn-space">{{ ('Done') }}
         </a>
     </div>

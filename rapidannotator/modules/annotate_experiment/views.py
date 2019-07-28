@@ -72,6 +72,7 @@ def index(experimentId):
     else:
         progress_width = round((currentFileIndex/ (lastFile  + 1))*100, 2)
 
+    isExpowner =  int((current_user in  experiment.owners))
 
     return render_template('annotate_experiment/main.html',
         experiment = experiment,
@@ -84,7 +85,8 @@ def index(experimentId):
         labelCount = labelCount,
         labelWarning = labelWarning,
         progress_width = progress_width,
-    )
+        isExpowner = isExpowner
+    ) 
 
 def makeKeyBindingDict(experimentId):
     levels = AnnotationLevel.query.filter_by(experiment_id=\

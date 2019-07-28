@@ -81,6 +81,9 @@ class User(UserMixin, db.Model):
         server_default='1',
     )
 
+    """ Number of notification that a user currently have in his/her feed"""
+    numNotif = db.Column(db.Integer, nullable=False, server_default="0")
+
     def is_experimenter(self):
         return self.experimenter
 
@@ -653,3 +656,50 @@ class RightsRequest(db.Model):
                 requested_at={0.requested_at}, \
                 approved={0.approved}, \
                 message={0.message}>'.format(self)
+
+"""
+    Notification table for each experimenter
+"""
+class NotificationInfo(db.Model):
+
+    __tablename__ = 'NotificationInfo'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    '''the experiment with which notification is associated.'''
+    experiment_id = db.Column(Integer, db.ForeignKey(
+        'Experiment.id', ondelete='CASCADE'))
+
+    ''' id of the user who sent this notification.'''
+    user_id = db.Column(Integer, db.ForeignKey(
+        'User.id', ondelete='CASCADE')
+    )
+
+    ''' username of the user who sent this notification.'''
+    username = db.Column(db.String(255), db.ForeignKey(
+        'User.username', ondelete='CASCADE')
+    )
+
+    """ Annotator's notification for the experimenter. """
+    notification = db.Column(db.String(640))
+
+
+    """The date and time when the notification was sent."""
+    notified_at = db.Column(db.DateTime, server_default=func.now())
+
+    def __str__(self):
+        """Representation."""
+        return 'NotificationInfo <id={0.id}, \
+                experiment_id={0.experiment_id},\
+                user_id={0.user_id}, \
+                username={0.username},\
+                notified_at={0.notified_at}, \
+                notification={0.notification}>'.format(self)
+
+    def __repr__(self):
+        return 'NotificationInfo <id={0.id}, \
+                experiment_id={0.experiment_id},\
+                user_id={0.user_id}, \
+                username={0.username},\
+                notified_at={0.notified_at}, \
+                notification={0.notification}>'.format(self)

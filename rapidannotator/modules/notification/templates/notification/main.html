@@ -1,0 +1,49 @@
+{% extends "notification/base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %} Notifications {% endblock title %}
+{% block head %}
+  {{ super() }}
+  <style type="text/css">
+    .important { color: #336699; }
+  </style>
+{% endblock head %}
+
+
+{% block notification %}
+
+<div class="container">
+    <table id="" class="table table-hover table-striped">
+        <thead>
+            <tr class="">
+                <th style="width: 5.0%">{{ ('Index') }}</th>
+                <th style="width: 20.0%; text-align: center">{{ ('User') }}</th>
+                <th style="width: 55.0%; text-align: center">{{ ('Message') }}</th>
+                <th style="width: 20.0%; text-align: center">{{ ('Received at') }}</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for notify in notifications %}
+                <tr class="" value="{{notify.id}}">
+                    <td style="width: 5.0%"> {{ loop.index }} </td>
+                    <td style="width: 20.0%; text-align: center"> {{ notify.username }} </td>
+                    <td style="width: 55.0%; text-align: center"> {{ notify.notification }} </td>
+                    <td style="width: 20.0%; text-align: center"> {{ notify.notified_at}} </td>
+                </tr>
+            {% endfor %}
+
+    </tbody>
+</table>
+</div>
+
+<script type="text/javascript">
+    $(window).on('load',function(){
+
+        
+
+    });
+</script>
+
+{% endblock notification %}

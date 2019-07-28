@@ -12,7 +12,7 @@ from rapidannotator import bcrypt
 
 from flask_login import current_user, login_required
 from flask_login import login_user, logout_user, current_user
-from .api import isPerimitted
+from .api import isPerimitted, isPerimitted1
 
 from sqlalchemy import and_
 import os
@@ -29,11 +29,12 @@ def before_request():
         return "You are not an experimenter, hence allowed to access this page."
 
 
-@blueprint.route('/a/<int:experimentId>')
+@blueprint.route('/a/<int:experimentId>/<int:page>')
 @isPerimitted
-def index(experimentId):
+def index(experimentId, page):
     users = User.query.all()
     experiment = Experiment.query.filter_by(id=experimentId).first()
+    expFiles = File.query.filter_by(experiment_id=experiment.id).paginate(page, 10, error_out=False)
     owners = experiment.owners
     annotators = experiment.annotators
     '''
@@ -52,6 +53,7 @@ def index(experimentId):
         experiment = experiment,
         notOwners = notOwners,
         notAnnotators = notAnnotators,
+        expFiles = expFiles,
     )
 
 @blueprint.route('/_addDisplayTimeDetails', methods=['GET','POST'])
@@ -115,7 +117,7 @@ def _addAnnotator():
 
 
 @blueprint.route('/labels/<int:experimentId>')
-@isPerimitted
+@isPerimitted1
 def editLabels(experimentId):
 
     experiment = Experiment.query.filter_by(id=experimentId).first()
@@ -305,7 +307,7 @@ def _addGlobalName():
     return jsonify(response)
 
 @blueprint.route('/_importAnnotationtLevel/<int:experimentId>')
-@isPerimitted
+@isPerimitted1
 def _importAnnotationtLevel(experimentId):
 
     import_experiment = Experiment.query.filter_by(id=experimentId).first()
@@ -556,7 +558,7 @@ def _updateFileCaption():
     return jsonify(response)
 
 @blueprint.route('/viewSettings/<int:experimentId>')
-@isPerimitted
+@isPerimitted1
 def viewSettings(experimentId):
 
     users = User.query.all()
@@ -692,11 +694,12 @@ def _deleteExperiment():
     return jsonify(response)
 
 
-@blueprint.route('/viewResults/<int:experimentId>')
+@blueprint.route('/viewResults/<int:experimentId>/<int:page>')
 @isPerimitted
-def viewResults(experimentId):
+def viewResults(experimentId, page):
 
     experiment = Experiment.query.filter_by(id=experimentId).first()
+    expFiles = File.query.filter_by(experiment_id=experiment.id).paginate(page, 10, error_out=False)
     annotations = {}
 
     for f in experiment.files:
@@ -715,6 +718,7 @@ def viewResults(experimentId):
     return render_template('add_experiment/results.html',
         experiment = experiment,
         annotations = annotations,
+        expFiles = expFiles,
     )
 
 @blueprint.route('/_discardAnnotations', methods=['POST','GET'])

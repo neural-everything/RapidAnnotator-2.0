@@ -136,7 +136,7 @@
 
         <tbody>
 
-            {% for file in experiment.files | reverse %}
+            {% for file in expFiles.items | reverse %}
                 <tr class="" value={{file.id}} id={{file.id}} data-href="">
                 <td style="width: 10.0%; text-align: center">
                     <img class="hidden-element" src="{{url_for('static', filename = 'img/uploading.gif')}}" alt="uploading images" style="width:35%; margin-left: 25%">
@@ -155,6 +155,11 @@
         </tbody>
     </table>
 </div>
+
+<ul class="pager">
+    {% if expFiles.has_prev %}<li><a href="{{ url_for('add_experiment.index', experimentId=experiment.id, page=expFiles.prev_num) }}">Previous</a></li>{% else %}<li>Previous</li>{% endif %}  
+    {% if expFiles.has_next %}<li><a href="{{ url_for('add_experiment.index', experimentId=experiment.id ,page=expFiles.next_num) }}">Next</a></li>{% else %}<li>Next</li>{% endif %}
+</ul>
 
 <div id="snackbar1"><strong> Uploading</strong> has been started !</div>
 <div id="snackbar2"><strong> Finished!</strong> Files have been uploaded !</div>

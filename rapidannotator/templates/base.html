@@ -56,6 +56,18 @@
     <script type="text/javascript" src="https://www.plupload.com/js/themeswitcher.js" charset="UTF-8"></script> -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.min.js" crossorigin="anonymous"></script>
     
+    <style>
+    .notification .badge {
+        position: absolute;
+        top: 8px;
+        right: 7px;
+        padding: 1.5px 4px;
+        border-radius: 50%;
+        background-color: red;
+        color: white;
+        font-size: 0.80em
+    }
+    </style>
 
     {% block head %}
     <title>{% block title %}{% endblock %}</title>
@@ -99,6 +111,12 @@
                       <a href="{{ url_for('admin.index') }}">{{ ('Admin Panel') }}</a>
                   </li>
               {%- endif -%}
+                <li>
+                    <a class="notification" href="{{ url_for('notification.index') }}"><i class="fa fa-bell" style="font-size:16px"></i>
+                        <!-- <span>{{ ('Notifications') }}</span> -->
+                        <span class="badge hidden-element">3</span>
+                    </a>
+                </li>
           </ul>
       {% endif %}
       <ul class="nav navbar-nav navbar-right">
@@ -290,6 +308,30 @@
                 $( "div.msg1" ).fadeIn(600).delay(3000).fadeOut(700);
 
             });
+
+            $(document).ready(function() {
+                // auto refresh page after 1 second
+                setInterval('refreshNotification()', 5000);
+            });
+ 
+            function refreshNotification() {
+                var data = {};  
+                $.ajax({
+                    url: "{{ url_for('notification.getNumNotif')}}",
+                    type: "POST",
+                    data : data,
+                    async: true,
+                    success: function(response) {
+                        if(response.numNotif > 0){
+                            $('.badge').text(response.numNotif);
+                            $('.badge').removeClass('hidden-element');
+                        }
+                        else{
+                            $('.badge').addClass('hidden-element');
+                        }
+                    }
+                });
+            }
         </script>
 
 

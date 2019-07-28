@@ -37,7 +37,7 @@
 
     <div class="pull-right" style="display: inline-block">
         {%- set viewSettings = url_for('add_experiment.viewSettings', experimentId = experiment.id) %}
-        {%- set viewResults = url_for('add_experiment.viewResults', experimentId = experiment.id) %}
+        {%- set viewResults = url_for('add_experiment.viewResults', experimentId = experiment.id, page = '1') %}
 
         {%- if (experiment.category == 'audio' or experiment.category == 'video') -%}
             <a data-toggle="modal" data-target="#displayTimeModalId"
@@ -71,7 +71,7 @@
                 </ul>
             </div>
 
-            <a href="{{ url_for('add_experiment.index', experimentId = experiment.id) }}"
+            <a href="{{ url_for('add_experiment.index', experimentId = experiment.id, page= '1') }}"
                 class="btn btn-success btn-group btn-group-inline btn-space">{{ ('Done') }}
             </a>
 

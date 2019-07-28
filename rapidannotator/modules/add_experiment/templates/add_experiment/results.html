@@ -63,7 +63,7 @@
             </thead>
 
             <tbody>
-                {% for file in experiment.files %}
+                {% for file in expFiles.items %}
                     <tr>
                         <td>
                             {%- if experiment.uploadType == 'manual' or experiment.uploadType == 'viaSpreadsheet' -%}
@@ -116,6 +116,10 @@
                 {% endfor %}
             </tbody>
         </table>
+        <ul class="pager">
+            {% if expFiles.has_prev %}<li><a href="{{ url_for('add_experiment.viewResults', experimentId=experiment.id, page=expFiles.prev_num) }}">Previous</a></li>{% else %}<li>Previous</li>{% endif %}  
+            {% if expFiles.has_next %}<li><a href="{{ url_for('add_experiment.viewResults', experimentId=experiment.id ,page=expFiles.next_num) }}">Next</a></li>{% else %}<li>Next</li>{% endif %}
+        </ul>
     </div>
     {%- else -%}
     <div>

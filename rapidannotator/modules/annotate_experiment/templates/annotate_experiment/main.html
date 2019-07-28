@@ -6,7 +6,7 @@
   {{ super() }}
   <style type="text/css">
     .important { color: #336699; }
-  </style>
+  </style>  
 {% endblock head %}
 
 {% block annotate_experiment_body %}
@@ -141,7 +141,19 @@
 </div>
 
 <div class="container hidden-element thanksNote">
-    <h3>No more files to annotate. Thanks</h3>
+    {%- if (lastFile + 1 == 0) or (isExpowner == 2) -%}
+        <h3> No files to annotate. Thanks </h3>
+    {%- else -%}
+        <div class="alert alert-success hidden-element notify" id="notify" style="width:35%">
+            <strong>Success!</strong> Notification has been sent !
+        </div>
+        <h3>No more files to annotate. Thanks</h3>
+        <br>
+        <button type="button" class="btn btn-warning btn-group btn-group-inline btn-space send_notification" title="click here"> 
+            <span class="glyphicon glyphicon-envelope"></span>
+            <b id="msg2"> Send Notification to Experimenter</b>
+        </button>
+    {%- endif -%}
 </div>
 
 {%- if labelWarning == 1 -%}
@@ -596,6 +608,29 @@
         }
 
     });
+
+    $(document).ready(function(){
+        $(".send_notification").click(function(){
+            new_notification();
+            $('#notify').removeClass('hidden-element').fadeIn(600).delay(1500).fadeOut(700);
+            $('#msg2').text("Notification has been sent");
+            var input = this;
+            input.disabled = true;
+        });
+
+        function new_notification(){
+            var url = "{{ url_for('notification._addNotification')}}";
+            var data = {
+                'experimentId' : "{{experiment.id}}",
+            };
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: data,
+            });
+        };
+    });
+
 </script>
 
 {% endblock annotate_experiment_body %}
