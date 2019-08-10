@@ -52,7 +52,8 @@ class AddExperimentForm(FlaskForm):
         label=_('File uploading procedure'),
         description=_("Select the way in which you wish to upload files."),
         choices=[   ('manual', 'manual'),
-                    ('viaSpreadsheet', 'viaSpreadsheet'),]
+                    ('viaSpreadsheet', 'viaSpreadsheet'),
+                    ('fromConcordance', 'fromConcordance')],
     )
 
     def validate_name(self, name):

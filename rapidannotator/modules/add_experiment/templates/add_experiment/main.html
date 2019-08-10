@@ -100,7 +100,7 @@
         <div id="fileContainer" class="pull-right" style="display: inline-block">
             <button type="button" id="chooseFiles" class="btn btn-primary btn-group btn-group-inline btn-space">
                 <span class="glyphicon glyphicon glyphicon-file"></span>
-                {{( 'Choose Spreadsheet' )}}
+                {{( 'Choose Spreadsheet/Concordance' )}}
             </button>
 
             <button type="button" id="uploadfiles" class="btn btn-primary btn-group btn-group-inline btn-space">
@@ -457,6 +457,13 @@
                         fileTypes = {
                             mime_types: [
                                 {title : "Uploadable files", extensions : "xls"},
+                            ]
+                        }
+                    }
+                    else if ( experimentUploadType == "fromConcordance") {
+                        fileTypes = {
+                            mime_types: [
+                                {title : "Uploadable files", extensions : "txt"},
                             ]
                         }
                     }

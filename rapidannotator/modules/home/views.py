@@ -60,7 +60,7 @@ def addExperiment():
         db.session.commit()
 
         experimentId = experiment.id
-        return redirect(url_for('add_experiment.index', experimentId = experimentId))
+        return redirect(url_for('add_experiment.index', experimentId = experimentId, page = 1))
 
     errors = "addExperimentErrors"
     return render_template('home/main.html',

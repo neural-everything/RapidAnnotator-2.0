@@ -15,7 +15,7 @@ from flask_login import login_user, logout_user, current_user
 from .api import isPerimitted, isPerimitted1
 
 from sqlalchemy import and_
-import os
+import os, csv, re
 
 import xlwt, xlrd
 
@@ -397,6 +397,8 @@ def _uploadFiles():
 
             if experiment.uploadType == 'viaSpreadsheet':
                 addFilesViaSpreadsheet(experimentId, flaskFile)
+            elif experiment.uploadType == 'fromConcordance':
+                addFilesFromConcordance(experimentId, flaskFile)
             else:
                 filename = secure_filename(request.form.get('fileName', None))
                 newFile = File(name=filename)
@@ -460,6 +462,61 @@ def addFilesViaSpreadsheet(experimentId, spreadsheet):
                     experiment_id=experimentId,
         )
         experiment.files.append(newFile)
+    db.session.commit()
+    os.remove(filePath)
+
+def addFilesFromConcordance(experimentId, concordance):
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+
+    from rapidannotator import app
+    filename = 'temp_' + current_user.username + '.txt'
+    filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    concordance.save(filePath)
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+
+    with open(filePath, encoding='utf-8') as tsvfile:
+        reader = csv.DictReader(tsvfile, dialect='excel-tab', quoting=csv.QUOTE_NONE)
+        if "Structure ``text_file''" in reader.fieldnames:
+            readnamefromattributetext_file = True  # NewScape style
+        else:
+            readnamefromattributetext_file = False # YouTube style
+        for row in reader:
+            caption = row["Context before"] + " <<<" + row["Query item"] + ">>> " + row["Context after"]
+            if experiment.category == "video":
+                content = row["Video Snippet"]
+            elif experiment.category == "audio":
+                content = row["Audio Snippet"]
+            elif experiment.category == "image":
+                content = row["Screenshot"]
+            else:
+                content = caption
+            if readnamefromattributetext_file:
+                name_temp = (row["Structure ``text_file''"]).replace(".txt", "")
+                name_match = re.search("([0-9]{4}-[0-9]{2}-[0-9]{2}_.*)$", name_temp)
+                name = name_match.group(1)
+            else:
+                name = row["Text ID"]
+            # Let us add a timestamp to the name:
+            if experiment.category == "image":
+                imageresults = re.search("start=(.*)$", row["Screenshot"])
+                name = name + "__" + imageresults.group(1)
+            else:
+                timeresults = re.search("start=(.*)&end=(.*)$", row["Video Snippet"])
+                name = name + "__" + timeresults.group(1) + "-" + timeresults.group(2)
+            
+            # This makes more sense in the video display, so that is where it goes.
+            # temp_content = row["Video URL"].split(',')
+            # starttime = int(temp_content[2]) - experiment.display_time.before_time;
+            # if starttime < 0:
+            #     starttime = 0
+            #     endtime = int(temp_content[2]) + experiment.display_time.after_time;
+            #     content = "http://pisa.vrnewsscape.ucla.edu/newsscape_mp4_snippet.cgi?file=" + temp_content[1] + "&start=" + str(starttime) + "&end=" + str(endtime)
+            newFile = File(name=name[:1024],
+                    content=content[:32000],
+                    caption=caption[:320],
+                    experiment_id=experimentId,
+            )
+            experiment.files.append(newFile)
     db.session.commit()
     os.remove(filePath)
 

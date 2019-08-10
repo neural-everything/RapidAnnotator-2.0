@@ -193,7 +193,7 @@ class Experiment(db.Model):
     ..  viaSpreadsheet,
     """
     uploadType = db.Column(
-        db.Enum('manual', 'viaSpreadsheet',
+        db.Enum('manual', 'viaSpreadsheet', 'fromConcordance',
         name='uploadType'),
         nullable=False,
         server_default='manual',
