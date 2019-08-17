@@ -28,6 +28,6 @@ class BaseConfig(object):
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
-    TESTING = True
+    TESTING = False
     SQLALCHEMY_ECHO = True
     LOGIN_DISABLED = False

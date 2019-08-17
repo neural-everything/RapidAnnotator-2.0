@@ -69,7 +69,7 @@ class User(UserMixin, db.Model):
     admin = db.Column(
         db.Boolean(name='admin'),
         nullable=False,
-        server_default='1',
+        server_default='0',
     )
 
     """ Flag indicating whether the user has turned on the
