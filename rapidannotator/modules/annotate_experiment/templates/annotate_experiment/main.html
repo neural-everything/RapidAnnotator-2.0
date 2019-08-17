@@ -333,6 +333,7 @@
         undoButton.on('click', function() {
             // console.log(currentFileIndex);
             undoButton.attr("disabled", "disabled");
+            $('.toggleLooping').removeClass('hidden-element');
             if(last_previous == 1){
                 progress_num = currentFileIndex;
             }
@@ -354,7 +355,7 @@
 
         doneButton.on('click', function(){
             
-            if (confirm("Press OK to Submit Annotations! Once submitted, cannot perform Undo operation.")){
+            if (confirm("Press OK to Submit Annotations! Once you have submitted the results, no undo operation can be performed.")){
 
                 // alert("Once clicked you cannot perform undo operation !")
                 doneButton.attr("disabled", "disabled");
@@ -468,6 +469,7 @@
 
                         last_previous = 1
                         doneButton.removeClass('hidden-element');
+                        $('.toggleLooping').addClass('hidden-element');
                         $('.annotationArea').addClass('hidden-element');
                         $('.thanksNote').removeClass('hidden-element');
 

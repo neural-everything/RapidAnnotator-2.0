@@ -98,7 +98,7 @@ Now, create a database for rapidannotator and select it :
 
 Now grant the privileges to rapidannotator :
 
-`grant all privileges on [Database_name].* to username@localhost;`
+`grant all privileges on [Database_name].* to username@localhost with grant option;`
 
 Now set an identification password for the user :
 

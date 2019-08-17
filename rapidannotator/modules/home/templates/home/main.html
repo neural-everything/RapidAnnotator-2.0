@@ -120,7 +120,7 @@
                 </thead>
                 <tbody>
                     {% for experiment in othersExperiments %}
-                        {%- set experiment_url = url_for('add_experiment.index', experimentId = experiment.id) %}
+                        {%- set experiment_url = url_for('add_experiment.index', experimentId = experiment.id, page = 1) %}
 
                         <tr>
                             <td onClick="document.location.href='{{ experiment_url }}';">{{experiment.name}}</td>
