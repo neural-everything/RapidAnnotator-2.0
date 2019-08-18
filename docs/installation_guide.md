@@ -14,6 +14,8 @@ following command and then run the above command
 
 Install **python3-mysqldb**.
 
+Install `sudo apt-get install libmysqlclient-dev`
+
 Install [**virtualenv**](https://virtualenv.pypa.io/en/latest/) using the below command:
 
 `sudo pip3 install virtualenv`
