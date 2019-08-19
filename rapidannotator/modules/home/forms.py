@@ -5,6 +5,7 @@ from flask_login import current_user
 from flask_security.forms import email_required, email_validator, \
     unique_user_email
 from flask_wtf import FlaskForm
+from rapidannotator import bcrypt
 from sqlalchemy.orm.exc import NoResultFound
 from wtforms import FormField, PasswordField, StringField, SubmitField, \
     BooleanField, SelectField, TextAreaField
@@ -80,9 +81,18 @@ class UpdateInfoForm(FlaskForm):
         validators=[DataRequired(message=_('Email not provided.')), Email()]
     )
 
+    # oldpassword = PasswordField(
+    #     label=_('Old Password'),
+    #     validators=[DataRequired(message=_('Old Password not provided.'))],)
+
     password = PasswordField(
         label=_('Password'),
         validators=[DataRequired(message=_('Password not provided.'))],)
+    
+    password2 = PasswordField(
+        label=_('Confirm Password'),
+        validators=[DataRequired(message=_('Confirmation password not provided.')),
+                    EqualTo('password')])
     
     def validate_username(self, username):
         """Wrap username validator for WTForms."""

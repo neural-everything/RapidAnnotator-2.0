@@ -32,20 +32,35 @@ def index():
 def _addNotification():
     
     experimentId = request.form.get('experimentId', None)
-    print("The Experiment Id is : {}".format(experimentId))
-    
     current_username = current_user.username
     experiment_info = Experiment.query.filter_by(id=experimentId).first()
     experiment_owners = experiment_info.owners
 
     for owner in experiment_owners:
-        experiment_owner_id = owner.id
         owner.numNotif += 1 
         message = 'The experiment ' + experiment_info.name + ' got completed'
         notify = NotificationInfo()
-        notify.experiment_id = experimentId
-        notify.user_id = experiment_owner_id
+        notify.user_id = owner.id
         notify.username = current_username
+        notify.notification = message
+        db.session.add(notify)
+        db.session.commit()
+
+    response = {'success' : True}
+    return jsonify(response)
+
+@blueprint.route('/_rightNotification', methods=['GET', 'POST'])
+def _rightNotification():
+    message = request.args.get('message', '')
+    role = request.args.get('role', 'experimenter')
+    users = User.query.filter_by(admin=1).all()
+    
+    for user in users:
+        user.numNotif += 1
+        message = 'User ' + current_user.fullname + ' has requested rights for the role ' + role + '.'
+        notify = NotificationInfo()
+        notify.user_id = user.id
+        notify.username = current_user.username
         notify.notification = message
         db.session.add(notify)
         db.session.commit()

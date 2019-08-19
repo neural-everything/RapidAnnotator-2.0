@@ -65,6 +65,7 @@
                 if(approved == "True") {
                     newText = "Approve";
                     currentRequest.val("False");
+                    location.reload(true);
                 } else {
                     newText = "Revoke";
                     currentRequest.val("True");

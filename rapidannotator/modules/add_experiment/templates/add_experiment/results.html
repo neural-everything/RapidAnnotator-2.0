@@ -68,7 +68,7 @@
                         <td>
                             {%- if experiment.uploadType == 'manual' or experiment.uploadType == 'viaSpreadsheet' -%}
                                 {%- if experiment.category == 'image' -%}
-                                    <img class="{{file.id}}" id="{{file.id}}" src=""  alt="Red Hen Logo" width="99%">
+                                    <img class="{{file.id}}" id="{{file.id}}" src=""  alt="Red Hen Logo" width="100px"><br>
                                     {{ file.name }}
                                 {%- else -%}
                                     {%- if experiment.category == 'video' -%}

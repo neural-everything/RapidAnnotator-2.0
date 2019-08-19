@@ -554,6 +554,8 @@
 
                     is_state_left_saving = is_state_left_saving - 1;
                     uploadedFeedback();
+                    location.reload(true);
+
 
                     var serverResponse = JSON.parse(response.response);
                     $("tr[value=" + file.id + "]").attr("value", serverResponse.fileId);

@@ -5,6 +5,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 
 from rapidannotator import db
 from rapidannotator import bcrypt
+import flask_bcrypt
 from rapidannotator.models import User, Experiment, RightsRequest, AnnotatorAssociation
 from rapidannotator.modules.home import blueprint
 from rapidannotator.modules.home.forms import AddExperimentForm, UpdateInfoForm
@@ -93,6 +94,12 @@ def askRights():
 def checkRights():
 
     requestsSent = RightsRequest.query.filter_by(user_id=current_user.id)
+    
+    if requestsSent.count() == 0:
+        response = {}
+        response['success'] = False
+        return jsonify(response)
+    
     response = {}
     response['success'] = True
 
@@ -119,19 +126,18 @@ def updateInfo():
             user = current_user)
     elif request.method == 'POST':
         updateForm1 = UpdateInfoForm()
-        print(updateForm1.username.data)
         if updateForm1.validate_on_submit():
-            user = User.query.filter_by(id=current_user.id).first()
-            user.username = updateForm.username.data
-            user.fullname = updateForm.fullname.data
-            user.email = updateForm.email.data
+            user = User.query.filter_by(id=current_user.id).first()    
+            user.username = updateForm1.username.data
+            user.fullname = updateForm1.fullname.data
+            user.email = updateForm1.email.data
             if updateForm.password.data is not None:
                 hashedPassword = bcrypt.generate_password_hash(\
-                    updateForm.password.data).decode('utf-8')
+                    updateForm1.password.data).decode('utf-8')
                 user.password = hashedPassword
             db.session.commit()
             flash(_('Information updated successfully'))
-            return render_template('home/settings.html', updateForm = updateForm1, \
+            return render_template('home/settings.html', updateForm = updateForm, \
                 user = current_user)    
 
         errors = "UpdateErrors"

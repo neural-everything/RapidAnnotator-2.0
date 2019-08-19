@@ -666,10 +666,6 @@ class NotificationInfo(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 
-    '''the experiment with which notification is associated.'''
-    experiment_id = db.Column(Integer, db.ForeignKey(
-        'Experiment.id', ondelete='CASCADE'))
-
     ''' id of the user who sent this notification.'''
     user_id = db.Column(Integer, db.ForeignKey(
         'User.id', ondelete='CASCADE')

@@ -15,7 +15,7 @@
         <strong> Error in Updating Information!</strong>
     </div>
     <form method="POST" name="update_form" action = "{{ url_for('home.updateInfo') }}">
-        <div style="width: 30%; margin-left: 35%">
+        <div style="width: 30%; margin-left: 35%; margin-top: -2%">
             {% for field in updateForm %}
                 {% if field.widget.input_type == 'hidden' %}
                     {{ field() }}

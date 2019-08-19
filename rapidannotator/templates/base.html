@@ -271,6 +271,9 @@
                                 $(".askRightsButton[value='admin']").removeClass('hidden-element');
                             }
                         }
+                        else{
+                            $(".askRightsButton[value='admin']").removeClass('hidden-element');
+                        }
                     });
                 }
 
@@ -281,6 +284,17 @@
                     askFor = $(this).attr('value');
                 })
                 var rightsForm = $('#rightsForm');
+
+                function addRightNotification(data){
+                    var url = "{{ url_for('notification._rightNotification')}}";
+                    console.log('Enter 2');
+                    $.getJSON(url , data, function(response) {
+                        if(response.success){
+                            $(".askRightsButton[value=" + askFor + "]").addClass('hidden-element');
+                            alert('request has been sent and would be soon reviewed by admins');
+                        }
+                    });
+                };
 
                 rightsForm.on('submit', function(e) {
                     e.stopImmediatePropagation();
@@ -297,9 +311,8 @@
                         if(response.success) {
                             $('#rightsModalId').modal('hide');
                             $('#rightsForm').find('input').val("");
-                            $(".askRightsButton[value=" + askFor + "]").addClass('hidden-element');
-                            alert('request has been sent and would be soon reviewed by admins');
-                            // $(".askRightsButton[value=" + askFor + "]").hide();
+                            console.log('Enter 1');
+                            addRightNotification(data);
                         }
                     });
 
@@ -310,8 +323,8 @@
             });
 
             $(document).ready(function() {
-                // auto refresh page after 1 second
-                setInterval('refreshNotification()', 5000);
+                // auto refresh page after 4 second
+                setInterval('refreshNotification()', 4000);
             });
  
             function refreshNotification() {
@@ -333,13 +346,6 @@
                 });
             }
         </script>
-
-
     </div>
-    <!-- <div class="container fixed-footer">
-        <a class="footer-copyright footer-items" href="#"><span class="glyphicon glyphicon-copyright-mark"></span> Red Hen Labs</a>
-        <a class="footer-items" href="#"> About</a>
-        <a class="footer-items" href="#"> Contact Us</a>
-    </div> -->
 </body>
 </html>
