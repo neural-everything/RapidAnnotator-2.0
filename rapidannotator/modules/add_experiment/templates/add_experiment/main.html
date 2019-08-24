@@ -23,8 +23,10 @@
 
         <a id="addLableButtonId" href="{{ viewSettings }}" value="{{ viewSettings }}"
             class="btn btn-primary btn-group btn-group-inline btn-space">
-            {{ ('Settings') }}
-            <span class="glyphicon glyphicon-cog"></span>
+            <div style="text-align:center">
+                <span class="glyphicon glyphicon-cog" ></span>
+                {{ ('Settings') }}
+            </div>
         </a>
 
         {%- set addLablesUrl = url_for('add_experiment.editLabels', experimentId = experiment.id) %}
@@ -55,7 +57,7 @@
                 </ul>
             </div>
 
-            <a href="{{ url_for('home.index') }}"
+            <a id="done" onclick="check_is_left_saving();" 
              type="button" class="btn btn-success btn-group btn-group-inline btn-space">{{ ('Done') }}</a>
 
         </div>
@@ -68,11 +70,11 @@
 <div class="container">
     <div>
         <div style="display: inline-block">
-            <h3 style="display: inline"><b>{{ ('Upload Files') }}</b></h3>
+            <h4 style="display: inline"><b>{{ ('Upload Files') }}</b></h4>
         </div>
 
         <div id="fileContainer" class="pull-right" style="display: inline-block">
-            <button type="button" id="chooseFiles" class="btn btn-default btn-group btn-group-inline btn-space">
+            <button type="button" id="chooseFiles" class="btn btn-primary btn-group btn-group-inline btn-space">
                 <span class="glyphicon glyphicon glyphicon-file"></span>
                 Choose files
             </button>
@@ -92,13 +94,13 @@
 <div class="container">
     <div>
         <div style="display: inline-block">
-            <h3 style="display: inline"><b>{{ ('Upload Files via Spreadsheet') }}</b></h3>
+            <h4 style="display: inline"><b>{{ ('Upload Files via Spreadsheet') }}</b></h4>
         </div>
 
         <div id="fileContainer" class="pull-right" style="display: inline-block">
-            <button type="button" id="chooseFiles" class="btn btn-default btn-group btn-group-inline btn-space">
+            <button type="button" id="chooseFiles" class="btn btn-primary btn-group btn-group-inline btn-space">
                 <span class="glyphicon glyphicon glyphicon-file"></span>
-                {{( 'Choose Spreadsheet' )}}
+                {{( 'Choose Spreadsheet/Concordance' )}}
             </button>
 
             <button type="button" id="uploadfiles" class="btn btn-primary btn-group btn-group-inline btn-space">
@@ -125,33 +127,43 @@
     <table id="fileTable" class="table table-hover table-striped">
         <thead>
             <tr class="">
-                <th style="width: 10.0%">{{ ('Status') }}</th>
-                <th style="width: 20.0%">{{ ('Name') }}</th>
-                <th style="width: 67.0%">{{ ('Description') }}</th>
-                <th style="width: 3.0%"></th>
+                <th style="width: 10.0%; text-align: center">{{ ('Status') }}</th>
+                <th style="width: 30.0%; text-align: center">{{ ('Name') }}</th>
+                <th style="width: 55.0%; text-align: center">{{ ('Description') }}</th>
+                <th style="width: 5.0%; text-align: center"></th>
             </tr>
         </thead>
 
         <tbody>
 
-            {% for file in experiment.files | reverse %}
-                <tr class="" value={{file.id}} data-href="">
-                <td>
+            {% for file in expFiles.items | reverse %}
+                <tr class="" value={{file.id}} id={{file.id}} data-href="">
+                <td style="width: 10.0%; text-align: center">
+                    <img class="hidden-element" src="{{url_for('static', filename = 'img/uploading.gif')}}" alt="uploading images" style="width:35%; margin-left: 25%">
                     <center><i class="fa fa-check uploadedFileIcon"></i></center>
                     <center><span class="uploadedFileText">{{ ('Uploaded') }}</span></center>
                 </td>
-                <td class="fileName"><p>{{file.name}}</p></td>
-                <td class="fileCaption"><p>{%- if file.caption -%} {{ file.caption }} {%- else -%} {{('No caption provided')}} {%- endif -%}</p></td>
-                <td>
+                <td class="fileName" style="width: 30.0%; text-align: center"><p>{{file.name}}</p></td>
+                <td class="fileCaption" style="width: 55.0%; text-align: center"><p>{%- if file.caption -%} {{ file.caption }} {%- else -%} {{('No caption provided')}} {%- endif -%}</p></td>
+                <td style="width: 5.0%; text-align: center">
                     <button class="deleteFileButton pull-right close" type="button"
                     data-toggle="modal" data-target="#deleteFileModal">&times;</button>
                 </td>
                 </tr>
             {% endfor %}
 
-    </tbody>
-</table>
+        </tbody>
+    </table>
 </div>
+
+<ul class="pager">
+    {% if expFiles.has_prev %}<li><a href="{{ url_for('add_experiment.index', experimentId=experiment.id, page=expFiles.prev_num) }}">Previous</a></li>{% else %}<li>Previous</li>{% endif %}  
+    {% if expFiles.has_next %}<li><a href="{{ url_for('add_experiment.index', experimentId=experiment.id ,page=expFiles.next_num) }}">Next</a></li>{% else %}<li>Next</li>{% endif %}
+</ul>
+
+<div id="snackbar1"><strong> Uploading</strong> has been started !</div>
+<div id="snackbar2"><strong> Finished!</strong> Files have been uploaded !</div>
+<div id="snackbar3">Message</div>
 
 <div class="modal fade" id="displayTimeModalId" role="dialog" tabindex="-1"
     aria-labelledby="displayTimeModalId" aria-hidden="true" data-backdrop="static"
@@ -166,11 +178,11 @@
             <form method="POST" id="displayTimeForm" name="displayTimeForm">
 
                 <b>Before Time</b>
-                <input type="number" name="beforeTime" id="beforeTime" class="form-control validate" placeholder="Before Time(in secs) Example : 65">
+                <input type="number" name="beforeTime" id="beforeTime" step="0.01" class="form-control validate" placeholder="Before Time(in secs) Example : 65">
                 <span class="help-block"><small>The time relative to the time given in the link to before which the clip will start.</small></span>
 
                 <b>After Time</b>
-                <input type="number" name="afterTime" id="afterTime" class="form-control validate" placeholder="After Time(in secs) Example : 5">
+                <input type="number" name="afterTime" id="afterTime" step="0.01" class="form-control validate" placeholder="After Time(in secs) Example : 5">
                 <span class="help-block"><small>The time relative to the time given in the link till which the clip will be played.</small></span>
 
                 <div class="form-actions">
@@ -209,367 +221,407 @@
 </div>
 
 <script charset="utf-8" type="text/javascript">
-$(function() {
-    /* (TODO) prevent same file from getting uploaded */
-    /* ((TODO)) pop up on clicking */
-    /* ((TODO)) UPDATE IMAGE */
-    /* (TODO) change multipart_params TO params {if multipart_params is deprecated}*/
+    var is_state_left_saving = 0
 
-    var chooseFilesButton = $('#chooseFiles');
+    // Function for saving names and description in database on a click outside the box without using any save button
+    $(function(){
+        'use-strict';
+        
+        // Gettig instances of td tag
+        var td1 = $('.fileName');
+        var td2 = $('.fileCaption');
 
-    var closeErrorButton = $('.errorLog').find(".container").find("button");
-    var deleteFileButton = '.deleteFileButton';
-    var currentDeleteFileId = -1;
-    var currentEditFileId = -1;
-    var deleteFileForm = $('#deleteFileForm');
-    var editing  = false;
+        // Add event listeners to all td tags of fileName
+        for(var i=0;i<td1.length;i++) {
+            td1[i].addEventListener('click', change, false);
+            td1[i].addEventListener('blur', changeback, false);
+        }
 
-    if (document.getElementById && document.createElement) {
-    	var butt = document.createElement('BUTTON');
-        butt.classList.add("saveEditButton");
-    	var buttext = document.createTextNode('Save!');
-    	butt.appendChild(buttext);
-    	butt.onclick = saveEdit;
-    }
+        // Add event listeners to all td tags of fileCaptions
+        for(var i=0;i<td2.length;i++){
+            td2[i].addEventListener('click', change, false);
+            td2[i].addEventListener('blur',changeback,false);
+        }
+        
+        //listeners function when the event happened
+        // This function makes td editable
+        function change() {
+            this.contentEditable = true;
+            this.focus();
+        }
 
-    function catchIt(e) {
-    	if (editing) return;
-    	if (!document.getElementById || !document.createElement) return;
-    	if (!e) var obj = window.event.srcElement;
-    	else var obj = e.target;
-    	while (obj.nodeType != 1) {
-    		obj = obj.parentNode;
-    	}
-    	if (obj.tagName == 'TEXTAREA' || obj.tagName == 'A') return;
-    	while (obj.nodeName != 'P' && obj.nodeName != 'HTML') {
-    		obj = obj.parentNode;
-    	}
-    	if (obj.nodeName == 'HTML') return;
-    	var x = obj.innerHTML;
-    	var y = document.createElement('TEXTAREA');
-        y.style.width = obj.offsetWidth + "px";
-        y.style.height = obj.offsetHeight + "px";
-    	var z = obj.parentNode;
-    	z.insertBefore(y,obj);
-    	z.insertBefore(butt,obj);
-    	z.removeChild(obj);
-    	y.value = x;
-    	y.focus();
-    	editing = true;
-    }
+        // This function makes td again non-editable
+        function changeback() {
+            this.removeAttribute("contentEditable");
+            fileId = $(this).closest('tr').attr('id');
+            tdTag = $(this).attr("class");
+            if (tdTag == 'fileName'){
+                saveNameInDatabase(fileId);
+            }
+            else{
+                saveCaptionInDatabase(fileId);                
+            }
+        }
 
-    function saveEdit() {
-    	var area = document.getElementsByTagName('TEXTAREA')[0];
-        currentEditFileId = $("TEXTAREA").closest("tr").attr('value');
-        var parentClassList = area.parentNode.classList;
-    	var y = document.createElement('P');
-    	var z = area.parentNode;
-    	y.innerHTML = area.value;
-    	z.insertBefore(y,area);
-    	z.removeChild(area);
-    	z.removeChild(document.getElementsByClassName('saveEditButton')[0]);
-        if($.isNumeric(currentEditFileId)) {
-            parentClassList.forEach(function(key, value) {
-                if(key == "fileName") {
-                    saveNameInDatabase(currentEditFileId, y.innerHTML);
-                } else if(key == "fileCaption") {
-                    saveCaptionInDatabase(currentEditFileId, y.innerHTML);
+        // Saves name of the file into database
+        function saveNameInDatabase(fileId) {
+            var fileName = $('#fileTable tbody tr[value=' + fileId + '] .fileName p').text();
+
+            var url = "{{ url_for('add_experiment._updateFileName')}}";
+            var data = {
+                'fileId' :  fileId,
+                'name' : fileName,
+            };
+
+            $.getJSON(url , data, function(response) {
+                if(response.success) {
+                } else {
                 }
-            } );
-        }
-    	editing = false;
-    }
-
-    $(document).keydown(function(event) {
-        if(editing) {
-            var x = event.charCode || event.keyCode;
-            if( x == 13 || x == 27 ) { // code for enter key(13) and esc key(27)
-                event.stopImmediatePropagation();
-                event.preventDefault();
-                saveEdit();
-            }
-        }
-    });
-
-    function saveNameInDatabase(fileId, caption) {
-        var fileName = $('#fileTable tbody tr[value=' + fileId + '] .fileName p').text();
-
-        var url = "{{ url_for('add_experiment._updateFileName')}}";
-        var data = {
-            'fileId' :  fileId,
-            'name' : fileName,
-        };
-
-        $.getJSON(url , data, function(response) {
-            if(response.success) {
-            } else {
-            }
-        });
-    }
-
-    function saveCaptionInDatabase(fileId, caption) {
-        var fileCaption = $('#fileTable tbody tr[value=' + fileId + '] .fileCaption p').text();
-        if( fileCaption == 'No caption provided' || fileCaption == '') return;
-
-        var url = "{{ url_for('add_experiment._updateFileCaption')}}";
-        var data = {
-            'fileId' :  fileId,
-            'caption' : fileCaption,
-        };
-
-        $.getJSON(url , data, function(response) {
-            if(response.success) {
-            }
-            else {
-                /*do something here*/
-            }
-        });
-    }
-
-    document.onclick = catchIt;
-
-    deleteFileForm.on('submit', function(e) {
-        e.stopImmediatePropagation();
-        e.preventDefault();
-        if($.isNumeric(currentDeleteFileId)) {
-            deleteFileFromDatabase();
-        } else {
-            deleteFileFromPlUpload();
-        }
-    });
-
-    function deleteFileFromPlUpload() {
-        uploader.removeFile(currentDeleteFileId);
-    }
-
-    function deleteFileFromDatabase() {
-        var url = "{{ url_for('add_experiment._deleteFile')}}";
-        var data = {
-            'experimentCategory' : '{{ experiment.category }}',
-            'experimentId' : '{{ experiment.id }}',
-            'fileId' : currentDeleteFileId,
-        };
-
-        $.getJSON(url , data, function(response) {
-            if(response.success) {
-                $("tr[value=" + currentDeleteFileId + "]").remove();
-                $('#deleteFileModal').modal('hide');
-            }
-            else {
-                /*do something here*/
-            }
-        });
-    }
-
-    $("body").on("click", deleteFileButton, function() {
-        currentDeleteFileId = $(this).closest("tr").attr('value');
-    });
-
-    chooseFilesButton.on("click", function() {
-        if ( experimentUploadType == "viaSpreadsheet") {
-            alert('experiment names, caption, content should not exceed 1024, 320, 32000 characters. If so they will be truncated.');
-        }
-    })
-
-    closeErrorButton.on('click', function() {
-            $(".errorLog").find(".container").find("strong").text("");
-            $(".errorLog").addClass('hidden-element');
-        });
-
-    function addFileToTable(file) {
-
-        var fileTableBody = $('#fileTable').find("tbody");
-        var rowAttributeDict = {
-            "value" :           file.id,
+            });
         }
 
-        var row = $("<tr/>", rowAttributeDict);
-        cell1 = $("<td/>", {
-            "style" :       "width: 10.0%",
-        });
-        cell2 = $("<td/>", {
-            "style" :       "width: 20.0%",
-            "class" :       "fileName",
-        });
-        cell3 = $("<td/>", {
-            "style" :       "width: 67.0%",
-            "class" :       "fileCaption",
-        });
+        // saves fileCaption into database
+        function saveCaptionInDatabase(fileId) {
+            var fileCaption = $('#fileTable tbody tr[value=' + fileId + '] .fileCaption p').text();
+            if( fileCaption == 'No caption provided' || fileCaption == '') return;
 
-        cell4 = $("<td/>", {
-            "style" :     "width: 3.0%",
-        });
+            var url = "{{ url_for('add_experiment._updateFileCaption')}}";
+            var data = {
+                'fileId' :  fileId,
+                'caption' : fileCaption,
+            };
 
-        var statusIconAttributeDict = {
-            "class" :   "fa fa-upload pendingFileIcon",
-        };
-        var statusIcon = $("<i/>", statusIconAttributeDict);
-
-        var statusSpanAttributeDic = {
-            "class" :   "pendingFileText",
-            "text" :    "Pending",
-        };
-        var statusSpan = $("<span/>", statusSpanAttributeDic);
-
-        var cell3Text = "<p>No caption provided</p>";
-        var cell2Text = "<p>" + file.name + "</p>";
-        var buttonAttributeDict = {
-            "type" :            "button",
-            "class" :           "deleteFileButton pull-right close",
-            "data-toggle" :     "modal",
-            "data-target" :     "#deleteFileModal",
-        };
-        var buttonToAdd = $("<button/>", buttonAttributeDict);
-        buttonToAdd.append("&times;");
-
-        var lineBreak = $("<br/>");
-        var centerTag1 = $("<center/>");
-        var centerTag2 = $("<center/>");
-        statusIcon.appendTo(centerTag1);
-        statusSpan.appendTo(centerTag2);
-
-
-        centerTag1.appendTo(cell1);
-        centerTag2.appendTo(cell1);
-        cell2.append(cell2Text);
-        cell3.append(cell3Text);
-        buttonToAdd.appendTo(cell4);
-        row.append(cell1,cell2,cell3,cell4);
-        fileTableBody.prepend(row);
-    }
-
-    uploader = new plupload.Uploader({
-        runtimes :             'silverlight,html5,flash,silverlight,html4',
-        url :                  "{{ url_for('add_experiment._uploadFiles') }}",
-        flash_swf_url :        "{{ url_for('static', filename='js/Moxie.swf') }}",
-        silverlight_xap_url :  "{{ url_for('static', filename='js/Moxie.xap') }}",
-        browse_button :        "chooseFiles",
-        container :            document.getElementById('fileContainer'),
-        multipart :            true,
-        multipart_params : {
-            "experimentId" : {{ experiment.id }},
-        },
-
-        filters : {
-            mime_types: []
-            },
-         
-        init: {
-            PostInit: function(up, info) {
-                experimentType = "{{ experiment.category }}";
-                experimentUploadType = "{{ experiment.uploadType }}";
-                if ( experimentUploadType == "viaSpreadsheet") {
-                    fileTypes = {
-                        mime_types: [
-                            {title : "Uploadable files", extensions : "xls"},
-                        ]
-                    }
+            $.getJSON(url , data, function(response) {
+                if(response.success) {
                 }
                 else {
-                    switch (experimentType) {
-
-                        case 'text':
-                            fileTypes = {
-                                mime_types: [
-                                    {title : "Text files", extensions : "txt,html"},
-                                ]
-                            }
-            				break;
-
-                        case 'image':
-                            fileTypes = {
-                                mime_types: [
-                                    {title : "Image files", extensions : "jpg,gif,png" },
-                                ]
-                            }
-            				break;
-
-            			case 'audio':
-                            fileTypes = {
-                                mime_types: [
-                                    {title : "Audio Files", extensions : "mp3,wma,mp2,wav,aiff,aif,m4a,ra,dss"},
-                                ]
-                            }
-            				break;
-
-                        case 'video':
-                            fileTypes = {
-                                mime_types: [
-                                    {title : "Video files", extensions : "avi,mov,mp4,wmv,webm"},
-                                ]
-                            }
-            				break;
-                        }
+                    /*do something here*/
                 }
+            });
+        }
 
-                up.setOption('filters', fileTypes);
-                document.getElementById('filelist').innerHTML = '';
+    }());
 
-                document.getElementById('uploadfiles').onclick = function() {
-                    uploader.start();
-                    return false;
-                };
-            },
+    $(function() {
+        /* (TODO) prevent same file from getting uploaded */
+        /* ((TODO)) pop up on clicking */
+        /* ((TODO)) UPDATE IMAGE */
+        /* (TODO) change multipart_params TO params {if multipart_params is deprecated}*/
 
-            BeforeUpload: function (up, file) {
-                var fileCaption = $('#fileTable tbody tr[value=' + file.id + '] .fileCaption p').text();
-                var fileName = $('#fileTable tbody tr[value=' + file.id + '] .fileName p').text();
-                if( fileCaption != 'No caption provided' && fileCaption != '') {
-                    up.setOption('multipart_params', {fileCaption : fileCaption});
-                }
-                up.setOption('multipart_params', {fileName : fileName});
-            },
+        var chooseFilesButton = $('#chooseFiles');
 
-            UploadFile: function(up, file) {
-            },
+        var closeErrorButton = $('.errorLog').find(".container").find("button");
+        var deleteFileButton = '.deleteFileButton';
+        var currentDeleteFileId = -1;
+        var currentEditFileId = -1;
+        var deleteFileForm = $('#deleteFileForm');
+        
+        deleteFileForm.on('submit', function(e) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            if($.isNumeric(currentDeleteFileId)) {
+                deleteFileFromDatabase();
+            } else {
+                deleteFileFromPlUpload();
+            }
+        });
 
-            FilesAdded: function(up, files) {
-                plupload.each(files, function(file) {
-                    // document.getElementById('filelist').innerHTML += '<div id="' + file.id + '">' + file.name + ' (' + plupload.formatSize(file.size) + ') <b></b></div>';
-                    addFileToTable(file);
-                });
-            },
+        function deleteFileFromPlUpload() {
+            uploader.removeFile(currentDeleteFileId);
+        }
 
-            FileUploaded: function(up, file, response) {
-                uploadedRow = $("tr[value=" + file.id + "]");
-                uploadedRow.removeClass('choosenFile');
-                var firstColumn = uploadedRow.find('td:first-child');
-                var icon = firstColumn.find("center").find('i');
-                var text = firstColumn.find("center").find('span');
-                icon.removeClass("fa-upload pendingFileIcon");
-                icon.addClass("fa-check uploadedFileIcon");
-                text.removeClass("pendingFileText");
-                text.addClass("uploadedFileText");
-                text.text("Uploaded");
+        function deleteFileFromDatabase() {
+            var url = "{{ url_for('add_experiment._deleteFile')}}";
+            var data = {
+                'experimentCategory' : '{{ experiment.category }}',
+                'experimentId' : '{{ experiment.id }}',
+                'fileId' : currentDeleteFileId,
+            };
 
-                var serverResponse = JSON.parse(response.response);
-                $("tr[value=" + file.id + "]").attr("value", serverResponse.fileId);
-                if ( experimentUploadType == "viaSpreadsheet") {
-                    location.reload(true);
-                }
-            },
-
-            FilesRemoved: function(up, files) {
-                plupload.each(files, function(file) {
+            $.getJSON(url , data, function(response) {
+                if(response.success) {
                     $("tr[value=" + currentDeleteFileId + "]").remove();
                     $('#deleteFileModal').modal('hide');
-                });
-            },
-
-            UploadProgress: function(up, file) {
-                // document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = '<span>' + file.percent + "%</span>";
-            },
-
-            Error: function(up, err) {
-                asdf = $(".errorLog").find(".container").find("strong");
-                $(".errorLog").find(".container").find("strong").append("Error ### " + err.file.name + " : " + err.code + " : " + err.message + "<br/>");
-                $(".errorLog").removeClass('hidden-element');
-            }
+                }
+                else {
+                    /*do something here*/
+                }
+            });
         }
-    });
-    uploader.init();
-});
 
+        $("body").on("click", deleteFileButton, function() {
+            currentDeleteFileId = $(this).closest("tr").attr('value');
+        });
+
+        chooseFilesButton.on("click", function() {
+            if ( experimentUploadType == "viaSpreadsheet") {
+                alert('experiment names, caption, content should not exceed 1024, 320, 32000 characters. If so they will be truncated.');
+            }
+        })
+
+        closeErrorButton.on('click', function() {
+                $(".errorLog").find(".container").find("strong").text("");
+                $(".errorLog").addClass('hidden-element');
+            });
+
+        function addFileToTable(file) {
+
+            var fileTableBody = $('#fileTable').find("tbody");
+            var rowAttributeDict = {
+                "value" :           file.id,
+            }
+
+            var row = $("<tr/>", rowAttributeDict);
+            cell1 = $("<td/>", {
+                "style" :       "width: 10.0%; text-align: center",
+            });
+            cell2 = $("<td/>", {
+                "style" :       "width: 30.0%; text-align: center",
+                "class" :       "fileName",
+            });
+            cell3 = $("<td/>", {
+                "style" :       "width: 55.0%; text-align: center",
+                "class" :       "fileCaption",
+            });
+
+            cell4 = $("<td/>", {
+                "style" :     "width: 5.0%; text-align: center",
+            });
+
+            var statusIconAttributeDict = {
+                "class" :   "fa fa-upload pendingFileIcon",
+            };
+            var statusIcon = $("<i/>", statusIconAttributeDict);
+
+            var statusSpanAttributeDic = {
+                "class" :   "pendingFileText",
+                "text" :    "Pending",
+            };
+            var statusSpan = $("<span/>", statusSpanAttributeDic);
+
+            var cell3Text = "<p>No caption provided</p>";
+            var cell2Text = "<p>" + file.name + "</p>";
+            var buttonAttributeDict = {
+                "type" :            "button",
+                "class" :           "deleteFileButton pull-right close",
+                "data-toggle" :     "modal",
+                "data-target" :     "#deleteFileModal",
+            };
+            var buttonToAdd = $("<button/>", buttonAttributeDict);
+            buttonToAdd.append("&times;");
+
+            var lineBreak = $("<br/>");
+            var imgAttributeDict = {
+                "class" : "hidden-element",
+                "src" : "{{url_for('static', filename = 'img/uploading.gif')}}", 
+                "alt" : "uploading images",
+                "style": "width:35%; margin-left: 25%",
+            };
+            var imgTag = $("<img/>", imgAttributeDict);
+            var centerTag1 = $("<center/>");
+            var centerTag2 = $("<center/>");
+            statusIcon.appendTo(centerTag1);
+            statusSpan.appendTo(centerTag2);
+
+            imgTag.appendTo(cell1);
+            centerTag1.appendTo(cell1);
+            centerTag2.appendTo(cell1);
+            cell2.append(cell2Text);
+            cell3.append(cell3Text);
+            buttonToAdd.appendTo(cell4);
+            row.append(cell1,cell2,cell3,cell4);
+            fileTableBody.prepend(row);
+        }
+
+        uploader = new plupload.Uploader({
+            runtimes :             'silverlight,html5,flash,silverlight,html4',
+            url :                  "{{ url_for('add_experiment._uploadFiles') }}",
+            flash_swf_url :        "{{ url_for('static', filename='js/Moxie.swf') }}",
+            silverlight_xap_url :  "{{ url_for('static', filename='js/Moxie.xap') }}",
+            browse_button :        "chooseFiles",
+            container :            document.getElementById('fileContainer'),
+            multipart :            true,
+            multipart_params : {
+                "experimentId" : {{ experiment.id }},
+            },
+
+            filters : {
+                mime_types: []
+                },
+             
+            init: {
+                PostInit: function(up, info) {
+                    experimentType = "{{ experiment.category }}";
+                    experimentUploadType = "{{ experiment.uploadType }}";
+                    if ( experimentUploadType == "viaSpreadsheet") {
+                        fileTypes = {
+                            mime_types: [
+                                {title : "Uploadable files", extensions : "xls"},
+                            ]
+                        }
+                    }
+                    else if ( experimentUploadType == "fromConcordance") {
+                        fileTypes = {
+                            mime_types: [
+                                {title : "Uploadable files", extensions : "txt"},
+                            ]
+                        }
+                    }
+                    else {
+                        switch (experimentType) {
+
+                            case 'text':
+                                fileTypes = {
+                                    mime_types: [
+                                        {title : "Text files", extensions : "txt,html"},
+                                    ]
+                                }
+                                break;
+
+                            case 'image':
+                                fileTypes = {
+                                    mime_types: [
+                                        {title : "Image files", extensions : "jpg,gif,png" },
+                                    ]
+                                }
+                                break;
+
+                            case 'audio':
+                                fileTypes = {
+                                    mime_types: [
+                                        {title : "Audio Files", extensions : "mp3,wma,mp2,wav,aiff,aif,m4a,ra,dss"},
+                                    ]
+                                }
+                                break;
+
+                            case 'video':
+                                fileTypes = {
+                                    mime_types: [
+                                        {title : "Video files", extensions : "avi,mov,mp4,wmv,webm"},
+                                    ]
+                                }
+                                break;
+                            }
+                    }
+                    up.setOption('filters', fileTypes);
+                    document.getElementById('filelist').innerHTML = '';
+
+                    document.getElementById('uploadfiles').onclick = function() {
+                        uploader.start();
+                        return false;
+                    };
+                },
+
+                BeforeUpload: function (up, file) {
+                    var fileCaption = $('#fileTable tbody tr[value=' + file.id + '] .fileCaption p').text();
+                    var fileName = $('#fileTable tbody tr[value=' + file.id + '] .fileName p').text();
+                    if( fileCaption != 'No caption provided' && fileCaption != '') {
+                        up.setOption('multipart_params', {fileCaption : fileCaption});
+                    }
+                    up.setOption('multipart_params', {fileName : fileName});
+                    showuploadingFeedback(file);
+                    uploadingFeedback();
+                },
+
+                UploadFile: function(up, file) {
+                },
+
+                FilesAdded: function(up, files) {
+                    plupload.each(files, function(file) {
+                        // document.getElementById('filelist').innerHTML += '<div id="' + file.id + '">' + file.name + ' (' + plupload.formatSize(file.size) + ') <b></b></div>';
+                        addFileToTable(file);
+                        is_state_left_saving = is_state_left_saving + 1;
+                    });
+                },
+
+                FileUploaded: function(up, file, response) {
+                    
+                    uploadedRow = $("tr[value=" + file.id + "]");
+                    uploadedRow.removeClass('choosenFile');
+                    var firstColumn = uploadedRow.find('td:first-child');
+                    
+                    var icon = firstColumn.find("center").find('i');
+                    icon.removeClass("fa-upload pendingFileIcon");
+                    icon.addClass("fa-check uploadedFileIcon");
+                    
+                    var text = firstColumn.find("center").find('span');
+                    text.removeClass("pendingFileText");
+                    text.addClass("uploadedFileText");
+                    text.text("Uploaded");
+                    
+                    var img = firstColumn.find("img");
+                    img.addClass("hidden-element");
+
+                    is_state_left_saving = is_state_left_saving - 1;
+                    uploadedFeedback();
+                    var serverResponse = JSON.parse(response.response);
+                    $("tr[value=" + file.id + "]").attr("value", serverResponse.fileId);
+                    if ( experimentUploadType == "viaSpreadsheet") {
+                        location.reload(true);
+                    }
+                },
+
+                FilesRemoved: function(up, files) {
+                    plupload.each(files, function(file) {
+                        $("tr[value=" + currentDeleteFileId + "]").remove();
+                        $('#deleteFileModal').modal('hide');
+                    });
+                },
+
+                UploadProgress: function(up, file) {
+                    showuploadingFeedback(file);
+                    // document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = '<span>' + file.percent + "%</span>";
+                },
+
+                Error: function(up, err) {
+                    asdf = $(".errorLog").find(".container").find("strong");
+                    $(".errorLog").find(".container").find("strong").append("Error ### " + err.file.name + " : " + err.code + " : " + err.message + "<br/>");
+                    $(".errorLog").removeClass('hidden-element');
+                }
+            }
+        });
+        uploader.init();
+
+        // Function for showing the rotating arrows for uploading status of the file
+        function showuploadingFeedback(file){
+            uploadedRow = $("tr[value=" + file.id + "]");
+            uploadedRow.removeClass('choosenFile');
+            var firstColumn = uploadedRow.find('td:first-child');
+            var icon = firstColumn.find("center").find('i');
+            var text = firstColumn.find("center").find('span');
+            var img = firstColumn.find("img");
+            icon.removeClass("fa-upload pendingFileIcon");
+            text.removeClass("pendingFileText");
+            text.addClass("uploadedingFileText");
+            text.text("Uploading File");
+            img.removeClass("hidden-element");
+        };
+
+    });
+
+    // Function for giving the feedback of uploading status
+    function uploadingFeedback() {
+        var x = document.getElementById("snackbar1");
+        x.className = "show";
+        setTimeout(function(){ x.className = x.className.replace("show", ""); }, 1500);
+    }
+
+    // Function for giving the feedback when the file/files is/are uploaded
+    function uploadedFeedback() {
+        var x = document.getElementById("snackbar2");
+        x.className = "show";
+        setTimeout(function(){ x.className = x.className.replace("show", ""); }, 2500);
+    }
+
+    //Function to checck if the state is left ith saving or without saving
+    function check_is_left_saving(){
+        if(is_state_left_saving != 0){
+            alert('You have some pending files! Click on Start Upload button to upload them.');
+        }
+        else{
+            window.location.href = "{{ url_for('home.index') }}";
+        }
+    };
 </script>
 
 
@@ -641,6 +693,7 @@ $(function() {
                     /*do something here*/
                 }
             });
+            addOwnerFeedback(userName);
         });
 
         selectedAnnotator.on('click', function() {
@@ -661,8 +714,26 @@ $(function() {
                     /*do something here*/
                 }
             });
+            addAnnotatorFeedback(userName);
         });
 
+        // Function to display feedback when user is added as annotator of the experiment
+        function addAnnotatorFeedback(userName){
+            var snackbar = $('#snackbar3');
+            snackbar.text(userName + ' added successfully as an Annotator of the experiment.')
+            var x = document.getElementById("snackbar3");
+            x.className = "show";
+            setTimeout(function(){ x.className = x.className.replace("show", ""); }, 2500);
+        };
+
+        // Function to display feedback when user is added as owner of the experiment
+        function addOwnerFeedback(userName){
+            var snackbar = $('#snackbar3');
+            snackbar.text(userName + ' added successfully as an owner of the experiment.')
+            var x = document.getElementById("snackbar3");
+            x.className = "show";
+            setTimeout(function(){ x.className = x.className.replace("show", ""); }, 2500);
+        };
 
     });
 </script>

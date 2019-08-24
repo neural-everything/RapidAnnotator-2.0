@@ -4,9 +4,23 @@
 {% block title %} Add Experiment Page {% endblock title %}
 {% block head %}
   {{ super() }}
-  <style type="text/css">
-    .important { color: #336699; }
-  </style>
+    <style type="text/css">
+        .important { color: #336699; }
+    </style>
+    <style type="text/css">
+        select {
+            width: 150px;
+            margin: 5px;
+        }
+        select:focus {
+            min-width: 150px;
+            width: auto;
+        } 
+        .bootstrap-tagsinput {
+            width: 100%;
+        }
+ 
+    </style>
 {% endblock head %}
 
 {% block experiment_body %}
@@ -23,7 +37,7 @@
 
     <div class="pull-right" style="display: inline-block">
         {%- set viewSettings = url_for('add_experiment.viewSettings', experimentId = experiment.id) %}
-        {%- set viewResults = url_for('add_experiment.viewResults', experimentId = experiment.id) %}
+        {%- set viewResults = url_for('add_experiment.viewResults', experimentId = experiment.id, page = '1') %}
 
         {%- if (experiment.category == 'audio' or experiment.category == 'video') -%}
             <a data-toggle="modal" data-target="#displayTimeModalId"
@@ -51,12 +65,13 @@
                 <span class="caret"></span></button>
                 <ul class="dropdown-menu scrollable-dropdown" id="addAnnotatorsMenu" role="menu" aria-labelledby="addAnnotators">
                     {% for user in notAnnotators %}
-                    <li role="presentation"><a role="menuitem" tabindex="-1" href="#"><span>{{user.username}}</span></a></li>
+                        <li role="presentation"><a role="menuitem" tabindex="-1" href="#"><span>{{user.username}}</span></a></li>
                     {% endfor %}
+                    
                 </ul>
             </div>
 
-            <a href="{{ url_for('add_experiment.index', experimentId = experiment.id) }}"
+            <a href="{{ url_for('add_experiment.index', experimentId = experiment.id, page= '1') }}"
                 class="btn btn-success btn-group btn-group-inline btn-space">{{ ('Done') }}
             </a>
 
@@ -76,14 +91,14 @@
 
 <div class="container">
     <div class="row">
-        <div class="col-xs-12">
+        <div class="col-xs-14">
             <div class="col-xs-3">
                 <h3>Annotators</h3>
-                <div class="list-group col-6" id="annotators">
+                <div class="list-group col-8" id="annotators">
                     {% for obj in annotatorDetails %}
                         <a value="{{ obj.annotator.id }}" class="list-group-item annotator"
                             data-start={{ obj.start }} data-end={{ obj.end }}>
-                            <span>{{ obj.annotator.fullname }}</span>
+                            <span>{{ obj.annotator.username }}</span>
                             <span class="deleteAnnotatorButton pull-right glyphicon glyphicon-trash btn-space"
                                 data-toggle="modal" data-target="#deleteAnnotatorModal"></span>
                             <span class="editAnnotatorButton pull-right glyphicon glyphicon-cog btn-space"
@@ -97,7 +112,7 @@
                 <div class="list-group col-6" id="owners">
                     {% for user in owners %}
                         <a class="list-group-item owner" value="{{ user.id }}">
-                            <span>{{ user.fullname }}</span>
+                            <span>{{ user.username }}</span>
                             <span class="deleteOwnerButton pull-right glyphicon glyphicon-trash btn-space"
                                 data-toggle="modal" data-target="#deleteOwnerModal"></span>
                         </a>
@@ -109,13 +124,21 @@
 </div>
 
 
+
 <div class="container">
+    <button class="btn btn-primary dropdown-toggle" type="button" id="dataPartition"
+        data-target="#dataPartitionModal" data-toggle="modal">
+        Data Partition
+    </button>
+
+    &nbsp;&nbsp;
     <button class="btn btn-danger dropdown-toggle pull-right" type="button" id="addAnnotators"
         data-target="#deleteProjectModal" data-toggle="modal">
         Delete Project
         <span class="glyphicon glyphicon-trash"></span>
     </button>
 </div>
+<div id="snackbar3"><strong> Message </strong></div>
 
 <div class="container">
 </div>
@@ -134,12 +157,12 @@
             <form method="POST" id="displayTimeForm" name="displayTimeForm">
 
                 <b>Before Time</b>
-                <input type="number" name="beforeTime" id="beforeTime" class="form-control validate"
+                <input type="number" name="beforeTime" id="beforeTime" step="0.01" class="form-control validate"
                 value="{{experiment.display_time.before_time}}" placeholder="{{experiment.display_time.before_time}}">
                 <span class="help-block"><small>The time relative to the time given in the link to before which the clip will start.</small></span>
 
                 <b>After Time</b>
-                <input type="number" name="afterTime" id="afterTime" class="form-control validate"
+                <input type="number" name="afterTime" id="afterTime" step="0.01" class="form-control validate"
                 value="{{experiment.display_time.after_time}}" placeholder="{{experiment.display_time.after_time}}">
                 <span class="help-block"><small>The time relative to the time given in the link till which the clip will be played.</small></span>
 
@@ -162,7 +185,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
-        <h4 class="modal-title">Delete this Project? Note: once deleted the project can not be recovered by any means.</h4>
+        <h4 class="modal-title"><strong>Want to delete this Project? </strong><br><b>Note: </b>once deleted the project can not be recovered by any means.</h4>
       </div>
         <div class="modal-body">
             <form method="POST" id="deleteProjectForm" name="deleteProjectForm">
@@ -240,7 +263,7 @@
                 <input type="number" name="startNumber" class="form-control validate"
                     placeholder="Starting file number for annotation Example : 56"
                     id="startNumber" min="0" max="{{totalFiles}}">
-                <span class="help-block"><small>The file with which the annotator will start annotation.</small></span>
+                <span class="help-block"><div style="line-height:110%"><small>The file with which the annotator will start annotation.</small></div></span>
 
                 <b>Ending file number for annotation</b>
                 <input type="number" name="endNumber" class="form-control validate"
@@ -261,15 +284,56 @@
   </div>
 </div>
 
+<!-- Data Partition-Modal -->
+<div class="modal fade" id="dataPartitionModal" role="dialog" tabindex="-1"
+    aria-labelledby="dataPartitionModal" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Select the Annotators for equal partitions of data among them </h4>
+      </div>
+        <div class="modal-body">
+            <form name="dataPartitionForm" id="dataPartitionForm">
+                <div style="margin-bottom:20px">
+                    <input type="text" readonly="readonly" class="tagtest" value="" data-role="tagsinput">
+                </div>
+                <div> 
+                    <b>Select the Annotators from the List</b>
+                    <br><br>
+                    <select class="annotatorSelect" name="annotatorSelect">
+                        {% for user in annotatorDetails %}
+                            <option> {{user.annotator.username}} </option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-primary addTag" type="button" style="font-size:12px; padding: 3px 5px;">Add</button>
+                </div>
+                <div>&nbsp;</div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary"> {{ ('Done') }}</button>
+                    <button type="button" class="btn btn-default pull-right" data-dismiss="modal">Close</button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+        </div>
+    </div>
+  </div>
+</div>
 
 <script charset="utf-8" type="text/javascript">
     $(function() {
 
         var selectedAnnotatorButton = '.deleteAnnotatorButton, .editAnnotatorButton';
         var editAnnotatorForm = $('#editAnnotatorForm');
+        var dataPartitionForm = $('#dataPartitionForm');
         var selectedOwnerButton = '.deleteOwnerButton';
         var currentAnnotator = -1;
         var currentOwner = -1;
+
+        $('.addTag').click(function() {
+            $(".tagtest").tagsinput('add', $('.annotatorSelect').val());
+        });
 
         $("body").on("click", selectedOwnerButton, function() {
             currentOwner = $(this).parent().attr('value');
@@ -281,7 +345,7 @@
             e.preventDefault();
             var url = "{{ url_for('add_experiment._deleteExperiment')}}";
             var data = {
-                'experimentId' : {{ experiment.id }},
+                'experimentId' : "{{ experiment.id }}",
             };
 
             $.getJSON(url , data, function(response) {
@@ -299,7 +363,7 @@
             var url = "{{ url_for('add_experiment._deleteOwner')}}";
             var data = {
                 'ownerId' : currentOwner,
-                'experimentId' : {{ experiment.id }},
+                'experimentId' : "{{ experiment.id }}",
             };
             /* (TODO) break into functions */
             $.getJSON(url , data, function(response) {
@@ -342,7 +406,7 @@
             currentAnnotator = $(this).parent().attr('value');
             var startFileNumber = $(this).parent().data('start');
             var endFileNumber = $(this).parent().data('end');
-            endFileNumber = endFileNumber == -1 ? {{totalFiles}} : endFileNumber;
+            endFileNumber = endFileNumber == -1 ? "{{totalFiles}}" : endFileNumber;
             editAnnotatorForm.find('input[name="startNumber"]').val(startFileNumber);
             editAnnotatorForm.find('input[name="endNumber"]').val(endFileNumber);
         });
@@ -363,7 +427,7 @@
             var url = "{{ url_for('add_experiment._editAnnotator')}}";
             var data = {
                 annotatorId :   currentAnnotator,
-                experimentId :  {{ experiment.id }},
+                experimentId :  "{{ experiment.id }}",
                 start :         start,
                 end :           end,
             };
@@ -387,7 +451,7 @@
             var url = "{{ url_for('add_experiment._deleteAnnotator')}}";
             var data = {
                 'annotatorId' : currentAnnotator,
-                'experimentId' : {{ experiment.id }},
+                'experimentId' : "{{ experiment.id }}",
             };
 
             $.getJSON(url , data, function(response) {
@@ -448,7 +512,7 @@
             var data = {
                 'beforeTime' : beforeTime,
                 'afterTime' : afterTime,
-                'experimentId' : {{ experiment.id }},
+                'experimentId' : "{{ experiment.id }}",
             };
 
             $.getJSON(url , data, function(response) {
@@ -468,18 +532,19 @@
             var url = "{{ url_for('add_experiment._addOwner')}}";
             var data = {
                 'userName' : userName,
-                'experimentId' : {{ experiment.id }},
+                'experimentId' : "{{ experiment.id }}",
             };
 
             $.getJSON(url , data, function(response) {
                 if(response.success) {
                     currentSelected.remove();
-                    addOwnerToList(response.ownerId, response.ownerFullname);
+                    addOwnerToList(response.ownerId, response.ownerUsername);
                 }
                 else {
                     /*do something here*/
                 }
             });
+            addOwnerFeedback(userName);
         });
 
         $("body").on("click", selectedAnnotator, function() {
@@ -489,18 +554,19 @@
             var url = "{{ url_for('add_experiment._addAnnotator')}}";
             var data = {
                 'userName' : userName,
-                'experimentId' : {{ experiment.id }},
+                'experimentId' : "{{ experiment.id }}",
             };
 
             $.getJSON(url , data, function(response) {
                 if(response.success) {
                     currentSelected.remove();
-                    addAnnotatorToList(response.annotatorId, response.annotatorFullname);
+                    addAnnotatorToList(response.annotatorId, response.annotatorUsername);
                 }
                 else {
                     /*do something here*/
                 }
             });
+            addAnnotatorFeedback(userName);
         });
 
         function addOwnerToList(id, name) {
@@ -549,7 +615,7 @@
                 "class" :          "list-group-item annotator",
                 "value" :           id,
                 "data-start" :      0,
-                "data-end" :      {{ totalFiles }},
+                "data-end" :      "{{ totalFiles }}",
             };
 
             var aToAdd = $("<a/>", aAttributeDict);
@@ -559,7 +625,44 @@
             aToAdd.appendTo('#annotators');
         }
 
+        dataPartitionForm.on('submit', function(e) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            var tagsinputValue = $(".tagtest").tagsinput('items');
+            var url = "{{ url_for('add_experiment._equalDataParition')}}";
+            var data = {
+                'annotatorsDict' : String(tagsinputValue),
+                'experimentId' : "{{ experiment.id }}",
+            };
+
+            $.getJSON(url , data, function(response) {
+                if(response.success) {
+                    $(".tagtest").tagsinput('removeAll');
+                }
+                else {
+                    /*do something here*/
+                }
+            });
+        });
+
+        // Function to display feedback when user is added as annotator of the experiment
+        function addAnnotatorFeedback(userName){
+            var snackbar = $('#snackbar3');
+            snackbar.text(userName + ' added successfully as an Annotator of the experiment.')
+            var x = document.getElementById("snackbar3");
+            x.className = "show";
+            setTimeout(function(){ x.className = x.className.replace("show", ""); }, 2500);
+        };
+        
+        // Function to display feedback when user is added as owner of the experiment
+        function addOwnerFeedback(userName){
+            var snackbar = $('#snackbar3');
+            snackbar.text(userName + ' added successfully as an owner of the experiment.')
+            var x = document.getElementById("snackbar3");
+            x.className = "show";
+            setTimeout(function(){ x.className = x.className.replace("show", ""); }, 2500);
+        };
+
     });
 </script>
-
 {% endblock experiment_body %}

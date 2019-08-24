@@ -11,7 +11,12 @@
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-
+    <script type = "text/javascript" src = "https://www.gstatic.com/charts/loader.js"> </script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.css" crossorigin="anonymous">
+    <!-- <script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script> -->
+    
     <!-- OFFLINE -->
     <!-- <link rel="stylesheet" href="{{ url_for('static', filename='offlineFiles/bootstrap.min.css') }}">
     <script type="text/javascript" src="{{ url_for('static', filename='offlineFiles/jquery.min.js') }}"></script>
@@ -49,7 +54,20 @@
     <script type="text/javascript" src="https://www.plupload.com/plupload/js/plupload.full.min.js" charset="UTF-8"></script>
     <script type="text/javascript" src="https://www.plupload.com/plupload/js/jquery.ui.plupload/jquery.ui.plupload.min.js" charset="UTF-8"></script>
     <script type="text/javascript" src="https://www.plupload.com/js/themeswitcher.js" charset="UTF-8"></script> -->
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.min.js" crossorigin="anonymous"></script>
+    
+    <style>
+    .notification .badge {
+        position: absolute;
+        top: 8px;
+        right: 7px;
+        padding: 1.5px 4px;
+        border-radius: 50%;
+        background-color: red;
+        color: white;
+        font-size: 0.80em
+    }
+    </style>
 
     {% block head %}
     <title>{% block title %}{% endblock %}</title>
@@ -70,7 +88,7 @@
         <img src="{{url_for('static', filename = 'img/logo.png')}}" alt="Red Hen Logo">
     </a>
     <ul class="nav navbar-nav navbar-brand">
-        <li><a href="{{ url_for('home.index') }}">Rapid Annotator</a></li>
+        <li><a href="{{ url_for('home.index') }}">&nbsp;&nbsp;Rapid Annotator</a></li>
     </ul>
   </div>
 
@@ -93,13 +111,34 @@
                       <a href="{{ url_for('admin.index') }}">{{ ('Admin Panel') }}</a>
                   </li>
               {%- endif -%}
+                <li>
+                    <a class="notification" href="{{ url_for('notification.index') }}"><i class="fa fa-bell" style="font-size:16px"></i>
+                        <!-- <span>{{ ('Notifications') }}</span> -->
+                        <span class="badge hidden-element">3</span>
+                    </a>
+                </li>
           </ul>
       {% endif %}
       <ul class="nav navbar-nav navbar-right">
           {% if current_user.is_authenticated %}
-          <li data-toggle="modal" data-target="#logoutModalId">
-              <a href="#">{{ ('Logout') }}</a>
-          </li>
+            <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#" style="width:100%; margin-left:-42%">  <span class="glyphicon
+                glyphicon-user"></span> Account <span class="caret"></span></a>
+                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    <li><a class="dropdown-item" href="{{url_for('home.updateInfo')}}"> 
+                        <span class="glyphicon glyphicon-cog"></span> Settings
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{{url_for('home.checkProgress')}}" >
+                            <span class="glyphicon glyphicon-check"></span> Check Progress 
+                        </a>
+                    </li>
+                    <li><div class="dropdown-divider"></div></li>
+                    <li data-toggle="modal" data-target="#logoutModalId">
+                        <a href="#"><span class="glyphicon glyphicon-log-out"></span> {{ ('Logout') }}</a>
+                    </li>
+                </ul>
+            </li>
           {% else %}
               <li data-toggle="modal" data-target="#registrationModalId">
                   <a href="#"><span class="glyphicon glyphicon-user"></span>Sign Up</a>
@@ -128,7 +167,7 @@
         <div class="modal-body">
             <form method="POST" name="logout_form" action = "{{ url_for('home.logout') }}">
                 <div class="form-actions">
-                    <button type="submit" name="submit" class="btn btn-primary"><i class="fa fa-check"></i> {{ ('Log Out') }}</button>
+                    <button type="submit" name="submit" class="btn btn-primary">Yes</button>
                     <button type="button" class="btn btn-default pull-right" data-dismiss="modal">Close</button>
                 </div>
             </form>
@@ -169,7 +208,7 @@
 </div>
 
 
-    {% with messages = get_flashed_messages() %}
+    <!-- {% with messages = get_flashed_messages() %}
     {% if messages %}
         <div class ="alert alert-dismissible fixed alert-success">
             {% for message in messages %}
@@ -181,22 +220,22 @@
             {% endfor %}
         </div>
     {% endif %}
-    {% endwith %}
+    {% endwith %} -->
 
 
-    <!-- <div class ="container-fluid">
+    <div class ="container-fluid msg1">
         {%  with messages = get_flashed_messages() %}
         {% if messages %}
             {% for message in messages %}
-            <div class ="alert alert-warning alert-dismissible fade in" role="alert">
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span></button>
-                <strong>{{ message }}</strong>
-            </div>
+                <div class ="alert alert-success alert-dismissible fade in" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span></button>
+                    <strong>{{ message }}</strong>
+                </div>
             {% endfor %}
         {% endif %}
         {% endwith %}
-    </div> -->
+    </div>
 
 <!--
     <div class ="container-fluid">
@@ -232,6 +271,9 @@
                                 $(".askRightsButton[value='admin']").removeClass('hidden-element');
                             }
                         }
+                        else{
+                            $(".askRightsButton[value='admin']").removeClass('hidden-element');
+                        }
                     });
                 }
 
@@ -242,6 +284,16 @@
                     askFor = $(this).attr('value');
                 })
                 var rightsForm = $('#rightsForm');
+
+                function addRightNotification(data){
+                    var url = "{{ url_for('notification._rightNotification')}}";
+                    $.getJSON(url , data, function(response) {
+                        if(response.success){
+                            $(".askRightsButton[value=" + askFor + "]").addClass('hidden-element');
+                            alert('request has been sent and would be soon reviewed by admins');
+                        }
+                    });
+                };
 
                 rightsForm.on('submit', function(e) {
                     e.stopImmediatePropagation();
@@ -258,23 +310,40 @@
                         if(response.success) {
                             $('#rightsModalId').modal('hide');
                             $('#rightsForm').find('input').val("");
-                            $(".askRightsButton[value=" + askFor + "]").addClass('hidden-element');
-                            alert('request has been sent and would be soon reviewed by admins');
-                            // $(".askRightsButton[value=" + askFor + "]").hide();
+                            addRightNotification(data);
                         }
                     });
 
                 })
 
+                $( "div.msg1" ).fadeIn(600).delay(3000).fadeOut(700);
+
             });
+
+            $(document).ready(function() {
+                // auto refresh page after 4 second
+                setInterval('refreshNotification()', 4000);
+            });
+ 
+            function refreshNotification() {
+                var data = {};  
+                $.ajax({
+                    url: "{{ url_for('notification.getNumNotif')}}",
+                    type: "POST",
+                    data : data,
+                    async: true,
+                    success: function(response) {
+                        if(response.numNotif > 0){
+                            $('.badge').text(response.numNotif);
+                            $('.badge').removeClass('hidden-element');
+                        }
+                        else{
+                            $('.badge').addClass('hidden-element');
+                        }
+                    }
+                });
+            }
         </script>
-
-
     </div>
-    <!-- <div class="container fixed-footer">
-        <a class="footer-copyright footer-items" href="#"><span class="glyphicon glyphicon-copyright-mark"></span> Red Hen Labs</a>
-        <a class="footer-items" href="#"> About</a>
-        <a class="footer-items" href="#"> Contact Us</a>
-    </div> -->
 </body>
 </html>

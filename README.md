@@ -1,16 +1,13 @@
-# rapidannotator
+# Rapidannotator - 2.0
 
-_This is my [Google Summer of Code 2018](https://summerofcode.withgoogle.com/organizations/4720430959558656/#6346511479209984) Project with [Red Hen Lab](http://www.redhenlab.org/)._
+## About
+Red Hen’s Rapid Annotator provides a platform to users to annotate large chunks of data in a short span of time and with least possible efforts. It provides the features of annotating images/videos/audios/text during collaborative situation also. With Red Hen Lab’s we will try to enable users to visualize the progress of each annotator separately and annotators can notify experimenter when the annotation is finished to make the annotation work more efficient.
 
-The entire codebase was a part of Google Summer of Code project.
+## Tools and Languages
+* Flask (Python Framework)
+* Javascript (+ Html5 / css3 / bootstrap) 
 
-With Red Hen Lab’s Rapid Annotator we try to enable researchers worldwide to annotate large chunks of data in a very short period of time with least effort possible and try to get started with minimal training.
-
-Rapid Annotator is built using _Flask (Python Framework) and Javascript (+ Html5 / css3 / bootstrap)_. 
-
-I have made a GSoC blog, please refer to it for my all GSoC blogposts about the progress made so far.
-Blog link: https://guptavaibhav18197.github.io/GSoC-Blog/
-
-For installation guide refer [here](https://github.com/RedHenLab/RapidAnnotator-2.0/blob/master/docs/installation_guide.md).
-
-For user guide refer [here](https://github.com/guptavaibhav18197/rapidannotator/blob/master/docs/user_guide.md).
+## Installation and User Guide
+Please refer the following links to install the Rapid Annotator-2.0 .
+* For installation guide refer [here](https://github.com/RedHenLab/RapidAnnotator-2.0/blob/master/docs/installation_guide.md).
+* For user guide refer [here](https://github.com/RedHenLab/RapidAnnotator-2.0/blob/master/docs/user_guide.md).

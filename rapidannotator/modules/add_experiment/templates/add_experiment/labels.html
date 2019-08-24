@@ -24,19 +24,30 @@
     <div style="display: inline-block">
         <h3 style="display: inline"><b>{{ experiment.name }}</b></h3>
     </div>
-
+    <hr class="horizontal-line">
     <div class="pull-right" style="display: inline-block">
-
+        <!-- <button type="button" data-toggle="modal" data-target="#addGlobalNameModal"  -->
+            <!-- class="togglePrivate btn btn-warning btn-group btn-group-inline btn-space" value={{experiment.is_global}}> -->
+            <button type="button"
+                class="togglePrivate1 btn btn-warning btn-group btn-group-inline btn-space" value={{experiment.is_global}}>
+                {{ ('Make Private') }}
+            </button>
+            <button type="button" data-toggle="modal" data-target="#addGlobalNameModal" 
+                class="togglePrivate2 btn btn-warning btn-group btn-group-inline btn-space" value={{experiment.is_global}}>
+                {{ ('Make Global') }}
+            </button>
+        <!-- </button> -->
+        <a href="{{ url_for('add_experiment._importAnnotationtLevel', experimentId = experiment.id) }}" 
+            class="btn btn-primary btn-group btn-group-inline btn-space">{{ ('Import Existing Levels') }}
+        </a>
         <button type="button" data-toggle="modal" data-target="#addAnnotationLevelModal"
             class="btn btn-primary btn-group btn-group-inline btn-space">{{ ('Add Annotation Level') }}</button>
-
-        <a href="{{ url_for('add_experiment.index', experimentId = experiment.id) }}" class="btn btn-success btn-group btn-group-inline btn-space">{{ ('Done') }}</a>
-
-        </div>
-
-        <hr class="horizontal-line">
-
+        <a href="{{ url_for('add_experiment.index', experimentId = experiment.id, page='1') }}" 
+            class="btn btn-success btn-group btn-group-inline btn-space">{{ ('Done') }}
+        </a>
+    </div>
 </div>
+<div><br></div>
 
 
 <div class="container">
@@ -45,43 +56,53 @@
                 data-level={{annotation_level.level_number}}>
                 <div class="col-xs-12">
                     <div class="annotationDescriptionGrp">
-                        <span class="col-xs-2 h5 wrapWord annotationName"><b>{{ annotation_level.name }}</b></span>
+                        <span class="col-xs-4 h5 wrapWord annotationName"> {{ annotation_level.name }}</span>
                         <span class="col-xs-7 h5 annotationDescription">{{ annotation_level.description }}</span>
-                        <span class="col-xs-2 container-fluid addMoreButtonClass">
-                            {%- if annotation_level.labels -%}
-                                <button type="button" data-toggle="modal" data-target="#addLabelModal"
-                                    class="addLabelButton btn btn-group btn-group-inline btn-space btn-sm">
-                                Add More Labels</button>
-                            {%- endif -%}
-                        </span>
                         <span class="col-xs-1 pull-right glyphicon glyphicon-pencil edit-button-margin"
-                            data-toggle="modal" data-target="#editAnnotationLevelModal"></span>
+                            data-toggle="modal" data-target="#editAnnotationLevelModal" title="Edit/Delete Annotation level"></span>
                     </div>
                 </div>
 
                 <div class="container-fluid addFirstLabel">
                     {%- if not annotation_level.labels -%}
+                        <br><br>
                         <button type="button" data-toggle="modal" data-target="#addLabelModal"
                             class="addLabelButton btn btn-group btn-group-inline btn-space btn-sm">
                         Add Labels</button>
+                        <br><br>
                     {%- endif -%}
                 </div>
 
                 <div class="col-xs-12 container-fluid labelCollection">
+                    <span class="col-xs-5 h5 labelName"><b>Label Name</b></span>
+                    <span class="col-xs-3 h5 pull-left labelKey"><b>Key binding</b></span>
+                    <span class="col-xs-2"><b>Delete Label</b></span>
+                    <span class="col-xs-2"><b>Edit Label</b></span>
+                    <hr style="width:98%"> 
                     {% for label in annotation_level.labels %}
                     <span class="labels" value={{label.id}}>
-                        <span class="col-xs-6 h5 labelName">{{ label.name }}</span>
-                        <span class="col-xs-2 h5 pull-left labelKey">{%- if label.key_binding -%} {{ label.key_binding }} {%- else -%} {{('default')}} {%- endif -%}</span>
+                        <span class="col-xs-5 h5 labelName">{{ label.name }}</span>
+                        <span class="col-xs-3 h5 pull-left labelKey">{%- if label.key_binding -%} {{ label.key_binding }} {%- else -%} {{('default')}} {%- endif -%}</span>
                         <span class="col-xs-2 glyphicon glyphicon-trash edit-button-margin"
-                            data-toggle="modal" data-target="#deleteLabelModal"></span>
+                            data-toggle="modal" data-target="#deleteLabelModal" title="Delete label"></span>
                         <span class="col-xs-2 glyphicon glyphicon-pencil edit-button-margin"
-                            data-toggle="modal" data-target="#editLabelModal"></span>
+                            data-toggle="modal" data-target="#editLabelModal" title="Edit label"></span>
                     </span>
                     {% endfor %}
                 </div>
+                <div>&nbsp;</div>
+                <div class="bottomLabelGrp">
+                    <span class="col-xs-5 container-fluid addMoreButtonClass" style="margin-left:45%">
+                        {%- if annotation_level.labels -%}
+                            <button type="button" data-toggle="modal" data-target="#addLabelModal"
+                                class="addLabelButton btn btn-group btn-group-inline btn-space btn-sm">
+                            Add More Labels</button>
+                        {%- endif -%}
+                    </span>
+                </div>
 
             </div>
-            <hr value={{annotation_level.id}}>
+            <hr class="horizontal-line" value={{annotation_level.id}}>
     {% endfor %}
 </div>
 
@@ -117,6 +138,13 @@
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
         <h4 class="modal-title">Edit Label</h4>
+        {%- if annotationCount > 0 -%}
+            <div style="line-height:70%">&nbsp;</div>
+            <div class="alert alert-danger alert-dismissible labelWarning" 
+                style="width: 100%; margin-bottom: 1px; height: 45px; line-height:30px; padding:5px 15px;">
+                <div style="line-height:130%; font-size:95%;"><strong> Warning! </strong>Annotations are in progress. Editing labels may effect it.</div>
+            </div>
+        {%- endif -%}
       </div>
         <div class="modal-body">
             <form id="editLabelForm" name="editLabelForm">
@@ -124,7 +152,7 @@
                 <b>Label Name</b>
                 <input type="text" name="labelName" maxlength="32" minlength="1"
                     class="form-control validate" placeholder="Label Name">
-                <span class="help-block"><small>Label Name (should be precise and unambiguous). Max length : 32</small></span>
+                <span class="help-block"><small><div style="line-height:130%">Label Name (should be precise & unambiguous). Max length : 32</div></small></span>
 
                 <b>Key Binding</b>
                 <input type="text" name="labelKey"
@@ -152,6 +180,13 @@
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
         <h4 class="modal-title">Edit / Delete Annotation Level</h4>
+        {%- if annotationCount > 0 -%}
+            <div style="line-height:70%">&nbsp;</div>
+            <div class="alert alert-danger alert-dismissible labelWarning" 
+                style="width: 100%; margin-bottom: 1px; height: 55px; line-height:30px; padding:5px 15px;">
+                <div style="line-height:130%; font-size:92%;"><strong> Warning! </strong>Annotations are in progress. Editing/Deleting Annotation Level may effect it.</div>
+            </div>
+        {%- endif -%}
       </div>
         <div class="modal-body">
             <form id="editAnnotationLevelForm" name="editAnnotationLevelForm">
@@ -159,20 +194,20 @@
                 <b>Annotation Level Name</b>
                 <input type="text" name="annotationName" maxlength="32" minlength="1"
                     class="form-control validate" placeholder="Annotation Level Name">
-                <span class="help-block"><small>Name of the annotation level: Example Gender, Age. Can't exceed 32 characters
-                </small></span>
+                <span class="help-block"><small><div style="line-height:135%">Name of the annotation level: Example Gender, Age. Can't exceed 32 characters
+                </div></small></span>
 
                 <b>Annotation level description</b>
                 <input type="text" name="annotationDescription"
                     class="form-control validate" placeholder="Annotation level description" maxlength="640">
-                <span class="help-block"><small>A short description : guidilines for the annotator. Can't exceed 640 characters
-                </small></span>
+                <span class="help-block"><small><div style="line-height:135%">A short description : guidilines for the annotator. Can't exceed 640 characters
+                </div></small></span>
 
                 <b>Annotation level Number</b>
                 <input type="number" name="annotationLevel"
                     class="form-control validate" placeholder="Annotation level Number">
-                <span class="help-block"><small>It decides the order in which an annotator is asked to annotate the data-items.
-                </small></span>
+                <span class="help-block"><small><div style="line-height:135%">It decides the order in which an annotator is asked to annotate the data-items.
+                </div></small></span>
 
                 <div class="form-actions">
                     <button type="submit" name="submit" value="" class="btn btn-primary"> {{ ('Save') }}</button>
@@ -196,6 +231,13 @@
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
         <h4 class="modal-title">Are you sure you want to delete it?</h4>
+        {%- if annotationCount > 0 -%}
+            <div style="line-height:70%">&nbsp;</div>
+            <div class="alert alert-danger alert-dismissible labelWarning" 
+                style="width: 100%; margin-bottom: 1px; height: 45px; line-height:30px; padding:5px 15px;">
+                <div style="line-height:130%; font-size:95%;"><strong> Warning! </strong>Annotations are in progress. Deleting labels may effect it.</div>
+            </div>
+        {%- endif -%}
       </div>
         <div class="modal-body">
             <form method="POST" id="deleteLabelForm" name="deleteLabelForm">
@@ -220,6 +262,13 @@
       <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal">&times;</button>
         <h4 class="modal-title">Enter Label Details</h4>
+        {%- if annotationCount > 0 -%}
+            <div style="line-height:70%">&nbsp;</div>
+            <div class="alert alert-danger alert-dismissible labelWarning" 
+                style="width: 100%; margin-bottom: 1px; height: 45px; line-height:30px; padding:5px 15px;">
+                <div style="line-height:130%; font-size:95%;"><strong> Warning! </strong>Annotations are in progress. Adding more labels may effect it.</div>
+            </div>
+        {%- endif -%}
       </div>
         <div class="modal-body">
             <form method="POST" id="addLabelForm" name="addLabelForm">
@@ -227,7 +276,7 @@
                 <b>Label Name</b>
                 <input type="text" name="labelName" id="labelName" maxlength="32" minlength="1"
                     class="form-control validate" placeholder="Label Name" required>
-                <span class="help-block"><small>Label Name (should be precise and unambiguous). Max length : 32</small></span>
+                <span class="help-block"><div style="line-height:110%"><small>Label Name (should be precise & unambiguous). Max length : 32</div></small></span>
 
                 <b>Key Binding</b>
                 <input type="text" name="labelKey" id="labelKey"
@@ -253,7 +302,7 @@
     aria-labelledby="addAnnotationLevelModal" aria-hidden="true">
   <div class="modal-dialog modal-sm">
     <!-- Modal content-->
-    <div class="modal-content">
+    <div class="modal-content" style="width: 100%">
       <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal">&times;</button>
         <h4 class="modal-title">Enter Level Details</h4>
@@ -264,12 +313,43 @@
                     {% if field.widget.input_type == 'hidden' %}
                     {{ field() }}
                     {% else %}
-                    {{ render_field(field, autofocus=True, placeholder=field.label.text) }}
+                    <div style="line-height:110%">{{ render_field(field, autofocus=True, placeholder=field.label.text) }}</div>
                     {% endif %}
                 {% endfor %}
                 <div class="form-actions">
                     <button type="submit" name="submit" value="" class="btn btn-primary"> {{ ('Submit') }}</button>
                     <button type="button" id="submitLater" class="btn btn-default pull-right" data-dismiss="modal">{{ ('Submit later') }}</button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+        </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Adding-Global-Annotation-Level-Name-Modal -->
+<div class="modal fade" id="addGlobalNameModal" role="dialog" tabindex="-1"
+    aria-labelledby="addGlobalNameModal" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <!-- Modal content-->
+    <div class="modal-content" style="width: 100%">
+      <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Enter the Global Name for all the Annotation Levels</h4>
+      </div>
+        <div class="modal-body">
+            <form method="POST" id="addGlobalNameForm" name="addGlobalNamelForm">
+
+                <b>Global Annotation Levels Name</b>
+                <input type="text" name="globalName" id="globalName" maxlength="42" minlength="1"
+                    class="form-control validate" placeholder="Global Name" required>
+                <span class="help-block"><div style="line-height:110%"><small>Global Name (should be precise & unambiguous)</div></small></span>
+
+                <div class="form-actions">
+                    <button type="submit" name="submit" value="" class="btn btn-primary"> {{ ('Submit') }}</button>
+                    <button type="button" id="" class="btn btn-default pull-right" data-dismiss="modal">{{ ('Cancel') }}</button>
                 </div>
             </form>
         </div>
@@ -297,10 +377,67 @@
         var deleteLabelButton = '.labels .glyphicon-trash';
         var editLabelButton = '.labels .glyphicon-pencil';
         var editLabelForm = $('#editLabelForm');
+        var addGlobalNameForm = $('#addGlobalNameForm')
 
         var selectedAnnotationId = -1;
         var selectedLabelId = -1;
         var addAnotherLevel = false;
+
+        var privateGlobalButton1 = $('.togglePrivate1');
+        var privateGlobalButton2 = $('.togglePrivate2');
+
+        if({{is_global}}){
+            $('.togglePrivate1').removeClass('hidden-element');
+            $('.togglePrivate2').addClass('hidden-element');
+        }
+        else{
+            $('.togglePrivate2').removeClass('hidden-element');
+            $('.togglePrivate1').addClass('hidden-element');
+        }
+
+        privateGlobalButton1.on('click', function() {
+            var url = "{{ url_for('add_experiment._togglePrivate')}}";
+            var data = {'experimentId': {{experiment.id}}};
+
+            $.getJSON(url, data, function(response) {
+                $('.togglePrivate2').removeClass('hidden-element');
+                $('.togglePrivate1').addClass('hidden-element');
+            });
+
+        });
+
+        privateGlobalButton2.on('click', function() {
+            var url = "{{ url_for('add_experiment._togglePrivate')}}";
+            var data = {'experimentId': {{experiment.id}}};
+
+            $.getJSON(url, data, function(response) {
+                $('.togglePrivate1').removeClass('hidden-element');
+                $('.togglePrivate2').addClass('hidden-element');
+            });
+
+        });
+
+        addGlobalNameForm.on('submit', function(e) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            var globalName = addGlobalNameForm.find('input[name="globalName"]').val();
+            var data = {
+                "globalName" : globalName,
+                'experimentId': {{experiment.id}},
+            };
+
+            var url = "{{ url_for('add_experiment._addGlobalName')}}";
+
+            $.getJSON(url , data, function(response) {
+                if(response.success) {
+                    $('input[name="globalName"]').val(globalName);
+                    $('#addGlobalNameModal').modal('hide');
+                }
+                else {
+                }
+            });
+
+        });
 
 
         /* (TODO) change request method types */
@@ -318,6 +455,7 @@
         });
 
         $("body").on("click", editLabelButton, function() {
+            $('.labelWarning').removeClass('hidden-element');
             selectedLabel = $(this).closest('.labels');
             selectedLabelId = selectedLabel.attr('value');
 
@@ -543,24 +681,26 @@
 
             var nameSpan = $("<span/>", {
                 "text":     labelTuple['labelName'],
-                "class":    "col-xs-6 h5 labelName",
+                "class":    "col-xs-5 h5 labelName",
             });
 
             var keySpan = $("<span/>", {
                 "text":     labelTuple['labelKey'] ? labelTuple['labelKey'] : "default",
-                "class":   "col-xs-2 h5 pull-left labelKey",
+                "class":   "col-xs-3 h5 pull-left labelKey",
             });
 
             var trashIconSpan = $("<span/>", {
                 "class":        "col-xs-2 glyphicon glyphicon-trash edit-button-margin",
                 "data-toggle":  "modal",
                 "data-target":  "#deleteLabelModal",
+                "title" : "Delete label",
             });
 
             var editIconSpan = $("<span/>", {
                 "class":   "col-xs-2 glyphicon glyphicon-pencil edit-button-margin",
                 "data-toggle":  "modal",
                 "data-target":  "#editLabelModal",
+                "title" : "Edit Label",
             });
 
             parentSpan.append(nameSpan, keySpan, trashIconSpan, editIconSpan);
@@ -590,8 +730,8 @@
                 };
 
                 var buttonToAdd = $("<button/>", buttonAttributeDict);
-                var descriptionClass = "." + annotation_levelClass + " .annotationDescriptionGrp .addMoreButtonClass"
-                buttonToAdd.appendTo(descriptionClass);
+                var bottomLabelClass = "." + annotation_levelClass + " .bottomLabelGrp .addMoreButtonClass"
+                buttonToAdd.appendTo(bottomLabelClass);
 
             }
 

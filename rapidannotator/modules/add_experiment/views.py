@@ -12,10 +12,10 @@ from rapidannotator import bcrypt
 
 from flask_login import current_user, login_required
 from flask_login import login_user, logout_user, current_user
-from .api import isOwner
+from .api import isPerimitted, isPerimitted1
 
 from sqlalchemy import and_
-import os
+import os, csv, re
 
 import xlwt, xlrd
 
@@ -29,11 +29,12 @@ def before_request():
         return "You are not an experimenter, hence allowed to access this page."
 
 
-@blueprint.route('/a/<int:experimentId>')
-@isOwner
-def index(experimentId):
+@blueprint.route('/a/<int:experimentId>/<int:page>')
+@isPerimitted
+def index(experimentId, page):
     users = User.query.all()
     experiment = Experiment.query.filter_by(id=experimentId).first()
+    expFiles = File.query.filter_by(experiment_id=experiment.id).paginate(page, 10, error_out=False)
     owners = experiment.owners
     annotators = experiment.annotators
     '''
@@ -52,10 +53,11 @@ def index(experimentId):
         experiment = experiment,
         notOwners = notOwners,
         notAnnotators = notAnnotators,
+        expFiles = expFiles,
     )
 
 @blueprint.route('/_addDisplayTimeDetails', methods=['GET','POST'])
-def _addDisplayTimeDetails():
+def _addDisplayTimeDetails():   
 
     beforeTime = request.args.get('beforeTime', None)
     afterTime = request.args.get('afterTime', None)
@@ -86,7 +88,7 @@ def _addOwner():
     response = {
         'success' : True,
         'ownerId' : user.id,
-        'ownerFullname' : user.fullname,
+        'ownerUsername' : user.username,
     }
 
     return jsonify(response)
@@ -108,24 +110,31 @@ def _addAnnotator():
     response = {
         'success' : True,
         'annotatorId' : user.id,
-        'annotatorFullname' : user.fullname,
+        'annotatorUsername' : user.username,
     }
 
     return jsonify(response)
 
 
 @blueprint.route('/labels/<int:experimentId>')
-@isOwner
+@isPerimitted1
 def editLabels(experimentId):
 
     experiment = Experiment.query.filter_by(id=experimentId).first()
     annotation_levels = experiment.annotation_levels
     annotationLevelForm = AnnotationLevelForm(experimentId = experimentId)
-
+    annotationInfo = AnnotatorAssociation.query.filter_by(experiment_id=experimentId, user_id=current_user.id)
+    if annotationInfo.count() > 0:
+        annotationInfo = AnnotatorAssociation.query.filter_by(experiment_id=experimentId, user_id=current_user.id).first()
+        annotationCount = annotationInfo.current
+    else:
+        annotationCount = 0
     return render_template('add_experiment/labels.html',
         experiment = experiment,
         annotation_levels = annotation_levels,
         annotationLevelForm = annotationLevelForm,
+        annotationCount = annotationCount,
+        is_global = (experiment.is_global)*1,
     )
 
 @blueprint.route('/_addAnnotationLevel', methods=['POST'])
@@ -176,6 +185,12 @@ def _addLabels():
     annotationId = request.args.get('annotationId', None)
     labelName = request.args.get('labelName', None)
     labelKey = request.args.get('labelKey', None)
+
+    if labelKey == ' ':
+        response = {
+            'error' : 'Invalid Key',
+        }
+        return jsonify(response)
 
     annotationLevel = AnnotationLevel.query.filter_by(id=annotationId).first()
     annotationLabels = Label.query.filter_by(annotation_id=annotationId).all()
@@ -263,6 +278,99 @@ def _editLabel():
 
     return jsonify(response)
 
+@blueprint.route('/_togglePrivate', methods=['POST','GET'])
+def _togglePrivate():
+
+    experimentId = request.args.get('experimentId', None)
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    
+    experiment.is_global = not experiment.is_global
+    db.session.commit()
+
+    response = {}
+    response['success'] = True
+
+    return jsonify(response)
+
+@blueprint.route('/_addGlobalName', methods=['POST', 'GET'])
+def _addGlobalName():
+    
+    globalName = request.args.get('globalName', None)
+    experimentId = request.args.get('experimentId', None)
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    experiment.globalName = globalName
+    db.session.commit()
+
+    response = {}
+    response['success'] = True
+
+    return jsonify(response)
+
+@blueprint.route('/_importAnnotationtLevel/<int:experimentId>')
+@isPerimitted1
+def _importAnnotationtLevel(experimentId):
+
+    import_experiment = Experiment.query.filter_by(id=experimentId).first()
+
+    global_annotation_level = []
+    owners = []
+    import_id = []
+    global_names = []
+    experiment_disp = []
+    myExperiments = Experiment.query.all()
+
+    for experiment in myExperiments:
+        if experiment.is_global:
+            annotation_levels = experiment.annotation_levels
+            global_annotation_level.append(annotation_levels)
+            owners.append(experiment.owners)
+            experiment_disp.append(experiment)
+            import_id.append(experiment.id)
+            global_names.append(experiment.globalName)
+
+    return render_template('add_experiment/import.html',
+        global_annotation_level = global_annotation_level,
+        import_experiment = import_experiment,
+        owners = owners,
+        import_id = import_id,
+        global_names = global_names,
+        experiment_disp = experiment_disp,
+    )
+
+@blueprint.route('/_addImportedLevels', methods=['POST','GET'])
+def _addImportedLevels():
+    
+    exportExperimentId = request.args.get('exportExperimentId', None)
+    importExperimentId = request.args.get('importExperimentId', None)
+    experiment = Experiment.query.filter_by(id=importExperimentId).first()
+
+    annotation_levels = AnnotationLevel.query.filter_by(experiment_id=exportExperimentId).all()
+    msg_already_imported = 1
+
+    for level in annotation_levels:
+        labels = Label.query.filter_by(annotation_id=level.id).all()
+        cnt = AnnotationLevel.query.filter_by(experiment_id=importExperimentId, level_number=level.level_number).count()
+        if cnt > 0:
+            continue
+        new_annotation_level = AnnotationLevel(experiment_id=importExperimentId, name=level.name, \
+            description=level.description, level_number=level.level_number)
+        experiment.annotation_levels.append(new_annotation_level)
+        db.session.commit()
+
+        new_annotation_level_id = AnnotationLevel.query.order_by(AnnotationLevel.id.desc()).first().id
+        
+        for label in labels:
+            new_label = Label(annotation_id=new_annotation_level_id, name=label.name, key_binding=label.key_binding)
+            new_annotation_level.labels.append(new_label)
+            db.session.commit()
+        
+        msg_already_imported = 0
+
+    response = {}
+    response['success'] = True
+    response['msg_already_imported'] = msg_already_imported
+
+    return jsonify(response)
 
 @blueprint.route('/_uploadFiles', methods=['POST','GET'])
 def _uploadFiles():
@@ -281,8 +389,15 @@ def _uploadFiles():
         if flaskFile:
             experimentId = request.form.get('experimentId', None)
             experiment = Experiment.query.filter_by(id=experimentId).first()
+            if experiment.is_done:
+                experiment.is_done = not experiment.is_done
+                experiment.status = 'In Progress'
+                db.session.commit()
+
             if experiment.uploadType == 'viaSpreadsheet':
                 addFilesViaSpreadsheet(experimentId, flaskFile)
+            elif experiment.uploadType == 'fromConcordance':
+                addFilesFromConcordance(experimentId, flaskFile)
             else:
                 filename = secure_filename(request.form.get('fileName', None))
                 newFile = File(name=filename)
@@ -349,19 +464,54 @@ def addFilesViaSpreadsheet(experimentId, spreadsheet):
     db.session.commit()
     os.remove(filePath)
 
+def addFilesFromConcordance(experimentId, concordance):
+    experiment = Experiment.query.filter_by(id=experimentId).first()
 
-'''
-    # print number of sheets
-    book.nsheets
+    from rapidannotator import app
+    filename = 'temp_' + current_user.username + '.txt'
+    filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    concordance.save(filePath)
+    experiment = Experiment.query.filter_by(id=experimentId).first()
 
-    # print sheet names
-    book.sheet_names()
-    # read a row slice
-    print first_sheet.row_slice(rowx=0,
-                                start_colx=0,
-                                end_colx=2)
-'''
-
+    with open(filePath, encoding='utf-8') as tsvfile:
+        reader = csv.DictReader(tsvfile, dialect='excel-tab', quoting=csv.QUOTE_NONE)
+        if "Structure ``text_file''" in reader.fieldnames:
+            readnamefromattributetext_file = True  # NewScape style
+        else:
+            readnamefromattributetext_file = False # YouTube style
+        for row in reader:
+            caption = row["Context before"] + " <<<" + row["Query item"] + ">>> " + row["Context after"]
+            if experiment.category == "video":
+                content = row["Video Snippet"]
+            elif experiment.category == "audio":
+                content = row["Audio Snippet"]
+            elif experiment.category == "image":
+                content = row["Screenshot"]
+            else:
+                content = caption
+            if readnamefromattributetext_file:
+                name_temp = (row["Structure ``text_file''"]).replace(".txt", "")
+                name_match = re.search("([0-9]{4}-[0-9]{2}-[0-9]{2}_.*)$", name_temp)
+                name = name_match.group(1)
+            else:
+                name = row["Text ID"]
+            # Add a timestamp to the name:
+            if experiment.category == "image":
+                imageresults = re.search("start=(.*)$", row["Screenshot"])
+                name = name + "__" + imageresults.group(1)
+            else:
+                timeresults = re.search("start=(.*)&end=(.*)$", row["Video Snippet"])
+                name = name + "__" + timeresults.group(1) + "-" + timeresults.group(2)
+            
+            
+            newFile = File(name=name[:1024],
+                    content=content[:32000],
+                    caption=caption[:320],
+                    experiment_id=experimentId,
+            )
+            experiment.files.append(newFile)
+    db.session.commit()
+    os.remove(filePath)
 
 @blueprint.route('/_deleteFile', methods=['POST','GET'])
 def _deleteFile():
@@ -444,7 +594,7 @@ def _updateFileCaption():
     return jsonify(response)
 
 @blueprint.route('/viewSettings/<int:experimentId>')
-@isOwner
+@isPerimitted1
 def viewSettings(experimentId):
 
     users = User.query.all()
@@ -509,6 +659,35 @@ def _editAnnotator():
 
     return jsonify(response)
 
+@blueprint.route('/_equalDataParition', methods=['POST','GET'])
+def _equalDataParition():
+
+    annotators = request.args.get('annotatorsDict', None)
+    annotators = annotators.split(',')
+    experimentId = request.args.get('experimentId', None)
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    numAnnotators = len(annotators)
+    numFiles = experiment.files.count()
+
+    start, step = 0,0
+
+    for annotator in annotators:
+        annotatorId = User.query.filter_by(username=annotator).first().id
+        annotatorDetails = AnnotatorAssociation.query.filter_by(experiment_id=experimentId,\
+            user_id=annotatorId).first()
+        step = numFiles // numAnnotators
+        annotatorDetails.start = start
+        annotatorDetails.end = start + step
+        db.session.commit()
+        start = start + step
+        numFiles = numFiles - step
+        numAnnotators = numAnnotators - 1
+   
+    response = {}
+    response['success'] = True
+
+    return jsonify(response)
+
 @blueprint.route('/_deleteOwner', methods=['POST','GET'])
 def _deleteOwner():
 
@@ -550,11 +729,12 @@ def _deleteExperiment():
     return jsonify(response)
 
 
-@blueprint.route('/viewResults/<int:experimentId>')
-@isOwner
-def viewResults(experimentId):
+@blueprint.route('/viewResults/<int:experimentId>/<int:page>')
+@isPerimitted
+def viewResults(experimentId, page):
 
     experiment = Experiment.query.filter_by(id=experimentId).first()
+    expFiles = File.query.filter_by(experiment_id=experiment.id).paginate(page, 10, error_out=False)
     annotations = {}
 
     for f in experiment.files:
@@ -573,6 +753,7 @@ def viewResults(experimentId):
     return render_template('add_experiment/results.html',
         experiment = experiment,
         annotations = annotations,
+        expFiles = expFiles,
     )
 
 @blueprint.route('/_discardAnnotations', methods=['POST','GET'])
@@ -580,6 +761,9 @@ def _discardAnnotations():
 
     experimentId = request.args.get('experimentId', None)
     annotationLevels = AnnotationLevel.query.filter_by(experiment_id=experimentId).all()
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    experiment.status = 'In Progress'
+    experiment.is_done = 0
 
     '''
         ..  delete all the AnnotationInfo for all the levels
@@ -592,7 +776,7 @@ def _discardAnnotations():
 
     annotatorsInfo = AnnotatorAssociation.query.filter_by(experiment_id=experimentId).all()
     for annotatorInfo in annotatorsInfo:
-        annotatorInfo.current = annotatorInfo.start
+        annotatorInfo.current = 0
 
     db.session.commit()
     response = {}
@@ -600,16 +784,70 @@ def _discardAnnotations():
 
     return jsonify(response)
 
+@blueprint.route('/_discardSingleAnnotation', methods=['POST','GET'])
+def _discardSingleAnnotation():
+    
+    experimentId = request.args.get('experimentId', None)
+    fileId = request.args.get('fileId', None)
+
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    experiment.status = 'In Progress'
+    annotationLevels = AnnotationLevel.query.filter_by(experiment_id=experimentId).all()
+
+    '''
+        ..  delete the AnnotationInfo for all the levels
+            of this file.
+        .. check if the file is annotated or not
+        ..  decrease the current pointer of the
+            annotation.
+    '''
+    is_annotated = 0
+    
+    for level in annotationLevels:
+        is_annotated = AnnotationInfo.query.filter_by(user_id=current_user.id,\
+            annotationLevel_id=level.id, file_id = fileId).delete()
+    
+    if is_annotated == 1:
+        annotatorsInfo = AnnotatorAssociation.query.filter_by(experiment_id=experimentId).all()
+        for annotatorInfo in annotatorsInfo:
+            annotatorInfo.current = annotatorInfo.current - 1
+
+    db.session.commit()
+    response = {}
+    response['success'] = True
+
+    return jsonify(response)
+
+@blueprint.route('/_showResultImages', methods=['POST','GET'])
+def _showResultImages():
+    
+    experimentId = request.args.get('experimentId', None)
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    files = []
+    for f in experiment.files:
+        files.append((f.content, f.id))
+
+    response = {}
+    response['success'] = True
+    response['files'] = files
+    response['category'] = experiment.category
+    response['uploadType'] = experiment.uploadType
+
+    return jsonify(response)
+
+
 @blueprint.route('/_exportResults/<int:experimentId>', methods=['POST','GET'])
 def _exportResults(experimentId):
 
     # experimentId = request.args.get('experimentId', None)
     experiment = Experiment.query.filter_by(id=experimentId).first()
 
+
     excel_file = xlwt.Workbook()
     sheet = excel_file.add_sheet('results')
     sheet.col(0).width = 256 * 40
     row, col = 0, 0
+    sheet.write(row, col, 'File Name')
     allLables, columnNumber = {}, {}
 
     annotationLevels = AnnotationLevel.query.filter_by(experiment_id=\
@@ -622,6 +860,11 @@ def _exportResults(experimentId):
             col += 1
             columnNumber[label.id] = col
             sheet.write(row, col, label.name)
+    col += 1
+    sheet.write(row, col, 'Caption')
+    if experiment.uploadType == 'viaSpreadsheet':
+        col += 1
+        sheet.write(row, col, 'Video Link')
 
     row, col = 0, 0
     for f in experiment.files:
@@ -641,6 +884,14 @@ def _exportResults(experimentId):
             sheet.write(row, columnNumber[key], allLables[key])
             col += 1
             allLables[key] = 0
+    
+        if f.caption == '':
+            sheet.write(row, col, 'No Caption Provided')
+        else:
+            sheet.write(row, col, f.caption)
+        if experiment.uploadType == 'viaSpreadsheet':
+            col += 1
+            sheet.write(row, col, f.content)
 
     filename = str(experimentId) + '.xls'
 

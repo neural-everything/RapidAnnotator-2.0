@@ -1,4 +1,5 @@
 from flask import Flask
+
 app = Flask(__name__)
 app.config.from_object('rapidannotator.config.DevelopmentConfig')
 
@@ -9,6 +10,10 @@ login.login_view = 'frontpage.index'
 
 from rapidannotator.models import db
 db.init_app(app)
+
+from flask_mail import Mail
+mail = Mail(app)
+
 '''
     .. for creating all the required tables
 '''
@@ -41,3 +46,6 @@ app.register_blueprint(annotate_experiment, url_prefix='/annotate_experiment')
 
 from rapidannotator.modules.admin import blueprint as admin
 app.register_blueprint(admin, url_prefix='/admin')
+
+from rapidannotator.modules.notification import blueprint as notification
+app.register_blueprint(notification, url_prefix='/notification')

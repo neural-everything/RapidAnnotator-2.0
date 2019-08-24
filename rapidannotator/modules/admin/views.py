@@ -35,13 +35,18 @@ def toggleRequest():
     req = RightsRequest.query.filter_by(id=requestId).first()
     user = User.query.filter_by(id=req.user_id).first()
 
-    action = 0 if req.approved else 1
+    if req.approved:
+        RightsRequest.query.filter_by(id=requestId).delete()
+        user.admin = 0
+        db.session.commit()
+    else:
+        action = 0 if req.approved else 1
 
-    if req.role == "experimenter": user.experimenter = action
-    if req.role == "admin": user.admin = action
-    req.approved = action
+        if req.role == "experimenter": user.experimenter = action
+        if req.role == "admin": user.admin = action
+        req.approved = action
 
-    db.session.commit()
+        db.session.commit()
 
     response = {}
     response['success'] = True

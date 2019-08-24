@@ -36,7 +36,7 @@
                 {% endfor %}
                 <div class="form-actions">
                     <button type="submit" name="submit" value="loginCredentials" class="btn btn-primary"> {{ ('Log In') }}</button>
-                    <a href="#">Forgot Password?</a>
+                    <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#forgotPasswordModalId" onclick="hideLoginModal();">Forgot Password?</button>
                 </div>
             </form>
         </div>
@@ -74,9 +74,120 @@
   </div>
 </div>
 
+<!-- Forgot Password Modal -->
+<div class="modal fade" id="forgotPasswordModalId" role="dialog" tabindex="-1"
+    aria-labelledby="forgotPasswordModalId" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Enter Details to Update Password</h4>
+      </div>
+
+        <div class="modal-body">
+            <form method="POST" name="forgotPassword_form" id="forgotPassword_form" action = "{{ url_for('frontpage.forgotPassword') }}">
+                {% for field in forgotPasswordForm %}
+                    {% if field.widget.input_type == 'hidden' %}
+                        {{ field() }}
+                    {% else %}
+                        {{ render_field(field, autofocus=True, placeholder=field.label.text) }}
+                    {% endif %}
+                {% endfor %}
+                <div class="form-actions">
+                    <button type="submit" name="submit" value="forgotPasswordCredentials" class="btn btn-primary"> {{ ('Confirm') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- OTP Modal -->
+<div class="modal fade" id="otpModalId" role="dialog" tabindex="-1"
+    aria-labelledby="otpModalId" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Enter OTP sent to your Mail</h4>
+        <div style="line-height:70%">&nbsp;</div>
+        <div class="alert alert-danger alert-dismissible hidden-element otpWarning" 
+                style="width: 100%; margin-bottom: 1px; margin-top: 3px; height: 32px; line-height:30px; padding:5px 15px;">
+            <div style="line-height:130%; font-size:100%;"><strong> OTP is incorrect! </strong></div>
+        </div>
+      </div>
+        <div class="modal-body">
+            <form method="POST" name="otpForm" id="otpForm">
+                <b>OTP</b>
+                <input type="text" name="otpVal" id="otpVal"
+                    class="form-control validate" placeholder="OTP" maxlength="8">
+                <span class="help-block"><div style="line-height:110%"></div></span>
+                <div class="form-actions">
+                    <button type="submit" name="submit" value="otpCredentials" class="btn btn-primary"> {{ ('Submit') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Update Password Modal -->
+<div class="modal fade" id="updatePasswordModalId" role="dialog" tabindex="-1"
+    aria-labelledby="updatePasswordModalId" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Enter Password</h4>
+        <div style="line-height:70%">&nbsp;</div>
+        <div class="alert alert-danger alert-dismissible hidden-element updatePasswordWarning" 
+                style="width: 100%; margin-bottom: 1px; margin-top: 3px; height: 32px; line-height:30px; padding:5px 15px;">
+            <div style="line-height:130%; font-size:100%;"><strong> Password doesn't Match! </strong></div>
+        </div>
+        <div class="alert alert-success alert-dismissible hidden-element updatePasswordSuccess" style="width: 100%; margin-top: 1px; margin-bottom: -2px; height: 70px;">
+            <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+            <strong> Thanks, Password updated Successfully ! </strong>
+        </div>
+      </div>
+
+        <div class="modal-body">
+            <form method="POST" name="updatePasswordForm" id="updatePasswordForm">
+                <b>Password</b>
+                <input type="password" name="password" id="password"
+                    class="form-control validate" placeholder="Password" required>
+                <span class="help-block"><div style="line-height:110%"></div></span>
+                <b>Confirm Password</b>
+                <input type="password" name="confirm_password" id="confirm_password"
+                    class="form-control validate" placeholder="Confirm Password" required>
+                <span class="help-block"><div style="line-height:110%"></div></span>
+                <br>
+                <div class="message" id='message'></div>         
+                <div class="form-actions">
+                    <button type="submit" name="submit" value="updatePasswordCredentials" class="btn btn-primary"> {{ ('Update') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+  </div>
+</div>
+
+
 
 <script type="text/javascript">
-    $(window).on('load',function(){
+
+    var otpShow = "{{otpShow}}";
+    var otpForm = $("#otpForm");
+    var updatePasswordForm = $("#updatePasswordForm");
+    var email = "";
+    
+    $(window).on('load',function(){    
         var errors = "{{errors}}";
 
         if( "{{ errors }}" == "LogInErrors") {
@@ -87,7 +198,76 @@
             $('#registrationModalId').modal('show');
         }
 
+        if("{{ errors }}" == "forgotPasswordErrors"){
+            $('#forgotPasswordModalId').modal('show');
+        }
+
+        if("{{ errors }}" == "updatePasswordErrors"){
+            $('#updatePasswordModalId').modal('show');
+        }
+
+        if(otpShow == 1){
+            email = "{{email}}";
+            $('#forgotPasswordModalId').modal('hide');
+            $('#otpModalId').modal('show');
+        }
     });
+
+    function hideLoginModal(){
+        $("#loginModalId").modal('hide');
+    }
+
+    otpForm.on('submit', function(e) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        var otp = otpForm.find('input[name="otpVal"]').val();
+        var url = "{{ url_for('frontpage.verifyOTP')}}";
+        var data = {
+            "otp" : otp,
+            "email" : email
+        };
+        $.getJSON(url , data, function(response) {
+            if(response.success){
+                $('.otpWarning').addClass('hidden-element');
+                $('#forgotPasswordModalId').modal('hide');
+                $('#otpModalId').modal('hide');
+                $('#updatePasswordModalId').modal('show');
+            }
+            else{
+                $('#otpModalId').modal('show');
+                $('.otpWarning').removeClass('hidden-element');
+            }
+        });
+    });
+
+    updatePasswordForm.on('submit', function(e) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        var passwd = updatePasswordForm.find('input[name="password"]').val();
+        var confirm_passwd = updatePasswordForm.find('input[name="confirm_password"]').val();
+        var url = "{{ url_for('frontpage.updatePassword')}}";
+        var data = {
+            "passwd" : passwd,
+            "email" : email,
+            "confirm_passwd" : confirm_passwd
+        };
+        $.getJSON(url , data, function(response) {
+            if(response.success){
+                $('.updatePasswordWarning').addClass('hidden-element');
+                $('#updatePasswordModalId').modal('show');
+                $('.updatePasswordSuccess').removeClass('hidden-element');
+                setTimeout(function(){
+                    window.location.href = '/frontpage';
+                }, 2100);
+            }
+            else{
+                $('#updatePasswordModalId').modal('show');
+                $('.updatePasswordSuccess').addClass('hidden-element');
+                $('.updatePasswordWarning').removeClass('hidden-element');
+            }
+        });
+    });
+
 </script>
 
 {% endblock frontpage_forms %}

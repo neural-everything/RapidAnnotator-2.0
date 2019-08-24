@@ -14,6 +14,8 @@ following command and then run the above command
 
 Install **python3-mysqldb**.
 
+Install `sudo apt-get install libmysqlclient-dev`
+
 Install [**virtualenv**](https://virtualenv.pypa.io/en/latest/) using the below command:
 
 `sudo pip3 install virtualenv`
@@ -98,7 +100,7 @@ Now, create a database for rapidannotator and select it :
 
 Now grant the privileges to rapidannotator :
 
-`grant all privileges on [Database_name].* to username@localhost;`
+`grant all privileges on [Database_name].* to username@localhost with grant option;`
 
 Now set an identification password for the user :
 

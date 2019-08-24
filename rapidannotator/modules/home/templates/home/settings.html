@@ -1,0 +1,40 @@
+{% extends "home/base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %} Update Information {% endblock title %}
+{% block head %}
+  {{ super() }}
+  <style type="text/css">
+    .important { color: #336699; }
+  </style>
+{% endblock head %}
+
+{% block home_body %}
+    <div style="font-size: 150%;margin-left: 43%; margin-bottom: 4%"><strong> <p> Update Information </p></strong></div>
+    <div class="alert alert-danger error hidden-element" id = "error" style="width:35%; margin-left: 32%; margin-bottom: 2%">
+        <strong> Error in Updating Information!</strong>
+    </div>
+    <form method="POST" name="update_form" action = "{{ url_for('home.updateInfo') }}">
+        <div style="width: 30%; margin-left: 35%; margin-top: -2%">
+            {% for field in updateForm %}
+                {% if field.widget.input_type == 'hidden' %}
+                    {{ field() }}
+                {% else %}
+                    {{ render_field(field, autofocus=True, placeholder=field.label.text) }}
+                {% endif %}
+            {% endfor %}
+            <div class="form-actions">
+                <button type="submit" name="submit" value="updateCredentials" class="btn btn-primary"> {{ ('Update') }}</button>
+            </div>
+        </div>
+    </form>
+    <script type="text/javascript">
+        $(window).on('load',function(){
+            var errors = "{{errors}}";
+    
+            if( "{{ errors }}" == "UpdateErrors") {
+                $('#error').removeClass('hidden-element').fadeIn(600).delay(2500).fadeOut(700);
+            }
+        });
+    </script>
+{% endblock home_body %}

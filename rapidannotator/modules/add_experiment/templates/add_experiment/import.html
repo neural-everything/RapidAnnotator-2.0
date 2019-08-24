@@ -1,0 +1,107 @@
+{% extends "add_experiment/base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %} Add Experiment Page {% endblock title %}
+{% block head %}
+  {{ super() }}
+  <style type="text/css">
+    .important { color: #336699; }
+  </style>
+{% endblock head %}
+
+{% block experiment_body %}
+<div class="container">
+    <div>
+      <div class="pull-left">
+        <a href="{{ url_for('add_experiment.editLabels', experimentId = import_experiment.id) }}" 
+          class="btn btn-danger btn-group btn-group-inline btn-space">{{ ('Go to Label Page') }}
+        </a>
+      </div>
+      <h2 style="text-align:center"> Import Annotation Levels</h2>
+    </div>
+    <hr>
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>Serial No.</th>
+          <th>Experiment Name</th>
+          <th>Global Name</th>
+          <th>Owner</th>
+          <th>Import</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for annotation_levels in global_annotation_level%}
+          <tr >
+            <td> {{loop.index}} </td>
+            <td>{{experiment_disp[loop.index - 1].name}}</td>
+            <td>
+              <!-- <select>
+                {% for level in annotation_levels %}
+                  <optgroup label="Description: {{level.description}}">
+                    <option value="{{level.name}}">{{level.name}}</option>
+                  </optgroup>
+                {% endfor %}
+              </select> -->
+              {{global_names[loop.index -1 ]}}
+            </td>
+            <td>
+                <select>
+                  <option>Owners</option>
+                  <optgroup label="" disabled>
+                    {% for owner in owners[loop.index - 1]%}
+                      <option value="1">{{owner.username}}</option>
+                    {% endfor %}
+                  </optgroup>
+                </select>
+            </td>
+			<td > <button type="button" class="btn btn-primary btn-group btn-group-inline btn-space" onclick="importLevels({{import_id[loop.index-1]}})"> Import </button></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div id="snackbar1"><strong>Annotation Levels already Imported!</strong></div>
+  <div id="snackbar2"><strong>Annotation Levels Imported Successfully !</strong></div>
+  <script charset="utf-8" type="text/javascript">
+    
+    function importLevels(exportExperimentId){
+      
+      var data = {
+        'exportExperimentId' :  exportExperimentId,
+        'importExperimentId' : {{import_experiment.id}},
+      };
+      
+      var url = "{{url_for('add_experiment._addImportedLevels')}}";
+      
+      $.getJSON(url , data, function(response) {
+        if(response.success) {
+            if(response.msg_already_imported){
+              alreadyImportedFeedback();
+            }
+            else{
+              importedFeedback();
+            }
+        }
+        else {
+        }
+      });
+    };
+
+    // Function for giving the feedback if annotation levels are already Imported
+    function alreadyImportedFeedback() {
+        var x = document.getElementById("snackbar1");
+        x.className = "show";
+        setTimeout(function(){ x.className = x.className.replace("show", ""); }, 2000);
+    }
+
+    // Function for giving the feedback if annotations levels imported successfully
+    function importedFeedback() {
+        var x = document.getElementById("snackbar2");
+        x.className = "show";
+        setTimeout(function(){ x.className = x.className.replace("show", ""); }, 2500);
+    }
+
+  </script>
+
+{% endblock experiment_body %}

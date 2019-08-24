@@ -36,15 +36,43 @@ def index(experimentId):
         lastFile = experiment.files.count()
 
     ''' It is to make compatible with 0-based indexing '''
-    lastFile -= 1
+    lastFile = lastFile - firstFile - 1
 
     if currentFileIndex <= lastFile:
-        currentFile = _getFile(experimentId, currentFileIndex)
+        currentFile = _getFile(experimentId, currentFileIndex, firstFile)
     else:
         currentFile = []
 
-
+    is_done = int(experiment.is_done)
     ''' TODO! move current back to original value if any file was deleted '''
+
+    ''' For displaying a warning if the labels got changed at any time'''
+        
+    labelCount = 0
+    labelWarning = 0
+
+    annotationLevels = AnnotationLevel.query.filter_by(experiment_id=experimentId).all()
+    for level in annotationLevels:
+        labels = Label.query.filter_by(annotation_id=level.id)
+        labelCount += labels.count()
+ 
+    if experiment.countLabel != labelCount and experiment.countLabel != -1 and labelCount != 0:
+        if currentFileIndex > 0:
+            labelWarning = 1
+    
+    if labelCount == 0:
+        experiment.countLabel = -1
+        db.session.commit()
+    else:
+        experiment.countLabel = labelCount
+        db.session.commit()
+
+    if lastFile == -1:
+        progress_width = 0
+    else:
+        progress_width = round((currentFileIndex/ (lastFile  + 1))*100, 2)
+
+    isExpowner =  int((current_user in  experiment.owners))
 
     return render_template('annotate_experiment/main.html',
         experiment = experiment,
@@ -53,7 +81,12 @@ def index(experimentId):
         lastFile = lastFile,
         firstFile = firstFile,
         keyBindingDict = keyBindingDict,
-    )
+        is_done = is_done,
+        labelCount = labelCount,
+        labelWarning = labelWarning,
+        progress_width = progress_width,
+        isExpowner = isExpowner
+    ) 
 
 def makeKeyBindingDict(experimentId):
     levels = AnnotationLevel.query.filter_by(experiment_id=\
@@ -93,9 +126,9 @@ def getDefaultKey(keySet):
         experimentId: id of the experiment
         fileIndex: index of the file to fetch
 '''
-def _getFile(experimentId, fileIndex):
+def _getFile(experimentId, fileIndex, start):
     experiment = Experiment.query.filter_by(id=experimentId).first()
-    currentFile = experiment.files.order_by(File.id)[fileIndex]
+    currentFile = experiment.files.order_by(File.id)[fileIndex + start]    
 
     currentFile = {
         'id' : currentFile.id,
@@ -143,14 +176,16 @@ def updateCurrentFileIndex():
 def deleteAnnotation():
 
     ''' in DELETE request data is received in request.form '''
-
     experimentId = request.form.get('experimentId', None)
     fileId = request.form.get('fileId', None)
+    lp = request.form.get('lp', None)
+    # if int(lp) == 0:
+        # fileId = int(fileId) - 1
 
     AnnotationInfo.query.filter(and_(AnnotationInfo.user_id==current_user.id, \
                                     AnnotationInfo.file_id==fileId)\
                                     ).delete()
-
+    
     db.session.commit()
     response = {}
     response['success'] = True
@@ -165,7 +200,8 @@ def deleteAnnotation():
 def _getFileDetails():
     experimentId = request.args.get('experimentId', None)
     currentFileIndex = request.args.get('currentFileIndex', None)
-    currentFile = _getFile(experimentId, int(currentFileIndex))
+    firstFile = request.args.get('firstFile', None)
+    currentFile = _getFile(experimentId, int(currentFileIndex), int(firstFile))
     return jsonify(currentFile)
 
 ''' (TODO) correct names '''
@@ -182,6 +218,22 @@ def _addAnnotationInfo():
 
     fileId = arguments.get('fileId', None)
     annotations = arguments.get('annotations')
+    prevLabelCount = arguments.get('labelCount', None)
+
+    ''' For displaying a warning if the labels got changed at any time'''
+    labelCount = 0
+
+    experimentId = File.query.filter_by(id=fileId).first().experiment_id
+    
+    annotationLevels = AnnotationLevel.query.filter_by(experiment_id=experimentId).all()
+    for level in annotationLevels:
+        labels = Label.query.filter_by(annotation_id=level.id)
+        labelCount += labels.count()
+
+    if labelCount != prevLabelCount:
+        response = {}
+        response['success'] = False
+        return jsonify(response)
 
     for annotationLevelId in annotations:
         labelId = annotations[annotationLevelId]
@@ -193,7 +245,6 @@ def _addAnnotationInfo():
         )
         db.session.add(annotationInfo)
 
-    experimentId = File.query.filter_by(id=fileId).first().experiment_id
     annotatorInfo = AnnotatorAssociation.query.filter_by(user_id=current_user.id).\
                     filter_by(experiment_id=experimentId).first()
     annotatorInfo.current = annotatorInfo.current + 1
@@ -215,4 +266,23 @@ def _toggleLooping():
     response = {}
     response['success'] = True
 
+    return jsonify(response)
+
+''' Change the status of the experiment dynamically'''
+@blueprint.route('/checkStatus', methods=['POST'])
+def checkStatus():
+    experimentId = request.form.get('experimentId', None)
+    associations = AnnotatorAssociation.query.filter_by(experiment_id=experimentId).all()
+    associationsCount = AnnotatorAssociation.query.filter_by(experiment_id=experimentId).count()
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    fileCount = experiment.files.count()
+    tot = 0
+    for association in associations:
+        tot += association.current
+    if (fileCount*associationsCount) == tot:
+        experiment.status = 'Completed'
+        experiment.is_done = 1
+        db.session.commit()
+    response = {}
+    response['success'] = True
     return jsonify(response)

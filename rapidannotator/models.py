@@ -41,6 +41,18 @@ class User(UserMixin, db.Model):
     """User password."""
     password = db.Column(db.String(300))
 
+    """ Date of Registration for a User """
+    registeredOn = db.Column(db.DateTime, server_default=func.now())
+
+    """ Check to see if a user is authentic or not."""
+    confirmed = db.Column(db.Boolean, nullable=False, default=False)
+
+    """Confirmation Date of confirming the email"""
+    confirmedOn = db.Column(db.DateTime, nullable=True)
+
+    """Usere Secret Key."""
+    secKey = db.Column(db.String(120), nullable=True, unique=True)
+
     """ There are 3 levels of user hierarchy,
      User can be any one / more of
     ..  Annotator,
@@ -57,7 +69,7 @@ class User(UserMixin, db.Model):
     admin = db.Column(
         db.Boolean(name='admin'),
         nullable=False,
-        server_default='1',
+        server_default='0',
     )
 
     """ Flag indicating whether the user has turned on the
@@ -68,6 +80,9 @@ class User(UserMixin, db.Model):
         nullable=False,
         server_default='1',
     )
+
+    """ Number of notification that a user currently have in his/her feed"""
+    numNotif = db.Column(db.Integer, nullable=False, server_default="0")
 
     def is_experimenter(self):
         return self.experimenter
@@ -178,7 +193,7 @@ class Experiment(db.Model):
     ..  viaSpreadsheet,
     """
     uploadType = db.Column(
-        db.Enum('manual', 'viaSpreadsheet',
+        db.Enum('manual', 'viaSpreadsheet', 'fromConcordance',
         name='uploadType'),
         nullable=False,
         server_default='manual',
@@ -194,6 +209,32 @@ class Experiment(db.Model):
         server_default="In Progress",
         nullable=False,
     )
+
+    """ Flag indicating whether the has completely done or not.
+    ..  Used for checking the undo operation of last annotation.
+    """
+    is_done = db.Column(
+        db.Boolean(name='is_done'),
+        nullable=False,
+        server_default='0',
+    )
+
+    """ Flag indicating whether the user has made annotation level 
+        globel or not.
+    """
+    is_global = db.Column(
+        db.Boolean(name='is_global'),
+        nullable=False,
+        server_default='0',
+    )
+
+    """ Global name for all Annotation levels in an experiment """
+    globalName = db.Column(db.String(255), nullable=False, server_default='')
+
+    """ countLabel
+    ... For giving the warning if the labels have been changed
+    """
+    countLabel = db.Column(db.Integer, nullable=False, server_default='-1')
 
     """ One to One relation
     ..  For Audio / Video Experiments:
@@ -419,9 +460,9 @@ class File(db.Model):
 
     ''' caption
     ..  a small description of the text.
-    ..  size is limited to 320 characters
+    ..  size is limited to 1500 characters
     '''
-    caption = db.Column(db.String(320), nullable=False, server_default='')
+    caption = db.Column(db.String(1500), nullable=False, server_default='')
 
     ''' content
     ..  actual text to be annotated for Text experiments.
@@ -432,6 +473,11 @@ class File(db.Model):
     ..  the maximum table row size allowed is 65535 including storing overheads.
     '''
     content = db.Column(db.String(10001), nullable=False, server_default='')
+
+    ''' isSelected 
+    ..  Flag for if the file is selected in the random order or not 
+    '''
+    isSelected = db.Column(db.Integer, nullable=False, server_default='0')
 
     """ One to Many relation
     ..  For File:
@@ -477,7 +523,7 @@ class DisplayTime(db.Model):
     ..  and before time is 13 then the actual time when the video
     ..  will start will be 1553 (1540 + 13)
     '''
-    before_time = db.Column(db.Integer, nullable=False, server_default="0")
+    before_time = db.Column(db.Float, nullable=False, server_default="0")
 
     ''' after_time
     ..  the time relative to the time given in the link
@@ -487,7 +533,7 @@ class DisplayTime(db.Model):
     ..  will end will be 1567 (1540 + 27).
     ..  Default value(-1) implies the video will be played till the end.
     '''
-    after_time = db.Column(db.Integer, nullable=False, server_default="-1")
+    after_time = db.Column(db.Float, nullable=False, server_default="-1")
 
     def __str__(self):
         """Representation."""
@@ -610,3 +656,46 @@ class RightsRequest(db.Model):
                 requested_at={0.requested_at}, \
                 approved={0.approved}, \
                 message={0.message}>'.format(self)
+
+"""
+    Notification table for each experimenter
+"""
+class NotificationInfo(db.Model):
+
+    __tablename__ = 'NotificationInfo'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    ''' id of the user who sent this notification.'''
+    user_id = db.Column(Integer, db.ForeignKey(
+        'User.id', ondelete='CASCADE')
+    )
+
+    ''' username of the user who sent this notification.'''
+    username = db.Column(db.String(255), db.ForeignKey(
+        'User.username', ondelete='CASCADE')
+    )
+
+    """ Annotator's notification for the experimenter. """
+    notification = db.Column(db.String(640))
+
+
+    """The date and time when the notification was sent."""
+    notified_at = db.Column(db.DateTime, server_default=func.now())
+
+    def __str__(self):
+        """Representation."""
+        return 'NotificationInfo <id={0.id}, \
+                experiment_id={0.experiment_id},\
+                user_id={0.user_id}, \
+                username={0.username},\
+                notified_at={0.notified_at}, \
+                notification={0.notification}>'.format(self)
+
+    def __repr__(self):
+        return 'NotificationInfo <id={0.id}, \
+                experiment_id={0.experiment_id},\
+                user_id={0.user_id}, \
+                username={0.username},\
+                notified_at={0.notified_at}, \
+                notification={0.notification}>'.format(self)

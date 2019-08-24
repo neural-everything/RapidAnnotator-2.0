@@ -81,6 +81,34 @@ class RegistrationForm(FlaskForm):
         if user is not None:
             raise ValidationError(_('Email address already registered.'))
 
+class ForgotPasswordForm(FlaskForm):
+    username = StringField(
+        label=_('Username'),
+        validators=[DataRequired(message=_('Username not provided.'))],
+        filters=[strip_filter],
+    )
+
+    email = StringField(
+        label=_('Email'),
+        validators=[DataRequired(message=_('Email not provided.')), Email()]
+    )
+
+    def validate_username(self, username):
+        """Wrap username validator for WTForms."""
+        try:
+            validate_username(username.data)
+        except ValueError as e:
+            raise ValidationError(_('Invalid Username'))
+
+        user = User.query.filter_by(username=username.data).first()
+        if user is None:
+            raise ValidationError(_('Username does not exist !'))
+
+    def validate_email(self, email):
+        user = User.query.filter_by(email=email.data).first()
+        if user is None:
+            raise ValidationError(_('Email does not exist !'))
+
 class DummyForm(FlaskForm):
     """A Dummy form for testing and debugging."""
 

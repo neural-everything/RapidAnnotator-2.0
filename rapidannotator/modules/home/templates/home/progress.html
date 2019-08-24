@@ -1,0 +1,148 @@
+{% extends "home/base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %} Update Information {% endblock title %}
+{% block head %}
+  {{ super() }}
+  <style type="text/css">
+    .important { color: #336699; }
+  </style>
+{% endblock head %}
+
+{% block home_body %}
+<body>
+	<div class="container-fluid">
+		<h4 style="text-align:center"> Your Progress </h4>
+		<hr>
+		<div class="info1 hidden-element">
+				<br>
+				<div class="alert alert-info col-md-6" role="alert">
+					You are not Annotator for any experiment !
+				</div>
+		</div>
+		<div id = "yourProgress" class="col-md-6" style="width:50%; margin-bottom: 10%; margin-left: 30%">
+		</div>
+		<div> </div>
+	</div>
+	<div class="container-fluid">
+		<h4 style="text-align:center">Check Progress for each Experiment</h4>
+		<hr>
+		<div class="row">
+			<div class="col-md-3" style="margin-right:10%">
+				<form>
+					<div class="form-group">
+						<label for="sel1">Select an Experiment :</label>
+						<select class="form-control experiment" id="experiment">
+							<option disabled selected value> ------ Select an Experiment --------- </option>
+							{% for experiment in experiments %}
+								<option value="{{experiment.name}}">{{experiment.name}}</option>
+							{% endfor %}
+						</select>
+					</div>
+				</form>
+			</div>
+			<div class="info2 hidden-element">
+				<br>
+				<div class="alert alert-info col-md-6" role="alert">
+					There are no Annotators for this experiment.
+				</div>
+			</div>
+			<br>
+			<div id = "experimentProgress" class="col-md-6" style = "width: 550px; height: 380px; margin: 0 auto;">
+			</div>
+		</div>
+	</div>
+</body>
+
+<script type="text/javascript">
+	
+	$(window).on('load',function(){
+		drawUserProgressChart();
+		$("select.experiment").change(function(){
+        	var selectedExperiment = $(this).children("option:selected").val();
+			drawExperimentProgressChart(selectedExperiment);
+    	});
+	});
+
+	function drawExperimentProgressChart(experimentName){
+		var url = "{{ url_for('home.getExperimentProgressData')}}";
+		var data = {
+			'experimentName' : experimentName,
+		}
+		$.getJSON(url, data,function(response) {
+			if(response.success) {
+				if(response.size == 0){
+					$('.info2').removeClass('hidden-element');
+					$('#experimentProgress').addClass('hidden-element');
+				}
+				else{
+					$('.info2').addClass('hidden-element');
+					$('#experimentProgress').removeClass('hidden-element');
+					callDrawChart(response.chartInfo, response.size, 'experimentProgress');
+				}
+			}
+		});
+	};
+
+	function callDrawChart(dataVis, size, charId){
+		google.charts.load('current', {'packages':['bar']});
+		google.charts.setOnLoadCallback(drawChart);
+		function drawChart() {
+			// Define the chart to be drawn.
+			var data = google.visualization.arrayToDataTable(dataVis);
+			var ht = 350, wdth = 570;
+			var brs = 'horizontal';
+			if(charId != 'experimentProgress'){
+				brs = 'vertical';
+				if(size > 1){
+					wdth = 160*size;
+				}
+				else{
+					wdth = 200;
+				}
+			}
+			else{
+				if(size > 1){
+					ht = 90*size; 
+				}
+				else{
+					ht = 125;
+				}
+			}
+			var options = {
+				title: 'Progress (in percentage)',
+				legend: { position: 'Top' },
+				bar: { groupWidth: '22%' },
+				bars: brs,
+				width: wdth,
+				height: ht,
+			}; 
+
+			// Instantiate and draw the chart.
+			var chart = new google.charts.Bar(document.getElementById(charId));
+			chart.draw(data, google.charts.Bar.convertOptions(options));
+		};
+	};
+
+	function drawUserProgressChart(){
+		var url = "{{ url_for('home.getUserProgressData')}}";
+		var data = {
+		}
+		$.getJSON(url, data,function(response) {
+			if(response.success) {
+				if(response.size == 0){
+					$('.info1').removeClass('hidden-element');
+					$('#yourProgress').addClass('hidden-element');
+				}
+				else{
+					$('.info1').addClass('hidden-element');
+					$('#yourProgress').removeClass('hidden-element');
+					callDrawChart(response.chartInfo, response.size, 'yourProgress');
+				}
+			}
+		});
+	};
+
+</script>
+
+{% endblock home_body %}
