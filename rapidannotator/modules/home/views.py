@@ -49,7 +49,6 @@ def addExperiment():
     addExperimentForm = AddExperimentForm()
 
     if addExperimentForm.validate_on_submit():
-        print(addExperimentForm.category.data)
         experiment = Experiment(
             name=addExperimentForm.name.data,
             description=addExperimentForm.description.data,

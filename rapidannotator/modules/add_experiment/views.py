@@ -358,7 +358,6 @@ def _addImportedLevels():
         db.session.commit()
 
         new_annotation_level_id = AnnotationLevel.query.order_by(AnnotationLevel.id.desc()).first().id
-        print(new_annotation_level_id)
         
         for label in labels:
             new_label = Label(annotation_id=new_annotation_level_id, name=label.name, key_binding=label.key_binding)
@@ -496,7 +495,7 @@ def addFilesFromConcordance(experimentId, concordance):
                 name = name_match.group(1)
             else:
                 name = row["Text ID"]
-            # Let us add a timestamp to the name:
+            # Add a timestamp to the name:
             if experiment.category == "image":
                 imageresults = re.search("start=(.*)$", row["Screenshot"])
                 name = name + "__" + imageresults.group(1)
@@ -504,13 +503,7 @@ def addFilesFromConcordance(experimentId, concordance):
                 timeresults = re.search("start=(.*)&end=(.*)$", row["Video Snippet"])
                 name = name + "__" + timeresults.group(1) + "-" + timeresults.group(2)
             
-            # This makes more sense in the video display, so that is where it goes.
-            # temp_content = row["Video URL"].split(',')
-            # starttime = int(temp_content[2]) - experiment.display_time.before_time;
-            # if starttime < 0:
-            #     starttime = 0
-            #     endtime = int(temp_content[2]) + experiment.display_time.after_time;
-            #     content = "http://pisa.vrnewsscape.ucla.edu/newsscape_mp4_snippet.cgi?file=" + temp_content[1] + "&start=" + str(starttime) + "&end=" + str(endtime)
+            
             newFile = File(name=name[:1024],
                     content=content[:32000],
                     caption=caption[:320],
@@ -519,20 +512,6 @@ def addFilesFromConcordance(experimentId, concordance):
             experiment.files.append(newFile)
     db.session.commit()
     os.remove(filePath)
-
-
-'''
-    # print number of sheets
-    book.nsheets
-
-    # print sheet names
-    book.sheet_names()
-    # read a row slice
-    print first_sheet.row_slice(rowx=0,
-                                start_colx=0,
-                                end_colx=2)
-'''
-
 
 @blueprint.route('/_deleteFile', methods=['POST','GET'])
 def _deleteFile():
@@ -685,7 +664,6 @@ def _equalDataParition():
 
     annotators = request.args.get('annotatorsDict', None)
     annotators = annotators.split(',')
-    print(annotators)
     experimentId = request.args.get('experimentId', None)
     experiment = Experiment.query.filter_by(id=experimentId).first()
     numAnnotators = len(annotators)
@@ -849,7 +827,6 @@ def _showResultImages():
     for f in experiment.files:
         files.append((f.content, f.id))
 
-    print(files)
     response = {}
     response['success'] = True
     response['files'] = files

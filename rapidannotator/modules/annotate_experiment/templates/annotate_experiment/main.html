@@ -233,7 +233,6 @@
             }
             if({{is_done}} == 0){
                 currentFileIndex= currentFileIndex - 1;
-                console.log(currentFileIndex, {{lastFile}}, {{is_done}});
                 last_previous = 1;
                 $('.annotationArea').addClass('hidden-element');
                 $('.thanksNote').removeClass('hidden-element');
@@ -331,14 +330,15 @@
         }
 
         undoButton.on('click', function() {
-            // console.log(currentFileIndex);
             undoButton.attr("disabled", "disabled");
             $('.toggleLooping').removeClass('hidden-element');
             if(last_previous == 1){
                 progress_num = currentFileIndex;
             }
             else{
-                progress_num = currentFileIndex - 1;
+                if(currentFileIndex -1 >= 0){
+                    progress_num = currentFileIndex - 1;
+                }
             }
             progress_value = 'Progress: ' + progress_num.toString() + ' / ' + ({{lastFile}} + 1).toString()
             $("#prg").text(progress_value);                                                
@@ -402,7 +402,6 @@
         function loadPreviousFile(load_previous) {
             annotations = {};
             var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
-            console.log(currentFileId, last_previous);
             var data = {
                 'lp': last_previous,
                 'fileId' :          currentFileId,
@@ -497,7 +496,6 @@
                         $("#progress-bar").width(prog_width.toString() + '%');
                         $('#preview').text(prog_width.toString() + '%');
                     }
-                    console.log(currentFileIndex);
                 }
                 else{
                     $('.labelWarning').removeClass('hidden-element');

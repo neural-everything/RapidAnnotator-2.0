@@ -55,7 +55,7 @@
                     <th style="width: 10%"> {{( 'File' )}} </th>
 
                     {% set width = 90 / levelCount %}
-                    {% set padLeft = 20 / levelCount %}
+                    {% set padLeft = 30 / levelCount %}
                     {% for level in experiment.annotation_levels %}
                         <th style="width: {{ width }}%; padding-left: {{padLeft}}%">{{ level.name }}</th>
                     {% endfor %}
@@ -108,10 +108,10 @@
                                  {% endfor %}
                              </td>
                          {% endfor %}
-                        <td>
+                        <!-- <td>
                             <button class="deleteAnnotationButton pull-right close" type="button"
                             data-toggle="modal" data-target="#deleteAnnotationModal" onclick="passFile('{{file.id}}')">&times;</button>
-                        </td>
+                        </td> -->
                     </tr>
                 {% endfor %}
             </tbody>

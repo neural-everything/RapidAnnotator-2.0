@@ -10,4 +10,4 @@ def send_email(to, subject, template):
         sender= app.config['MAIL_DEFAULT_SENDER']
     )
     mail.send(msg)
-    print("Yo Message is sent!")
+    

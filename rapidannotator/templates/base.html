@@ -287,7 +287,6 @@
 
                 function addRightNotification(data){
                     var url = "{{ url_for('notification._rightNotification')}}";
-                    console.log('Enter 2');
                     $.getJSON(url , data, function(response) {
                         if(response.success){
                             $(".askRightsButton[value=" + askFor + "]").addClass('hidden-element');
@@ -311,7 +310,6 @@
                         if(response.success) {
                             $('#rightsModalId').modal('hide');
                             $('#rightsForm').find('input').val("");
-                            console.log('Enter 1');
                             addRightNotification(data);
                         }
                     });

@@ -66,12 +66,14 @@
   <script charset="utf-8" type="text/javascript">
     
     function importLevels(exportExperimentId){
+      
       var data = {
         'exportExperimentId' :  exportExperimentId,
         'importExperimentId' : {{import_experiment.id}},
       };
+      
       var url = "{{url_for('add_experiment._addImportedLevels')}}";
-      console.log(data);
+      
       $.getJSON(url , data, function(response) {
         if(response.success) {
             if(response.msg_already_imported){

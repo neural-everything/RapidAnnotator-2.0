@@ -128,7 +128,7 @@ def getDefaultKey(keySet):
 '''
 def _getFile(experimentId, fileIndex, start):
     experiment = Experiment.query.filter_by(id=experimentId).first()
-    currentFile = experiment.files.order_by(File.id)[fileIndex + start]
+    currentFile = experiment.files.order_by(File.id)[fileIndex + start]    
 
     currentFile = {
         'id' : currentFile.id,

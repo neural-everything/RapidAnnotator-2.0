@@ -629,7 +629,6 @@
             e.stopImmediatePropagation();
             e.preventDefault();
             var tagsinputValue = $(".tagtest").tagsinput('items');
-            console.log(tagsinputValue);
             var url = "{{ url_for('add_experiment._equalDataParition')}}";
             var data = {
                 'annotatorsDict' : String(tagsinputValue),
