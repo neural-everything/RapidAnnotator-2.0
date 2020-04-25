@@ -488,8 +488,9 @@
         })
 
         category = "{{ experiment.category }}";
+        uploadType = "{{experiment.uploadType}}";
         dispTime = "{{ experiment.display_time }}";
-        if( dispTime == "None" && (category  === "audio" || category === "video") ) {
+        if( dispTime == "None" &&  uploadType != "manual" && (category  === "audio" || category === "video") ) {
             $('#displayTimeModalId').modal('show');
         }
 
