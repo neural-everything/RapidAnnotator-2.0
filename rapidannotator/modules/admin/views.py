@@ -202,4 +202,4 @@ def allExperiments():
 def searchItems():
     key = request.form['search']
     experiments = Experiment.query.all()
-    return render_template('admin/allExperiments.html', experiments = experiments)
+    return render_template('admin/userProfile.html', user = current_user)

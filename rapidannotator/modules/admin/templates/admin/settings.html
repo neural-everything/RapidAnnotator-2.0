@@ -38,7 +38,6 @@
         <thead>
             <tr class="">
                 <th style="width: 5.0%">{{ ('Index') }}</th>
-                <th style="width: 5.0%">{{ ('Gravatar') }}</th>
                 <th style="width: 21.0%">{{ ('User Name') }}</th>
                 <th style="width: 23.0%">{{ ('Full Name') }}</th>
                 <th style="width: 28.0%">{{ ('Email') }}</th>
@@ -52,8 +51,7 @@
                 {%- set userProfile_url = url_for('admin.editUserProfile', userId = user.id) %}
                 {%- set userExperiments_url = url_for('admin.userExperiments', userId = user.id) %}
                 <tr>
-                    <td style="width: 5.0%" > {{ loop.index }} </td>
-                    <td style="width: 5.0%"><img src="{{ user.avatar(36) }}"></td>
+                    <td style="width: 10.0%" > {{ loop.index }} &nbsp;<img src="{{ user.avatar(36) }}"></td>
                     <td style="width: 21.0%" > 
                         {%- if user.admin -%}
                             {{user.username}} <span class="badge badge-pill badge-dark">Admin</span>

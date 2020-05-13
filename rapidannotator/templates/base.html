@@ -117,19 +117,21 @@
                 </a>
             </li>
         </ul>
-        <ul class="nav navbar-nav" style="margin-left:35%; margin-top: 1%">
-            <li class="search-container">
-                <form  name="searchForm" method="POST" action = "{{ url_for('admin.searchItems') }}">
-                  <input type="text" placeholder="Search.." name="search" id="search" style="border-radius: 2px; border: 1px solid black;">
-                  <button type="submit" style="border-radius: 4px; color: white; background-color: rgb(173, 169, 169); border: 1px solid grey;"><i class="fa fa-search"></i></button>
-                </form>
-            </li>
-        </ul>
+        {%- if current_user.is_admin() -%}
+            <ul class="nav navbar-nav" style="margin-left:25%; margin-top: 1%">
+                <li class="search-container">
+                    <form  name="searchForm" method="POST" action = "{{ url_for('admin.searchItems') }}">
+                    <input type="text" placeholder="Search...." name="search" id="search" style="border-radius: 2px; border: 1px solid black;">
+                    <button type="submit" style="border-radius: 4px; color: white; background-color: rgb(173, 169, 169); border: 1px solid grey;"><i class="fa fa-search"></i></button>
+                    </form>
+                </li>
+            </ul>
+        {%- endif -%}
       {% endif %}
       <ul class="nav navbar-nav navbar-right">
           {% if current_user.is_authenticated %}
-            <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#" style="width:100%; margin-left:-42%">  <span class="glyphicon
-                glyphicon-user"></span> Account <span class="caret"></span></a>
+            <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#" style="width:100%; margin-left:-15%">  
+                <img src="{{ current_user.avatar(20) }}"> {{current_user.username}} <span class="caret"></span></a>
                 <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                     {%- if current_user.is_admin() -%}
                         <li><a class="dropdown-item" href="{{url_for('admin.settings')}}"> 
