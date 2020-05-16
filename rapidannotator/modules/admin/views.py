@@ -203,3 +203,17 @@ def searchItems():
     key = request.form['search']
     experiments = Experiment.query.all()
     return render_template('admin/userProfile.html', user = current_user)
+
+
+@blueprint.route('/seeProfile/<int:userId>', methods=['GET', 'POST'])
+def seeProfile(userId):
+    user = User.query.filter_by(id=userId).first()
+    return render_template('admin/userProfile.html', user = user)
+
+@blueprint.route('/userProgress/<int:userId>', methods=['GET', 'POST'])
+def userProgress(userId):
+    user = User.query.filter_by(id=userId).first()
+    experiments = user.my_experiments.all()
+    return render_template('home/progress.html',
+        experiments = experiments,)
+

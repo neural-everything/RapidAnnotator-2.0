@@ -43,13 +43,13 @@
                 <th style="width: 28.0%">{{ ('Email') }}</th>
                 <th style="width: 8.0%">{{ ('Delete') }}</th>
                 <th style="width: 8.0%">{{ ('Edit') }}</th>
-                <th style="width: 8.0%">{{ ('Experiments') }}</th>
+                <th style="width: 8.0%">{{ ('Full Profile') }}</th>
             </tr>
         </thead>
         <tbody>
             {% for user in users %}
                 {%- set userProfile_url = url_for('admin.editUserProfile', userId = user.id) %}
-                {%- set userExperiments_url = url_for('admin.userExperiments', userId = user.id) %}
+                {%- set seeProfile_url = url_for('admin.seeProfile', userId = user.id) %}
                 <tr>
                     <td style="width: 10.0%" > {{ loop.index }} &nbsp;<img src="{{ user.avatar(36) }}"></td>
                     <td style="width: 21.0%" > 
@@ -80,8 +80,8 @@
                         </a>
                     </td>
                     <td style="width: 8.0%">
-                        <button class="btn btn-primary" style="font-size:0.9em" onClick="document.location.href='{{userExperiments_url}}';"> 
-                            See Experiments 
+                        <button class="btn btn-primary" style="font-size:0.9em" onClick="document.location.href='{{seeProfile_url}}';"> 
+                            See Profile 
                         </button>
                     </td>
                 </tr>

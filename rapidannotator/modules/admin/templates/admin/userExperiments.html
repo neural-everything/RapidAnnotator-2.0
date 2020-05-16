@@ -12,15 +12,18 @@
 
 {% block admin_page %}
 
-<button class="btn btn-danger pull-left" style="font-size:0.9em; margin-left: 1em" onclick="goBack();">
-    <span class="glyphicon glyphicon-arrow-left"></span> Back
-</button>
-<br><br><br>
+<div>
+    <button class="btn btn-danger pull-left" style="font-size:0.9em; margin-left: 1em" onclick="goBack();">
+        <span class="glyphicon glyphicon-arrow-left"></span> Back
+    </button>
+    <div style="font-size:2em; margin-left: 40%"> <img src="{{ user.avatar(36) }}"> {{user.username}}</div>
+    <br><br>
+</div>
 
 <div class="container">
         <ul class="nav nav-tabs">
-            <li class="active"><a data-toggle="tab" href="#myExperiments">{{user.username}} {{(' Experiments')}}</a></li>
-            <li><a data-toggle="tab" href="#experimentsToAnnotate">{{user.username}} {{(' Experiments to Annotate')}}</a></li>
+            <li class="active"><a data-toggle="tab" href="#myExperiments">{{(' Experiments')}}</a></li>
+            <li><a data-toggle="tab" href="#experimentsToAnnotate">{{(' Experiments to Annotate')}}</a></li>
         </ul>
         <br>
     </div>
@@ -143,7 +146,7 @@
     };
     
     function goBack(){
-        document.location.href = "{{url_for('admin.settings')}}";
+        document.location.href = "{{url_for('admin.seeProfile', userId = userId)}}";
     }
 
     $(function(){
@@ -157,7 +160,7 @@
 
             $.getJSON(url , data, function(response) {
                 if(response.success) {
-                    var goUrl = "{{url_for('admin.userExperiments', userId = userId)}}";
+                    var goUrl = "{{url_for('admin.seeProfile', userId = userId)}}";
                     window.location.replace(goUrl);
                 } else {
                 }

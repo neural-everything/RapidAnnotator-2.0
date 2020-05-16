@@ -32,7 +32,7 @@
     <div class="jumbotron">
         <table>
             <tr class= "row">
-                <td class="collumn"> <img src="{{user.avatar(150) }}">  &nbsp; &nbsp; </div>  
+                <td class="collumn"> <img src="{{user.avatar(120) }}">  &nbsp; &nbsp; </div>  
                 <td class = collumn>
                     <div style="font-size: 40px"> {{user.fullname}}</div>
                     <div style="font-size: 20px"> @{{user.username}}</div>
@@ -42,10 +42,23 @@
         </table>
         <br>
 
-        <p class="lead">Click the Check progress button to see user's progress. Click View Experiments button to see user's experiments</p>
+        <p class="lead">
+            {%- if user.admin -%}
+                <span class="badge badge-pill" style="color:#fff; background-color:rgba(39, 134, 26, 0.815); border-radius: 0%;">Admin</span>
+            {%- else -%}
+            <span class="badge badge-pill" style="color:#fff; background-color:rgba(39, 134, 26, 0.815); border-radius: 0%;"> Not an Admin</span>
+            {%- endif -%}
+            &nbsp;&nbsp;
+            {%- if user.experimenter -%}
+                <span class="badge badge-pill" style="color:#fff; background-color:rgba(156, 18, 115, 0.815); border-radius: 0%;">Experimenter</span>
+            {%- else -%}
+            <span class="badge badge-pill" style="color:#fff; background-color:rgba(156, 18, 115, 0.815);">Not an Experimenter</span>
+            {%- endif -%}
+        </p>
         <hr class="my-4">
         <p class="lead">
-            <a class="btn btn-primary btn-lg" href="#" role="button">Check Progress</a>
+            {%- set userProgress_url = url_for('admin.userProgress', userId = user.id) %}
+            <a class="btn btn-primary btn-lg" role="button" onClick="document.location.href='{{userProgress_url}}';">Check Progress</a>
             {%- set userExperiments_url = url_for('admin.userExperiments', userId = user.id) %}
             <a class="btn btn-primary btn-lg" role="button" onClick="document.location.href='{{userExperiments_url}}';">View Experiments </a>
         </p>
