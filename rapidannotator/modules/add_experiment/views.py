@@ -163,6 +163,7 @@ def _addAnnotationLevel():
             annotationLevel = AnnotationLevel(
                 name = annotationLevelForm.name.data,
                 description = annotationLevelForm.description.data,
+                instruction = annotationLevelForm.instruction.data,
             )
             if levelNumber:
                 annotationLevel.level_number = annotationLevelForm.levelNumber.data
@@ -256,6 +257,7 @@ def _editAnnotationLevel():
     annotationLevel.name = request.args.get('annotationName', None)
     annotationLevel.description = request.args.get('annotationDescription', None)
     annotationLevel.level_number = request.args.get('annotationLevelNumber', None)
+    annotationLevel.instruction = request.args.get('annotationLevelInstruction', None)
 
     db.session.commit()
     response = {}
@@ -404,6 +406,7 @@ def _uploadFiles():
                 experiment.files.append(newFile)
                 fileCaption = request.form.get('fileCaption', None)
                 newFile.caption = fileCaption
+                newFile.target_caption = fileCaption
 
                 if experiment.category == 'text':
                     flaskFile.seek(0)
@@ -457,7 +460,8 @@ def addFilesViaSpreadsheet(experimentId, spreadsheet):
         content = str(first_sheet.cell(i, 1).value)
         newFile = File(name=name[:1024],
                     content=content[:32000],
-                    caption=caption[:320],
+                    caption=caption[:2000],
+                    target_caption=caption[:1000],
                     experiment_id=experimentId,
         )
         experiment.files.append(newFile)
@@ -481,6 +485,7 @@ def addFilesFromConcordance(experimentId, concordance):
             readnamefromattributetext_file = False # YouTube style
         for row in reader:
             caption = row["Context before"] + " <<<" + row["Query item"] + ">>> " + row["Context after"]
+            target_caption = row["Query item"]
             if experiment.category == "video":
                 content = row["Video Snippet"]
             elif experiment.category == "audio":
@@ -506,7 +511,8 @@ def addFilesFromConcordance(experimentId, concordance):
             
             newFile = File(name=name[:1024],
                     content=content[:32000],
-                    caption=caption[:320],
+                    caption=caption[:2000],
+                    target_caption=target_caption[:1000],
                     experiment_id=experimentId,
             )
             experiment.files.append(newFile)

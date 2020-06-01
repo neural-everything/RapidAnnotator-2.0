@@ -75,9 +75,9 @@ class AnnotationLevelForm(FlaskForm):
 
     description = StringField(
         label=_('Annotation level description'),
-        description=_("A short description : guidilines for the annotator. \
-                Can't exceed 640 chars"),
-        validators=[Length(max=640 ,message=_("Annotation level description can't exceed 640 chars."))],
+        description=_("A short description : Guidelines for the annotator. \
+                Can't exceed 850 chars"),
+        validators=[Length(max=850 ,message=_("Annotation level description can't exceed 850 chars."))],
         filters =[strip_filter],
     )
 
@@ -85,6 +85,14 @@ class AnnotationLevelForm(FlaskForm):
         label=_('Annotation level Number'),
         description=_("Decides the order in which an annotator is asked to annotate the data-items."),
         validators=[DataRequired(message=_('Annotation level number not provided.'))],
+    )
+
+    instruction = StringField(
+        label=_('Annotation level instruction'),
+        description=_("A short instruction : Guidelines for the annotator. \
+                Can't exceed 1500 chars"),
+        validators=[Length(max=1500 ,message=_("Annotation level instruction can't exceed 1500 chars."))],
+        filters =[strip_filter],
     )
 
     def reset(self):

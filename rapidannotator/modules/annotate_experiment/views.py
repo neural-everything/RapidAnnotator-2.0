@@ -135,6 +135,7 @@ def _getFile(experimentId, fileIndex, start):
         'name' : currentFile.name,
         'content' : currentFile.content,
         'caption' : currentFile.caption,
+        'target_caption': currentFile.target_caption,
     }
     return currentFile
 
@@ -219,11 +220,15 @@ def _addAnnotationInfo():
     fileId = arguments.get('fileId', None)
     annotations = arguments.get('annotations')
     prevLabelCount = arguments.get('labelCount', None)
+    # targetCaptionData = arguments.get('targetCaptionData', None)
 
     ''' For displaying a warning if the labels got changed at any time'''
     labelCount = 0
 
-    experimentId = File.query.filter_by(id=fileId).first().experiment_id
+    fileItem = File.query.filter_by(id=fileId).first()
+    # fileItem.target_caption = targetCaptionData
+
+    experimentId = fileItem.experiment_id
     
     annotationLevels = AnnotationLevel.query.filter_by(experiment_id=experimentId).all()
     for level in annotationLevels:
@@ -283,6 +288,19 @@ def checkStatus():
         experiment.status = 'Completed'
         experiment.is_done = 1
         db.session.commit()
+    response = {}
+    response['success'] = True
+    return jsonify(response)
+
+
+@blueprint.route('/saveTargetCaption', methods=["POST"])
+def saveTargetCaption():
+    fileId = request.form.get('fileId', None)
+    targetCaption = request.form.get('targetCaption', None)
+    fl = File.query.filter_by(id=fileId).first()
+    fl.target_caption = targetCaption
+    db.session.commit()
+    
     response = {}
     response['success'] = True
     return jsonify(response)

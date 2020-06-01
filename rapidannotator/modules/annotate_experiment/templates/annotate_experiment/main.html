@@ -6,6 +6,9 @@
   {{ super() }}
   <style type="text/css">
     .important { color: #336699; }
+    .red {
+        color: red;
+    }
   </style>  
 {% endblock head %}
 
@@ -96,17 +99,26 @@
                     <h4></h4>
                 </div>
 
+                <div class="target-caption hidden-element">
+                    <h4></h4>
+                </div>
+
             </div>
         {% endfor %}
 
         {% for level in experiment.annotation_levels | sort(attribute='level_number')%}
             <div class="col-xs-7 annotationLevel hidden-element" data-index="{{loop.index}}" data-levelid="{{level.id}}">
                 {%- set levelIndex = loop.index %}
-
-
+                <div class="alert alert-info alert-dismissible">
+                    <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                    <span class='glyphicon glyphicon-info-sign my-tooltip' title="Instruction"></span>
+                    &nbsp;{{level.instruction}}
+                </div>  
+                
                 <h3 class="labelName">
                     <b>{{level.name}}</b>
                 </h3>
+                        
                 <p>
                     {{level.description}}
                 </p>
@@ -136,7 +148,14 @@
 
     <div class="fileCaption">
         <h4></h4>
-    </div>
+    </div><br>
+
+    <div class="fileTargetCaption">
+        <form method="POST" id="targetCaptionForm" name="targetCaptionForm">
+            <b>Target Caption:</b> <br><br>
+            <textarea rows = "5" cols = "170" name = "targetCaptionData" id="targetCaptionData"></textarea>
+        </form>
+    </div><br>
 
 </div>
 
@@ -265,6 +284,9 @@
 
         labelButton.on('click', function() {
             selectedLabel = $(this).data("labelid");
+            var targetCaption = $("#targetCaptionData").val();
+            var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
+            save_targetCaption(currentFileId, targetCaption);
             nextLevel(selectedLabel);
         });
 
@@ -274,6 +296,9 @@
             /*for the dict in current index check if the key is there*/
             $.each( keyBindingDict[currentLevel], function( key, value ) {
                 if( y == value ) {
+                    var targetCaption = $("#targetCaptionData").val();
+                    var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
+                    save_targetCaption(currentFileId, targetCaption);
                     nextLevel(key);
                 }
             });
@@ -448,9 +473,10 @@
 
             var data = {
                 'fileId' :          currentFileId,
-                'annotations' :     annotations,
-                'labelCount' :     {{labelCount}}, 
+                'annotations' :     annotations, 
+                'labelCount' :     {{labelCount}},
             };
+
             data = JSON.stringify(data);
             $.getJSON(url , data, function(response) {
                 if(response.success) {
@@ -559,6 +585,10 @@
             var fileCaption = loadedFile.find('.caption h4').text();
             $('.fileCaption h4').text(fileCaption);
 
+            var targetFileCaption = loadedFile.find('.target-caption h4').text();
+            console.log(targetFileCaption);
+            $("#targetCaptionData").val(targetFileCaption);
+
         }
 
         function updateFile(index, fileToLoad) {
@@ -634,11 +664,27 @@
             }
 
             var caption = fileToLoad.caption;
+            var target_caption = fileToLoad.target_caption;
+            console.log(target_caption); 
             loadedDiv.find('.caption h4').text(caption);
+            loadedDiv.find('.target-caption h4').text(target_caption);
             loadedDiv.data("fileid", fileToLoad.id);
         }
 
     });
+
+    function save_targetCaption(fileId, targetCaption){
+        var url = "{{ url_for('annotate_experiment.saveTargetCaption')}}";
+        var data = {
+            'fileId' : fileId,
+            'targetCaption': targetCaption,
+        };
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: data,
+        });
+    };
 
     $(document).ready(function(){
         $(".send_notification").click(function(){
@@ -661,6 +707,28 @@
             });
         };
     });
+    
+    thisRespondHightlightText(".fileCaption h4");
+
+    function thisRespondHightlightText(thisDiv){
+        $(thisDiv).on("mouseup", function () {
+            var selectedText = getSelectionText();
+            var selectedTextRegExp = new RegExp(selectedText,"g");
+            var text = $(this).text().replace(selectedTextRegExp, "<span class='red'>" + selectedText + "</span>");
+            $(this).html(text);
+            $("#targetCaptionData").val(selectedText);
+        });
+    }
+
+    function getSelectionText() {
+        var text = "";
+        if (window.getSelection) {
+            text = window.getSelection().toString();
+        } else if (document.selection && document.selection.type != "Control") {
+            text = document.selection.createRange().text;
+        }
+        return text;
+    }
 
 </script>
 

@@ -26,8 +26,6 @@
     </div>
     <hr class="horizontal-line">
     <div class="pull-right" style="display: inline-block">
-        <!-- <button type="button" data-toggle="modal" data-target="#addGlobalNameModal"  -->
-            <!-- class="togglePrivate btn btn-warning btn-group btn-group-inline btn-space" value={{experiment.is_global}}> -->
             <button type="button"
                 class="togglePrivate1 btn btn-warning btn-group btn-group-inline btn-space" value={{experiment.is_global}}>
                 {{ ('Make Private') }}
@@ -56,8 +54,10 @@
                 data-level={{annotation_level.level_number}}>
                 <div class="col-xs-12">
                     <div class="annotationDescriptionGrp">
-                        <span class="col-xs-4 h5 wrapWord annotationName"> {{ annotation_level.name }}</span>
-                        <span class="col-xs-7 h5 annotationDescription">{{ annotation_level.description }}</span>
+                        <span class="col-xs-4 h5 wrapWord annotationName"><b>Annotation Level Name</b>: {{ annotation_level.name }}</span>
+                        <span class="col-xs-7 h5 annotationDescription"><b>Description</b>: {{ annotation_level.description }}</span>
+                        <span class="annotationLevelInstruction hidden-element">{{annotation_level.instruction }}</span>
+                        
                         <span class="col-xs-1 pull-right glyphicon glyphicon-pencil edit-button-margin"
                             data-toggle="modal" data-target="#editAnnotationLevelModal" title="Edit/Delete Annotation level"></span>
                     </div>
@@ -71,7 +71,7 @@
                         Add Labels</button>
                         <br><br>
                     {%- endif -%}
-                </div>
+                </div><br>
 
                 <div class="col-xs-12 container-fluid labelCollection">
                     <span class="col-xs-5 h5 labelName"><b>Label Name</b></span>
@@ -194,19 +194,25 @@
                 <b>Annotation Level Name</b>
                 <input type="text" name="annotationName" maxlength="32" minlength="1"
                     class="form-control validate" placeholder="Annotation Level Name">
-                <span class="help-block"><small><div style="line-height:135%">Name of the annotation level: Example Gender, Age. Can't exceed 32 characters
+                <span class="help-block"><small><div style="line-height:135%">Name of the annotation level: Example Gender, Age. Can't exceed 32 chars.
                 </div></small></span>
 
                 <b>Annotation level description</b>
                 <input type="text" name="annotationDescription"
                     class="form-control validate" placeholder="Annotation level description" maxlength="640">
-                <span class="help-block"><small><div style="line-height:135%">A short description : guidilines for the annotator. Can't exceed 640 characters
+                <span class="help-block"><small><div style="line-height:135%">A short description : guidelines for the annotator. Can't exceed 850 chars.
                 </div></small></span>
 
                 <b>Annotation level Number</b>
                 <input type="number" name="annotationLevel"
                     class="form-control validate" placeholder="Annotation level Number">
                 <span class="help-block"><small><div style="line-height:135%">It decides the order in which an annotator is asked to annotate the data-items.
+                </div></small></span>
+
+                <b>Annotation level Instruction</b>
+                <input type="text" name="annotationLevelInstruction"
+                    class="form-control validate" placeholder="Annotation level Instruction">
+                <span class="help-block"><small><div style="line-height:135%">A short instruction : guidelines for the annotator. Can't exceed 1500 chars.
                 </div></small></span>
 
                 <div class="form-actions">
@@ -580,12 +586,16 @@
             selectedAnnotationId = selectedAnnotation.attr('value');
 
             annotationName = selectedAnnotation.find('.annotationName').text();
+            annotationName = annotationName.substring(23);
             annotationDescription = selectedAnnotation.find('.annotationDescription').text();
+            annotationDescription = annotationDescription.substring(13);
             annotationLevel = selectedAnnotation.data('level');
+            annotationLevelInstruction = selectedAnnotation.find('.annotationLevelInstruction').text();
 
             editAnnotationLevelForm.find('input[name="annotationName"]').val(annotationName);
             editAnnotationLevelForm.find('input[name="annotationDescription"]').val(annotationDescription);
             editAnnotationLevelForm.find('input[name="annotationLevel"]').val(annotationLevel);
+            editAnnotationLevelForm.find('input[name="annotationLevelInstruction"]').val(annotationLevelInstruction);
         });
 
         editAnnotationLevelForm.on('submit', function(e) {
@@ -595,6 +605,7 @@
             name = editAnnotationLevelForm.find('input[name="annotationName"]').val();
             description = editAnnotationLevelForm.find('input[name="annotationDescription"]').val();
             levelNumber = editAnnotationLevelForm.find('input[name="annotationLevel"]').val();
+            instruction = editAnnotationLevelForm.find('input[name="annotationLevelInstruction"]').val();
 
             var url = "{{ url_for('add_experiment._editAnnotationLevel')}}";
             var data = {
@@ -602,11 +613,12 @@
                 annotationName: name,
                 annotationDescription: description,
                 annotationLevelNumber: levelNumber,
+                annotationLevelInstruction: instruction,
             };
 
             $.getJSON(url , data, function(response) {
                 if(response.success) {
-                    updateAnnotationLevel(selectedAnnotationId, name, description, levelNumber);
+                    updateAnnotationLevel(selectedAnnotationId, name, description, levelNumber, instruction);
                     $('#editAnnotationLevelModal').modal('hide');
                 }
                 else { }
@@ -640,10 +652,11 @@
             selectedLabel.find('.labelKey').text(key ? key : "default");
         }
 
-        function updateAnnotationLevel(selectedAnnotationId, name, description, levelNumber) {
+        function updateAnnotationLevel(selectedAnnotationId, name, description, levelNumber, instruction) {
             selectedAnnotation = $(".annotation_level[value=" + selectedAnnotationId + "]");
             selectedAnnotation.find('.annotationName b').text(name);
             selectedAnnotation.find('.annotationDescription').text(description);
+            selectedAnnotation.find('.annotationLevelInstruction').text(instruction);
             selectedAnnotation.data('level',levelNumber);
         }
 
