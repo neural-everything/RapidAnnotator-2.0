@@ -8,6 +8,7 @@ Flask_WTF==0.14.2
 Flask_Security==3.0.0
 mysqlclient==1.4.4
 onetimepass==1.0.1
+pandas==0.24.2
 WTForms==2.1
 SQLAlchemy==1.2.7
 speaklater==1.3

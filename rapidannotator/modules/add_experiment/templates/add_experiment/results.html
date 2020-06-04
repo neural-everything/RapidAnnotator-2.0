@@ -28,14 +28,18 @@
             {{ ('Discard All Annotations') }}
             <span class="glyphicon glyphicon-trash"></span>
         </a>
-        {%- set exportResultsUrl = url_for('add_experiment._exportResults', experimentId = experiment.id) %}
-
-        <a class="exportResults btn btn-primary btn-group btn-group-inline btn-space"
-            href="{{exportResultsUrl}}" Content-Disposition: attachment>
-
-            {{ ('Export Results to Sheet') }}
-            <span class="glyphicon glyphicon-download-alt"></span>
-        </a>
+        {%- set exportResultsUrl1 = url_for('add_experiment._exportResultsXLS', experimentId = experiment.id) %}
+        {%- set exportResultsUrl2 = url_for('add_experiment._exportResultsCSV', experimentId = experiment.id) %}
+        <div class="dropdown btn-group btn-group-inline btn-space">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="addOwners" data-toggle="dropdown">
+                {{ ('Export Results to Sheet') }}
+            <span class="glyphicon glyphicon-download-alt"></span> &nbsp;
+            <span class="caret"></span></button>
+            <ul class="dropdown-menu scrollable-dropdown" id="addOwnersMenu" role="menu" aria-labelledby="addOwners">
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportResultsUrl1}}"><span>Export as .xls</span></a></li>
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportResultsUrl2}}"><span>Export as .csv</span></a></li>
+            </ul>
+        </div>
 
     </div>
 

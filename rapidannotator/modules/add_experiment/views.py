@@ -17,7 +17,7 @@ from .api import isPerimitted, isPerimitted1
 from sqlalchemy import and_
 import os, csv, re
 
-import xlwt, xlrd
+import xlwt, xlrd, pandas
 
 @blueprint.before_request
 def before_request():
@@ -379,7 +379,6 @@ def _uploadFiles():
     from rapidannotator import app
 
     if request.method == 'POST':
-
         if 'file' not in request.files:
             flash('No file part')
             return redirect(request.url)
@@ -389,6 +388,8 @@ def _uploadFiles():
             return response
         ''' TODO? also check for the allowed filename '''
         if flaskFile:
+            fl_name, fl_ext = os.path.splitext(flaskFile.filename)
+            print(fl_name, fl_ext)
             experimentId = request.form.get('experimentId', None)
             experiment = Experiment.query.filter_by(id=experimentId).first()
             if experiment.is_done:
@@ -397,7 +398,13 @@ def _uploadFiles():
                 db.session.commit()
 
             if experiment.uploadType == 'viaSpreadsheet':
-                addFilesViaSpreadsheet(experimentId, flaskFile)
+                if fl_ext == '.xls':
+                    addFilesViaSpreadsheetXLS(experimentId, flaskFile)
+                elif fl_ext == '.csv':
+                    addFilesViaSpreadsheetCSV(experimentId, flaskFile)
+                else:
+                    flash('Currently, rapidannotator does not support the selected file format')
+                    return redirect(request.url)
             elif experiment.uploadType == 'fromConcordance':
                 addFilesFromConcordance(experimentId, flaskFile)
             else:
@@ -444,7 +451,7 @@ def _uploadFiles():
 
     return jsonify(response)
 
-def addFilesViaSpreadsheet(experimentId, spreadsheet):
+def addFilesViaSpreadsheetXLS(experimentId, spreadsheet):
     experiment = Experiment.query.filter_by(id=experimentId).first()
 
     from rapidannotator import app
@@ -467,6 +474,29 @@ def addFilesViaSpreadsheet(experimentId, spreadsheet):
         experiment.files.append(newFile)
     db.session.commit()
     os.remove(filePath)
+
+def addFilesViaSpreadsheetCSV(experimentId, spreadsheet):
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+
+    from rapidannotator import app
+    filename = 'temp_' + current_user.username + '.csv'
+    filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    spreadsheet.save(filePath)
+
+    csv_data = pandas.read_csv(filePath, names= ['file_name', 'content', 'caption'], delimiter=',')
+    for i, row in csv_data.iterrows():
+        name, content, caption = str(row['file_name']), row['content'], row['caption']
+        newFile = File(name=name[:1024],
+                    content=content[:12000],
+                    caption=caption[:2000],
+                    target_caption=caption[:1000],
+                    experiment_id=experimentId,
+        )
+        experiment.files.append(newFile)
+
+    db.session.commit()
+    os.remove(filePath)
+
 
 def addFilesFromConcordance(experimentId, concordance):
     experiment = Experiment.query.filter_by(id=experimentId).first()
@@ -905,8 +935,136 @@ def _exportResults(experimentId):
     filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     excel_file.save(filePath)
 
+    response = {}
+    response['success'] = True
+
+    return send_file(filePath, as_attachment=True)
+
+@blueprint.route('/_exportResultsXLS/<int:experimentId>', methods=['POST','GET'])
+def _exportResultsXLS(experimentId):
+
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    
+    excel_file = xlwt.Workbook()
+    sheet = excel_file.add_sheet('results')
+    style0 = xlwt.easyxf('font: name Times New Roman, color-index black, bold on')
+    sheet.col(0).width = 256 * 40
+    row, col = 0, 0
+    sheet.write(row, col, 'File Name', style0)
+    RESERVED_LABEL = '99999'
+    
+    annotators_assoc = experiment.annotators
+    annotators = [assoc.annotator for assoc in annotators_assoc]
+    for annotator in annotators:
+        col += 1
+        sheet.write(row, col, annotator.username, style0)
+
+    col += 1
+    sheet.write(row, col, 'Caption', style0)
+    col += 1
+    sheet.write(row, col, 'Target Caption', style0)
+    if experiment.uploadType == 'viaSpreadsheet':
+        col += 1
+        sheet.write(row, col, 'Video Link', style0)
+
+    row, col = 0, 0
+    for f in experiment.files:
+        row += 1
+        sheet.write(row, 0, f.name)
+
+        col = 0
+        for annotator in annotators:
+            col += 1
+            annotation_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=annotator.id).order_by(AnnotationInfo.annotationLevel_id)
+            if annotation_info.count() == 0:
+                sheet.write(row, col, RESERVED_LABEL)
+            else:
+                label_string = []
+                for info in annotation_info:
+                    label = Label.query.filter_by(id=info.label_id).first()
+                    label_string.append(label.name)
+                sheet.write(row, col, str(label_string))
+
+        col += 1
+        if f.caption == '':
+            sheet.write(row, col, 'No Caption Provided')
+        else:
+            sheet.write(row, col, f.caption)
+        
+        col += 1
+        sheet.write(row, col, f.target_caption)
+
+        if experiment.uploadType == 'viaSpreadsheet':
+            col += 1
+            sheet.write(row, col, f.content)
+
+    filename = str(experimentId) + '.xls'
+
+    from rapidannotator import app
+    filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    excel_file.save(filePath)
+
     # when to remove file?
     # os.remove(filePath)
+
+    response = {}
+    response['success'] = True
+
+    return send_file(filePath, as_attachment=True)
+
+
+@blueprint.route('/_exportResultsCSV/<int:experimentId>', methods=['POST','GET'])
+def _exportResultsCSV(experimentId):
+
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    
+    RESERVED_LABEL = '99999'
+    
+    column_headers = []
+    column_headers.append('File Name')
+    annotators_assoc = experiment.annotators
+    annotators = [assoc.annotator for assoc in annotators_assoc]
+    for annotator in annotators:
+        column_headers.append(annotator.username)
+    column_headers.append('Caption')
+    column_headers.append('Target Caption')
+    
+    if experiment.uploadType == 'viaSpreadsheet':
+        column_headers.append('Video Link')
+    
+    csv_data = []
+
+    for f in experiment.files:
+        csv_row = []
+        csv_row.append(f.name)
+        for annotator in annotators:
+            annotation_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=annotator.id).order_by(AnnotationInfo.annotationLevel_id)
+            if annotation_info.count() == 0:
+                csv_row.append(RESERVED_LABEL)
+            else:
+                label_string = []
+                for info in annotation_info:
+                    label = Label.query.filter_by(id=info.label_id).first()
+                    label_string.append(label.name)
+                csv_row.append(str(label_string))
+        if f.caption == '':
+            csv_row.append('No Caption Provided')
+        else:
+            csv_row.append(f.caption)
+        
+        csv_row.append(f.target_caption)
+
+        if experiment.uploadType == 'viaSpreadsheet':
+            csv_row.append(f.content)
+        csv_data.append(csv_row)
+    
+    fd = pandas.DataFrame(csv_data, columns=column_headers)
+
+    filename = str(experimentId) + '.csv'
+
+    from rapidannotator import app
+    filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    fd.to_csv(filePath, index=False)
 
     response = {}
     response['success'] = True

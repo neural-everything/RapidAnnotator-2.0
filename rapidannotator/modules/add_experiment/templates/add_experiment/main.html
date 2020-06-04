@@ -67,51 +67,50 @@
 </div>
 
 {%- if experiment.uploadType == 'manual' -%}
-<div class="container">
-    <div>
-        <div style="display: inline-block">
-            <h4 style="display: inline"><b>{{ ('Upload Files') }}</b></h4>
-        </div>
+    <div class="container">
+        <div>
+            <div style="display: inline-block">
+                <h4 style="display: inline"><b>{{ ('Upload Files') }}</b></h4>
+            </div>
 
-        <div id="fileContainer" class="pull-right" style="display: inline-block">
-            <button type="button" id="chooseFiles" class="btn btn-primary btn-group btn-group-inline btn-space">
-                <span class="glyphicon glyphicon glyphicon-file"></span>
-                Choose files
-            </button>
+            <div id="fileContainer" class="pull-right" style="display: inline-block">
+                <button type="button" id="chooseFiles" class="btn btn-primary btn-group btn-group-inline btn-space">
+                    <span class="glyphicon glyphicon glyphicon-file"></span>
+                    Choose files
+                </button>
 
-            <button type="button" id="uploadfiles" class="btn btn-primary btn-group btn-group-inline btn-space">
-                <span class="glyphicon glyphicon-upload"></span>
-                Start Upload
-            </button>
+                <button type="button" id="uploadfiles" class="btn btn-primary btn-group btn-group-inline btn-space">
+                    <span class="glyphicon glyphicon-upload"></span>
+                    Start Upload
+                </button>
+            </div>
+
         </div>
+        <div id="filelist">Your browser doesn't have Flash, Silverlight or HTML5 support.</div>
 
     </div>
-    <div id="filelist">Your browser doesn't have Flash, Silverlight or HTML5 support.</div>
-
-</div>
-
 {%- else -%}
-<div class="container">
-    <div>
-        <div style="display: inline-block">
-            <h4 style="display: inline"><b>{{ ('Upload Files via Spreadsheet') }}</b></h4>
+    <div class="container">
+        <div>
+            <div style="display: inline-block">
+                <h4 style="display: inline"><b>{{ ('Upload Files via Spreadsheet') }}</b></h4>
+            </div>
+
+            <div id="fileContainer" class="pull-right" style="display: inline-block">
+                <button type="button" id="chooseFiles" class="btn btn-primary btn-group btn-group-inline btn-space">
+                    <span class="glyphicon glyphicon glyphicon-file"></span>
+                    {{( 'Choose Spreadsheet/Concordance' )}}
+                </button>
+
+                <button type="button" id="uploadfiles" class="btn btn-primary btn-group btn-group-inline btn-space">
+                    <span class="glyphicon glyphicon-upload"></span>
+                    {{( 'Start Upload' )}}
+                </button>
+            </div>
+
         </div>
-
-        <div id="fileContainer" class="pull-right" style="display: inline-block">
-            <button type="button" id="chooseFiles" class="btn btn-primary btn-group btn-group-inline btn-space">
-                <span class="glyphicon glyphicon glyphicon-file"></span>
-                {{( 'Choose Spreadsheet/Concordance' )}}
-            </button>
-
-            <button type="button" id="uploadfiles" class="btn btn-primary btn-group btn-group-inline btn-space">
-                <span class="glyphicon glyphicon-upload"></span>
-                {{( 'Start Upload' )}}
-            </button>
-        </div>
-
+        <div id="filelist">Your browser doesn't have Flash, Silverlight or HTML5 support.</div>
     </div>
-    <div id="filelist">Your browser doesn't have Flash, Silverlight or HTML5 support.</div>
-</div>
 {%- endif -%}
 
 <div class ="errorLog hidden-element alert alert-dismissible fixed alert-warning">
@@ -456,7 +455,7 @@
                     if ( experimentUploadType == "viaSpreadsheet") {
                         fileTypes = {
                             mime_types: [
-                                {title : "Uploadable files", extensions : "xls"},
+                                {title : "Uploadable files", extensions : "xls,csv"},
                             ]
                         }
                     }
