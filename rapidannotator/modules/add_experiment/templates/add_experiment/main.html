@@ -74,6 +74,12 @@
             </div>
 
             <div id="fileContainer" class="pull-right" style="display: inline-block">
+                
+                <button type="button" class="deleteAllFilesButton btn btn-danger btn-group btn-group-inline btn-space" 
+                    value="{{ experiment.id }}" data-toggle="modal" data-target="#deleteAllFilesModal" onclick="setExperimentId({{experiment.id}});">
+                    <span class="glyphicon glyphicon-trash btn-space"></span>
+                </button>
+                
                 <button type="button" id="chooseFiles" class="btn btn-primary btn-group btn-group-inline btn-space">
                     <span class="glyphicon glyphicon glyphicon-file"></span>
                     Choose files
@@ -97,6 +103,11 @@
             </div>
 
             <div id="fileContainer" class="pull-right" style="display: inline-block">
+                <button type="button" class="deleteAllFilesButton btn btn-danger btn-group btn-group-inline btn-space" 
+                    value="{{ experiment.id }}" data-toggle="modal" data-target="#deleteAllFilesModal" onclick="setExperimentId({{experiment.id}});">
+                    <span class="glyphicon glyphicon-trash btn-space"></span>
+                </button>
+                
                 <button type="button" id="chooseFiles" class="btn btn-primary btn-group btn-group-inline btn-space">
                     <span class="glyphicon glyphicon glyphicon-file"></span>
                     {{( 'Choose Spreadsheet/Concordance' )}}
@@ -219,8 +230,56 @@
   </div>
 </div>
 
+
+<!-- Delete-All Files-Modal -->
+<div class="modal fade" id="deleteAllFilesModal" role="dialog" tabindex="-1"
+    aria-labelledby="deleteAllFilesModal" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title"><strong>Want to delete All Files? </strong><br><b>Note: </b>once deleted can not be recovered by any means.</h4>
+      </div>
+        <div class="modal-body">
+            <form method="POST" id="deleteAllFilesForm" name="deleteAllFilesForm">
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-danger"> {{ ('Delete') }}</button>
+                    <button type="button" class="btn btn-default pull-right" data-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+        </div>
+    </div>
+  </div>
+</div>
+
 <script charset="utf-8" type="text/javascript">
     var is_state_left_saving = 0
+    var Experiment_Id = -1;
+
+    function setExperimentId(id){
+        console.log(id);
+        Experiment_Id = id;
+    };
+
+    $(function(){
+        $('#deleteAllFilesForm').on('submit', function(e) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            var url = "{{ url_for('add_experiment._deleteAllFiles')}}";
+            var data = {
+                'experimentId' : Experiment_Id,
+            };
+
+            $.getJSON(url , data, function(response) {
+                if(response.success) {
+                    window.location.replace("{{url_for('home.index')}}");
+                } else {
+                }
+            });
+        })
+    });
 
     // Function for saving names and description in database on a click outside the box without using any save button
     $(function(){

@@ -585,6 +585,36 @@ def _deleteFile():
     response['success'] = True
     return jsonify(response)
 
+
+@blueprint.route('/_deleteAllFiles', methods=['POST','GET'])
+def _deleteAllFiles():
+
+    from rapidannotator import app
+
+    experimentId = request.args.get('experimentId', None)
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+
+    allFiles = experiment.files
+
+    for fl in allFiles:
+        currFile = File.query.filter_by(id=fl.id).first()
+        if experiment.uploadType == 'manual' and experiment.category != 'text':
+            experimentDir = os.path.join(app.config['UPLOAD_FOLDER'], str(experimentId))
+            if not os.path.exists(experimentDir):
+                response = {
+                    'error' : "specified experiment doesn't have any file",
+                }
+                return jsonify(response)
+            filePath = os.path.join(experimentDir, currFile.content)
+            os.remove(filePath)
+        db.session.delete(currFile)
+        db.session.commit()
+    
+    response = {}
+    response['success'] = True
+    return jsonify(response)
+
+
 @blueprint.route('/_updateFileName', methods=['POST','GET'])
 def _updateFileName():
 
