@@ -283,16 +283,21 @@
         $(".annotationLevel[data-index=1]").removeClass('hidden-element');
 
         labelButton.on('click', function() {
+            labelButton.attr("disabled", "disabled");
             selectedLabel = $(this).data("labelid");
             var targetCaption = $("#targetCaptionData").val();
             var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
             save_targetCaption(currentFileId, targetCaption);
             nextLevel(selectedLabel);
+            window.setTimeout(function() {
+                labelButton.removeAttr("disabled");
+            }, [800]);
         });
 
         $(document).keyup(function(event) {
             var x = event.charCode || event.keyCode;
             var y = String.fromCharCode(x).toLowerCase();
+            console.log(x, y);
             /*for the dict in current index check if the key is there*/
             $.each( keyBindingDict[currentLevel], function( key, value ) {
                 if( y == value ) {
@@ -304,7 +309,7 @@
             });
             /* undo feature */
             if(event.ctrlKey && y == 'z') {
-                undoAnnotation();
+                undoProcess();
             }
 
             if(x == 32){
@@ -317,6 +322,8 @@
                     space_pressed = (space_pressed + 1)%2;
                 }
             }
+            event.stopImmediatePropagation();
+            event.preventDefault();
 
         });
 
@@ -354,7 +361,7 @@
             }
         }
 
-        undoButton.on('click', function() {
+        function undoProcess(){
             undoButton.attr("disabled", "disabled");
             $('.toggleLooping').removeClass('hidden-element');
             if(last_previous == 1){
@@ -376,6 +383,10 @@
             window.setTimeout(function() {
                 undoButton.removeAttr("disabled");
             }, [1200]);
+        }
+
+        undoButton.on('click', function() {
+            undoProcess();
         });
 
         doneButton.on('click', function(){
@@ -587,7 +598,6 @@
             $('.fileCaption h4').text(fileCaption);
 
             var targetFileCaption = loadedFile.find('.target-caption h4').text();
-            console.log(targetFileCaption);
             $("#targetCaptionData").val(targetFileCaption);
 
         }
@@ -666,7 +676,6 @@
 
             var caption = fileToLoad.caption;
             var target_caption = fileToLoad.target_caption;
-            console.log(target_caption); 
             loadedDiv.find('.caption h4').text(caption);
             loadedDiv.find('.target-caption h4').text(target_caption);
             loadedDiv.data("fileid", fileToLoad.id);
