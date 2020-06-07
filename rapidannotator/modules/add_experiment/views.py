@@ -498,13 +498,24 @@ def addFilesViaSpreadsheetCSV(experimentId, spreadsheet):
     os.remove(filePath)
 
 
+def convert_txt_to_csv(inFileName, outFileName):
+    in_txt = csv.reader(open(inFileName, "r"), delimiter = '\t')
+    out_csv = csv.writer(open(outFileName, 'w'))
+    out_csv.writerows(in_txt)
+
+
 def addFilesFromConcordance(experimentId, concordance):
     experiment = Experiment.query.filter_by(id=experimentId).first()
 
     from rapidannotator import app
+    experimentDir = os.path.join(app.config['UPLOAD_FOLDER'], str(experimentId))
+    if not os.path.exists(experimentDir):
+        os.makedirs(experimentDir)
     filename = 'temp_' + current_user.username + '.txt'
-    filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    filePath = os.path.join(experimentDir, filename)
+    outfilePath = os.path.join(experimentDir, "input.csv")
     concordance.save(filePath)
+    convert_txt_to_csv(filePath, outfilePath)
     experiment = Experiment.query.filter_by(id=experimentId).first()
 
     with open(filePath, encoding='utf-8') as tsvfile:
