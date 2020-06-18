@@ -307,9 +307,15 @@ class AnnotationLevel(db.Model):
     ..  a small description of the annotation.
     ..  via this Experiment Owner can explain that what an annotator
     ..  is expected to look for while annotating this annotation level.
-    ..  size is limited to 640 characters
+    ..  size is limited to 850 characters
     '''
-    description = db.Column(db.String(640), nullable=False, server_default='')
+    description = db.Column(db.String(850), nullable=False, server_default='')
+
+    ''' Instruction
+    .. A small statement describing the instruction how to annotate the data
+    .. associated to a particular annotation level.  
+    '''
+    instruction = db.Column(db.String(1500), nullable=False, server_default='')
 
     ''' level_number
     ..  decides the order in which an annotator is asked
@@ -462,7 +468,13 @@ class File(db.Model):
     ..  a small description of the text.
     ..  size is limited to 1500 characters
     '''
-    caption = db.Column(db.String(1500), nullable=False, server_default='')
+    caption = db.Column(db.String(2000), nullable=False, server_default='')
+
+    ''' caption
+    ..  a small description of the text.
+    ..  size is limited to 1500 characters
+    '''
+    target_caption = db.Column(db.String(1000), nullable=False, server_default='')
 
     ''' content
     ..  actual text to be annotated for Text experiments.
@@ -472,12 +484,12 @@ class File(db.Model):
     ..  size limit of TEXT field of MySQL is 65535
     ..  the maximum table row size allowed is 65535 including storing overheads.
     '''
-    content = db.Column(db.String(10001), nullable=False, server_default='')
+    content = db.Column(db.String(11000), nullable=False, server_default='')
 
     ''' isSelected 
     ..  Flag for if the file is selected in the random order or not 
     '''
-    isSelected = db.Column(db.Integer, nullable=False, server_default='0')
+    concordance_lineNumber = db.Column(db.Integer, nullable=False, server_default='1')
 
     """ One to Many relation
     ..  For File:
