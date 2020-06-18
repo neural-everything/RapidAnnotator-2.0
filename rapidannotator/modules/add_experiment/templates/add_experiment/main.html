@@ -687,10 +687,8 @@
     $(function() {
 
         category = "{{ experiment.category }}";
-        uploadType = "{{experiment.uploadType}}";
         dt = "{{ experiment.display_time }}";
-
-        if( dt == "None" && uploadType != "manual" && (category  === "audio" || category === "video") ) {
+        if( dt == "None" && (category  === "audio" || category === "video") ) {
             $('#displayTimeModalId').modal('show');
         }
 

@@ -88,6 +88,8 @@
                                                 Your browser does not support HTML5 audio.
                                             </audio>
                                             &nbsp;&nbsp;&nbsp;&nbsp;{{ file.name }}
+                                        {%- else -%}
+                                            <span class="glyphicon glyphicon-file" style="font-size:30px;"></span><br>{{file.name}}
                                         {%- endif -%}
                                     {%- endif -%}    
                                 {%- endif -%}
