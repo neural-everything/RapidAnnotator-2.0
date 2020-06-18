@@ -513,10 +513,11 @@ def addFilesFromConcordance(experimentId, concordance):
         os.makedirs(experimentDir)
     filename = 'temp_' + current_user.username + '.txt'
     filePath = os.path.join(experimentDir, filename)
-    outfilePath = os.path.join(experimentDir, "input.csv")
+    outfilePath = os.path.join(experimentDir, "concordance.csv")
     concordance.save(filePath)
     convert_txt_to_csv(filePath, outfilePath)
     experiment = Experiment.query.filter_by(id=experimentId).first()
+    concordance_lineNum = 1
 
     with open(filePath, encoding='utf-8') as tsvfile:
         reader = csv.DictReader(tsvfile, dialect='excel-tab', quoting=csv.QUOTE_NONE)
@@ -555,7 +556,9 @@ def addFilesFromConcordance(experimentId, concordance):
                     caption=caption[:2000],
                     target_caption=target_caption[:1000],
                     experiment_id=experimentId,
+                    concordance_lineNumber=concordance_lineNum,
             )
+            concordance_lineNum = concordance_lineNum + 1
             experiment.files.append(newFile)
     db.session.commit()
     os.remove(filePath)
@@ -1054,10 +1057,57 @@ def _exportResultsXLS(experimentId):
     return send_file(filePath, as_attachment=True)
 
 
+def _exportResultsConcordance(experiment):
+
+    from rapidannotator import app
+    experimentDIR = os.path.join(app.config['UPLOAD_FOLDER'], str(experiment.id))
+    inputConcordance = os.path.join(experimentDIR, 'concordance.csv')
+    data = pandas.read_csv(inputConcordance)
+    
+    RESERVED_LABEL = '99999'
+    annotators_assoc = experiment.annotators
+    annotators = [assoc.annotator for assoc in annotators_assoc]
+    col_num = len(data.axes[1])
+
+    for annotator in annotators:
+        data_headers = ["File Deleted" for itr in range(len(data))]
+        for f in experiment.files:
+            annotation_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=annotator.id).order_by(AnnotationInfo.annotationLevel_id)
+            if annotation_info.count() == 0:
+                data_headers[f.concordance_lineNumber - 1] = RESERVED_LABEL
+            else:
+                label_string = []
+                for info in annotation_info:
+                    label = Label.query.filter_by(id=info.label_id).first()
+                    label_string.append(label.name)
+                label_string = str(label_string)
+                data_headers[f.concordance_lineNumber - 1] = label_string
+        data.insert(col_num, annotator.username, data_headers)
+        col_num = col_num + 1
+
+    data_headers = ["File Deleted" for itr in range(len(data))]
+    for f in experiment.files:
+        data_headers[f.concordance_lineNumber - 1] = f.target_caption
+    data.insert(col_num, "Target Caption", data_headers)
+
+    filename = str(experiment.id) + '.csv'
+
+    from rapidannotator import app
+    filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    data.to_csv(filePath, index=False)
+
+    response = {}
+    response['success'] = True
+
+    return send_file(filePath, as_attachment=True)
+
+
 @blueprint.route('/_exportResultsCSV/<int:experimentId>', methods=['POST','GET'])
 def _exportResultsCSV(experimentId):
 
     experiment = Experiment.query.filter_by(id=experimentId).first()
+    if experiment.uploadType == 'fromConcordance':
+        return _exportResultsConcordance(experiment)
     
     RESERVED_LABEL = '99999'
     

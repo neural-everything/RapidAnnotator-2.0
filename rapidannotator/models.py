@@ -489,7 +489,7 @@ class File(db.Model):
     ''' isSelected 
     ..  Flag for if the file is selected in the random order or not 
     '''
-    isSelected = db.Column(db.Integer, nullable=False, server_default='0')
+    concordance_lineNumber = db.Column(db.Integer, nullable=False, server_default='1')
 
     """ One to Many relation
     ..  For File:
