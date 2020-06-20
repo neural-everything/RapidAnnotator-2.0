@@ -1,5 +1,6 @@
 # All variables should be uppercase
 # For sending Mails to the users TESTING should be False in DevlopmentConfig Class
+# UPLOAD_FOLDER path must be raw string
 
 class BaseConfig(object):
     DEBUG = False
@@ -10,7 +11,7 @@ class BaseConfig(object):
     SECURITY_PASSWORD_SALT = "SOME SECURITY SALT like abcdefre"
     WTF_CSRF_ENABLED = True
     CSRF_ENABLED = True
-    UPLOAD_FOLDER = '[Path_to_storage_directory]'
+    UPLOAD_FOLDER = r'[Path_to_storage_directory]'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # mail settings

@@ -689,7 +689,8 @@
         category = "{{ experiment.category }}";
         dt = "{{ experiment.display_time }}";
         if( dt == "None" && (category  === "audio" || category === "video") ) {
-            $('#displayTimeModalId').modal('show');
+            setDisplayTime(2, 2);
+            // $('#displayTimeModalId').modal('show');
         }
 
         var selectedOwner = $('#addOwnersMenu li a');

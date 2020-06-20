@@ -9,6 +9,8 @@
     .red {
         color: red;
     }
+    
+    span.hl { background: yellow; }
   </style>  
 {% endblock head %}
 
@@ -99,7 +101,7 @@
                     <h4></h4>
                 </div>
 
-                <div class="target-caption hidden-element">
+                <div class="targetCaption hidden-element">
                     <h4></h4>
                 </div>
 
@@ -109,11 +111,13 @@
         {% for level in experiment.annotation_levels | sort(attribute='level_number')%}
             <div class="col-xs-7 annotationLevel hidden-element" data-index="{{loop.index}}" data-levelid="{{level.id}}">
                 {%- set levelIndex = loop.index %}
-                <div class="alert alert-info alert-dismissible">
-                    <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-                    <span class='glyphicon glyphicon-info-sign my-tooltip' title="Instruction"></span>
-                    &nbsp;{{level.instruction}}
-                </div>  
+                {%- if level.instruction != "" -%}
+                    <div class="alert alert-info alert-dismissible">
+                        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                        <span class='glyphicon glyphicon-info-sign my-tooltip' title="Instruction"></span>
+                        &nbsp;{{level.instruction}}
+                    </div>
+                {%- endif -%}
                 
                 <h3 class="labelName">
                     <b>{{level.name}}</b>
@@ -597,7 +601,7 @@
             var fileCaption = loadedFile.find('.caption h4').text();
             $('.fileCaption h4').text(fileCaption);
 
-            var targetFileCaption = loadedFile.find('.target-caption h4').text();
+            var targetFileCaption = loadedFile.find('.targetCaption h4').text();
             $("#targetCaptionData").val(targetFileCaption);
 
         }
@@ -677,7 +681,7 @@
             var caption = fileToLoad.caption;
             var target_caption = fileToLoad.target_caption;
             loadedDiv.find('.caption h4').text(caption);
-            loadedDiv.find('.target-caption h4').text(target_caption);
+            loadedDiv.find('.targetCaption h4').text(target_caption);
             loadedDiv.data("fileid", fileToLoad.id);
         }
 
@@ -722,9 +726,11 @@
 
     function thisRespondHightlightText(thisDiv){
         $(thisDiv).on("mouseup", function () {
+            console.log($(this).html());
             var selectedText = getSelectionText();
-            var selectedTextRegExp = new RegExp(selectedText,"g");
-            var text = $(this).text().replace(selectedTextRegExp, "<span class='red'>" + selectedText + "</span>");
+            var replacement = $('<span></span>').attr({'class':'hl'}).html(selectedText);
+            var replacementHtml = $('<div>').append(replacement.clone()).remove().html();
+            var text = $(this).text().replace(selectedText, replacementHtml);
             $(this).html(text);
             $("#targetCaptionData").val(selectedText);
         });
