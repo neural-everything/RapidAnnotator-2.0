@@ -499,9 +499,10 @@ def addFilesViaSpreadsheetCSV(experimentId, spreadsheet):
 
 
 def convert_txt_to_csv(inFileName, outFileName):
-    in_txt = csv.reader(open(inFileName, "r"), delimiter = '\t')
-    out_csv = csv.writer(open(outFileName, 'w'))
-    out_csv.writerows(in_txt)
+    with open(inFileName, encoding='utf-8') as tsvfile:
+        in_txt = csv.reader(tsvfile, delimiter = '\t')
+        out_csv = csv.writer(open(outFileName, 'w', encoding='utf-8'))
+        out_csv.writerows(in_txt)
 
 
 def addFilesFromConcordance(experimentId, concordance):
@@ -526,7 +527,7 @@ def addFilesFromConcordance(experimentId, concordance):
         else:
             readnamefromattributetext_file = False # YouTube style
         for row in reader:
-            caption = row["Context before"] + " <<<" + row["Query item"] + ">>> " + row["Context after"]
+            caption = row["Context before"] + " " + row["Query item"] +  " " + row["Context after"]
             target_caption = row["Query item"]
             if experiment.category == "video":
                 content = row["Video Snippet"]
