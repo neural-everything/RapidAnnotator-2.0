@@ -228,6 +228,13 @@ class Experiment(db.Model):
         server_default='0',
     )
 
+    """ Flag indicating whether to display target Caption or not """
+    displayTargetCaption = db.Column(
+        db.Boolean(name='displayTargetCaption'),
+        nullable=False,
+        server_default='0',
+    )
+
     """ Global name for all Annotation levels in an experiment """
     globalName = db.Column(db.String(255), nullable=False, server_default='')
 

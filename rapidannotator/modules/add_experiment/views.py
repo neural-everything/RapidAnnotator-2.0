@@ -13,7 +13,7 @@ from rapidannotator import bcrypt
 from flask_login import current_user, login_required
 from flask_login import login_user, logout_user, current_user
 from .api import isPerimitted, isPerimitted1
-
+from flask_paginate import Pagination, get_page_args
 from sqlalchemy import and_
 import os, csv, re
 
@@ -115,6 +115,22 @@ def _addAnnotator():
 
     return jsonify(response)
 
+@blueprint.route('/_displayTargetCaption', methods=['GET', 'POST'])
+def _displayTargetCaption():
+    optionVal = request.args.get('optionVal', None)
+    experimentId = request.args.get('experimentId', None)
+
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    if optionVal == "Yes":
+        experiment.displayTargetCaption = 1
+    else:
+        experiment.displayTargetCaption = 0
+    db.session.commit()
+
+    response = {
+        'success' : True,
+    }
+    return jsonify(response)
 
 @blueprint.route('/labels/<int:experimentId>')
 @isPerimitted1
@@ -723,7 +739,6 @@ def _editAnnotator():
 
     import sys
     from rapidannotator import app
-    app.logger.info("hoollllllllll")
 
     annotatorId = request.args.get('annotatorId', None)
     experimentId = request.args.get('experimentId', None)
@@ -810,12 +825,20 @@ def _deleteExperiment():
     return jsonify(response)
 
 
-@blueprint.route('/viewResults/<int:experimentId>/<int:page>')
-@isPerimitted
-def viewResults(experimentId, page):
+@blueprint.route('/viewResults/<int:experimentId>')
+@isPerimitted1
+def viewResults(experimentId):
 
+    page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
     experiment = Experiment.query.filter_by(id=experimentId).first()
-    expFiles = File.query.filter_by(experiment_id=experiment.id).paginate(page, 10, error_out=False)
+    expFiles = File.query.filter_by(experiment_id=experiment.id).all()
+    exp_files = []
+    for fl in expFiles:
+        exp_files.append(fl)
+    pagination_files = exp_files[offset: offset + per_page]
+    total = len(exp_files)
+    pagination = Pagination(page=page, per_page=per_page, total=total, css_framework='bootstrap3')
+    
     annotations = {}
 
     for f in experiment.files:
@@ -830,12 +853,10 @@ def viewResults(experimentId, page):
                 annotation[levelId] = {}
                 annotation[levelId][labelId] = 1
         annotations[f.id] = annotation
+    
+    return render_template('add_experiment/results.html', exp_files=pagination_files, page=page, \
+        per_page=per_page, pagination=pagination, experiment = experiment, annotations = annotations,)
 
-    return render_template('add_experiment/results.html',
-        experiment = experiment,
-        annotations = annotations,
-        expFiles = expFiles,
-    )
 
 @blueprint.route('/_discardAnnotations', methods=['POST','GET'])
 def _discardAnnotations():
