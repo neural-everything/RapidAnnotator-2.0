@@ -241,6 +241,7 @@
         var preLoadedTill = 0;
         var space_pressed = 0;
         var annotations = {};
+        var already_submitted = {};
         var progress_num = 0;
         var totalAnnotationLevels = {{ totalAnnotationLevels }};
         var keyBindingDict = {{keyBindingDict | safe}};
@@ -291,7 +292,7 @@
         labelButton.on('click', function() {
             labelButton.attr("disabled", "disabled");
             selectedLabel = $(this).data("labelid");
-            if("{{experiment.displayTargetCaption}}"){
+            if("{{experiment.displayTargetCaption}}" == "True"){
                 var targetCaption = $("#targetCaptionData").val();
                 var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
                 save_targetCaption(currentFileId, targetCaption);
@@ -301,22 +302,29 @@
                 labelButton.removeAttr("disabled");
             }, [800]);
         });
+        
+        
 
         $(document).keyup(function(event) {
             var x = event.charCode || event.keyCode;
             var y = String.fromCharCode(x).toLowerCase();
-            console.log(x, y);
-            /*for the dict in current index check if the key is there*/
-            $.each( keyBindingDict[currentLevel], function( key, value ) {
-                if( y == value ) {
-                    if("{{experiment.displayTargetCaption}}"){
-                        var targetCaption = $("#targetCaptionData").val();
-                        var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
-                        save_targetCaption(currentFileId, targetCaption);
+            var currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+            var levelId = currentLevelBody.data("levelid");
+            
+            if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio"){
+                var tp = $(".file[data-index='" + currentLoadedFile + "']");
+                tp = tp.find(".clip")[0];
+                if(tp.readyState == 3 || tp.readyState == 4 || tp.readyState == 2){
+                    if(!already_submitted[levelId]){
+                        annotationProcess(y);
                     }
-                    nextLevel(key);
                 }
-            });
+            }
+            else{
+                if(!already_submitted[levelId]){
+                    annotationProcess(y);
+                }
+            }
             /* undo feature */
             if(event.ctrlKey && y == 'z') {
                 undoProcess();
@@ -337,10 +345,26 @@
 
         });
 
+
+        function annotationProcess(y){
+            /*for the dict in current index check if the key is there*/
+            $.each( keyBindingDict[currentLevel], function( key, value ) {
+                if( y == value ) {
+                    if("{{experiment.displayTargetCaption}}" == "True"){
+                        var targetCaption = $("#targetCaptionData").val();
+                        var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
+                        save_targetCaption(currentFileId, targetCaption);
+                    }
+                    nextLevel(key);
+                }
+            });
+        }
+
         function nextLevel(label) {
             currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
             levelId = currentLevelBody.data("levelid");
             annotations[levelId] = label;
+            already_submitted[levelId] = 1;
             currentLevelBody.addClass('hidden-element');
             if (currentLevel == totalAnnotationLevels) {
                 fileAnnotationCompleted();
@@ -448,7 +472,7 @@
         function loadPreviousFile(load_previous) {
             annotations = {};
             var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
-            console.log(load_previous, currentFileId);
+            // console.log(load_previous, currentFileId);
             var data = {
                 'lp': load_previous,
                 'fileId' :          currentFileId,
@@ -503,6 +527,7 @@
             $.getJSON(url , data, function(response) {
                 if(response.success) {
                     annotations = {};
+                    already_submitted = {};
                     if(currentFileIndex == {{lastFile}}) {
 
                         //  Code for Progress bar
@@ -736,7 +761,6 @@
 
     function thisRespondHightlightText(thisDiv){
         $(thisDiv).on("mouseup", function () {
-            console.log($(this).html());
             var selectedText = getSelectionText();
             var replacement = $('<span></span>').attr({'class':'hl'}).html(selectedText);
             var replacementHtml = $('<div>').append(replacement.clone()).remove().html();
