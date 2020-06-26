@@ -37,7 +37,22 @@
 
     <div class="pull-right" style="display: inline-block">
         {%- set viewSettings = url_for('add_experiment.viewSettings', experimentId = experiment.id) %}
-        {%- set viewResults = url_for('add_experiment.viewResults', experimentId = experiment.id, page = '1') %}
+        {%- set viewResults = url_for('add_experiment.viewResults', experimentId = experiment.id) %}
+        
+        <div class="dropdown btn-group btn-group-inline btn-space">
+            <button class="btn btn-danger dropdown-toggle" type="button" id="addTargetCaption" data-toggle="dropdown">
+                {{ ('Display Target Caption') }} &nbsp;
+            <span class="caret"></span></button>
+            <ul class="dropdown-menu scrollable-dropdown" id="targetCaptionMenu" role="menu" aria-labelledby="addTargetCaption">
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="#"><span>
+                    {%- if experiment.displayTargetCaption == 0 -%}
+                        {{ ('Yes') }}
+                    {%- else -%}
+                        {{ ('No') }}
+                    {%- endif -%}
+                </span></a></li>
+            </ul>
+        </div>
 
         {%- if (experiment.category == 'audio' or experiment.category == 'video') -%}
             <a data-toggle="modal" data-target="#displayTimeModalId"
@@ -400,6 +415,46 @@
             });
         })
 
+        var targetCaptionMenu = '#targetCaptionMenu li a';
+        $("body").on("click", targetCaptionMenu, function() {
+            var currentSelected = $(this);
+            var option = currentSelected.find('span').text();
+            var url = "{{ url_for('add_experiment._displayTargetCaption')}}";
+            var data = {
+                'optionVal' : option,
+                'experimentId' : "{{ experiment.id }}",
+            };
+            $.getJSON(url , data, function(response) {
+                if(response.success) {
+                    currentSelected.remove();
+                    var liAttributeDict = {
+                        "role" :           "presentation",
+                    };
+                    
+                    var liToAdd = $("<li/>", liAttributeDict);
+                    var name = "No";
+                    if(option == "No"){
+                        name = "Yes";
+                    }
+                    var nameSpan = $("<span/>", {
+                        "text" : name,
+                    });
+
+                    var aAttributeDict = {
+                        "role" :           "menuitem",
+                        "tabindex" :       "-1",
+                        "href" :           "#",
+                    };
+                    var aToAdd = $("<a/>", aAttributeDict);
+                    nameSpan.appendTo(aToAdd);
+                    aToAdd.appendTo(liToAdd);
+                    liToAdd.appendTo('#targetCaptionMenu');
+                }
+                else {
+                    /*do something here*/
+                }
+            });
+        });
 
         /* (TODO) verify if there is need to bifurcate delete and edit */
         $("body").on("click", selectedAnnotatorButton, function() {
