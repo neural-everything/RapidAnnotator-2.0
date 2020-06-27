@@ -6,7 +6,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 from rapidannotator import db
 from rapidannotator import bcrypt
 from rapidannotator.models import User, Experiment, AnnotatorAssociation, File, \
-    AnnotationInfo, AnnotationLevel, Label
+    AnnotationInfo, AnnotationLevel, Label, FileCaption, AnnotationCaptionInfo
 from rapidannotator.modules.annotate_experiment import blueprint
 from .api import isAnnotator
 
@@ -128,14 +128,20 @@ def getDefaultKey(keySet):
 '''
 def _getFile(experimentId, fileIndex, start):
     experiment = Experiment.query.filter_by(id=experimentId).first()
-    currentFile = experiment.files.order_by(File.id)[fileIndex + start]    
+    currentFile = experiment.files.order_by(File.id)[fileIndex + start]
+    cp = FileCaption.query.filter_by(file_id = currentFile.id).first()
+    caption_info = AnnotationCaptionInfo.query.filter_by(user_id=current_user.id, file_id=currentFile.id).first()
+    if caption_info == None:
+        target_caption = cp.target_caption
+    else:
+        target_caption = caption_info.target_caption
 
     currentFile = {
         'id' : currentFile.id,
         'name' : currentFile.name,
         'content' : currentFile.content,
-        'caption' : currentFile.caption,
-        'target_caption': currentFile.target_caption,
+        'caption' : cp.caption,
+        'target_caption': target_caption,
     }
     return currentFile
 
@@ -297,10 +303,15 @@ def checkStatus():
 def saveTargetCaption():
     fileId = request.form.get('fileId', None)
     targetCaption = request.form.get('targetCaption', None)
-    fl = File.query.filter_by(id=fileId).first()
-    fl.target_caption = targetCaption
-    db.session.commit()
-    
+    annotationCaptionInfo = AnnotationCaptionInfo.query.filter_by(file_id=fileId, user_id=current_user.id).first()
+    if annotationCaptionInfo == None:
+        annotationCaptionInfo = AnnotationCaptionInfo(file_id=fileId, user_id=current_user.id, target_caption=targetCaption)
+        db.session.add(annotationCaptionInfo)
+        db.session.commit()
+    else:
+        annotationCaptionInfo.target_caption = targetCaption
+        db.session.commit()
+
     response = {}
     response['success'] = True
     return jsonify(response)

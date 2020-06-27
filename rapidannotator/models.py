@@ -471,17 +471,6 @@ class File(db.Model):
     '''
     name = db.Column(db.String(1024), nullable=False, server_default='')
 
-    ''' caption
-    ..  a small description of the text.
-    ..  size is limited to 1500 characters
-    '''
-    caption = db.Column(db.String(2000), nullable=False, server_default='')
-
-    ''' caption
-    ..  a small description of the text.
-    ..  size is limited to 1500 characters
-    '''
-    target_caption = db.Column(db.String(1000), nullable=False, server_default='')
 
     ''' content
     ..  actual text to be annotated for Text experiments.
@@ -510,16 +499,53 @@ class File(db.Model):
         """Representation."""
         return 'File <id={0.id}, \
                 Experiment={0.experiment_id}, \
-                caption={0.caption}, \
                 name={0.name}, \
                 content={0.content}>'.format(self)
 
     def __repr__(self):
         return 'File <id={0.id}, \
                 Experiment={0.experiment_id}, \
-                caption={0.caption}, \
                 name={0.name}, \
                 url={0.url}>'.format(self)
+
+"""
+    Modal to store File Captions 
+"""
+
+class FileCaption(db.Model):
+    __tablename__ = 'FileCaption'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    ''' caption
+    ..  a small description of the text.
+    ..  size is limited to 16,000 characters
+    '''
+    caption = db.Column(db.String(4000), nullable=False, server_default='')
+
+    ''' caption
+    ..  a small description of the text.
+    ..  size is limited to 16,000 characters
+    '''
+    target_caption = db.Column(db.String(4000), nullable=False, server_default='')
+
+    '''the experiment with which the this text file is associated.'''
+    file_id = db.Column(Integer, db.ForeignKey(
+        'File.id', ondelete='CASCADE')
+    )
+
+    def __str__(self):
+        """Representation."""
+        return 'FileCaption <id={0.id}, \
+                File={0.file_id}, \
+                caption={0.caption}, \
+                target_caption={0.target_caption}'.format(self)
+
+    def __repr__(self):
+        return 'FileCaption <id={0.id}, \
+                File={0.file_id}, \
+                caption={0.caption}, \
+                target_caption={0.target_caption}'.format(self)
 
 """
     DisplayTime model to store duration for which the
@@ -608,6 +634,45 @@ class AnnotationInfo(db.Model):
                 annotationLevel_id={0.annotationLevel_id}, \
                 user_id={0.user_id}, \
                 label_id={0.label_id}, \
+                file_id={0.file_id}>'.format(self)
+
+
+"""
+    Target Caption's AnnotationInfo of userand file.
+"""
+class AnnotationCaptionInfo(db.Model):
+    __tablename__ = 'AnnotationCaptionInfo'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    '''the annotator with which the this AnnotationInfo is associated.'''
+    user_id = db.Column(Integer, db.ForeignKey(
+        'User.id', ondelete='CASCADE')
+    )
+
+    '''the file with which the this AnnotationInfo is associated.'''
+    file_id = db.Column(Integer, db.ForeignKey(
+        'File.id', ondelete='CASCADE')
+    )
+
+    ''' caption
+    ..  a small description of the text.
+    ..  size is limited to 20,000 characters
+    '''
+    target_caption = db.Column(db.String(5000), nullable=False, server_default='')
+
+
+    def __str__(self):
+        """Representation."""
+        return 'AnnotationCaptionInfo <id={0.id}, \
+                user_id={0.user_id}, \
+                target_caption={0.target_caption}, \
+                file_id={0.file_id}>'.format(self)
+
+    def __repr__(self):
+        return 'AnnotationCaptionInfo <id={0.id}, \
+                user_id={0.user_id}, \
+                target_caption={0.target_caption}, \
                 file_id={0.file_id}>'.format(self)
 
 

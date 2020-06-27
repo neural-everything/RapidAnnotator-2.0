@@ -5,7 +5,7 @@ from werkzeug.utils import secure_filename
 
 from rapidannotator import db
 from rapidannotator.models import User, Experiment, AnnotatorAssociation, \
-    DisplayTime, AnnotationLevel, Label, File, AnnotationInfo
+    DisplayTime, AnnotationLevel, Label, File, AnnotationInfo, FileCaption, AnnotationCaptionInfo
 from rapidannotator.modules.add_experiment import blueprint
 from rapidannotator.modules.add_experiment.forms import AnnotationLevelForm
 from rapidannotator import bcrypt
@@ -29,12 +29,22 @@ def before_request():
         return "You are not an experimenter, hence allowed to access this page."
 
 
-@blueprint.route('/a/<int:experimentId>/<int:page>')
-@isPerimitted
-def index(experimentId, page):
+@blueprint.route('/a/<int:experimentId>')
+@isPerimitted1
+def index(experimentId):
     users = User.query.all()
     experiment = Experiment.query.filter_by(id=experimentId).first()
-    expFiles = File.query.filter_by(experiment_id=experiment.id).paginate(page, 10, error_out=False)
+    page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
+    expFiles = File.query.filter_by(experiment_id=experiment.id).all()
+    exp_files = []
+    for fl in expFiles:
+        fileCaption = FileCaption.query.filter_by(file_id=fl.id).first()
+        exp_files.append((fl, fileCaption))
+    pagination_files = exp_files[offset: offset + per_page]
+    total = len(exp_files)
+    pagination = Pagination(page=page, per_page=per_page, total=total, css_framework='bootstrap3')
+
+    
     owners = experiment.owners
     annotators = experiment.annotators
     '''
@@ -53,7 +63,8 @@ def index(experimentId, page):
         experiment = experiment,
         notOwners = notOwners,
         notAnnotators = notAnnotators,
-        expFiles = expFiles,
+        exp_files=pagination_files, page=page,
+        per_page=per_page, pagination=pagination,
     )
 
 @blueprint.route('/_addDisplayTimeDetails', methods=['GET','POST'])
@@ -428,8 +439,6 @@ def _uploadFiles():
                 newFile = File(name=filename)
                 experiment.files.append(newFile)
                 fileCaption = request.form.get('fileCaption', None)
-                newFile.caption = fileCaption
-                newFile.target_caption = fileCaption
 
                 if experiment.category == 'text':
                     flaskFile.seek(0)
@@ -453,7 +462,11 @@ def _uploadFiles():
                     filePath = os.path.join(experimentDir, updatedName)
                     flaskFile.save(filePath)
 
+                db.session.add(newFile)
+                db.session.commit()
 
+                newFileCaption = FileCaption(caption=fileCaption, target_caption=fileCaption, file_id = newFile.id)
+                db.session.add(newFileCaption)
                 db.session.commit()
 
                 response = {
@@ -483,10 +496,16 @@ def addFilesViaSpreadsheetXLS(experimentId, spreadsheet):
         content = str(first_sheet.cell(i, 1).value)
         newFile = File(name=name[:1024],
                     content=content[:32000],
-                    caption=caption[:2000],
-                    target_caption=caption[:1000],
                     experiment_id=experimentId,
         )
+        db.session.add(newFile)
+        db.session.commit()
+        newFileCaption = FileCaption(caption=caption[:16000],
+                    target_caption=caption[:16000],
+                    file_id=newFile.id,
+        )
+        db.session.add(newFileCaption)
+        db.session.commit()
         experiment.files.append(newFile)
     db.session.commit()
     os.remove(filePath)
@@ -503,11 +522,17 @@ def addFilesViaSpreadsheetCSV(experimentId, spreadsheet):
     for i, row in csv_data.iterrows():
         name, content, caption = str(row['file_name']), row['content'], row['caption']
         newFile = File(name=name[:1024],
-                    content=content[:12000],
-                    caption=caption[:2000],
-                    target_caption=caption[:1000],
+                    content=content[:32000],
                     experiment_id=experimentId,
         )
+        db.session.add(newFile)
+        db.session.commit()
+        newFileCaption = FileCaption(caption=caption[:16000],
+                    target_caption=caption[:16000],
+                    file_id=newFile.id,
+        )
+        db.session.add(newFileCaption)
+        db.session.commit()
         experiment.files.append(newFile)
 
     db.session.commit()
@@ -570,11 +595,17 @@ def addFilesFromConcordance(experimentId, concordance):
             
             newFile = File(name=name[:1024],
                     content=content[:32000],
-                    caption=caption[:2000],
-                    target_caption=target_caption[:1000],
                     experiment_id=experimentId,
                     concordance_lineNumber=concordance_lineNum,
             )
+            db.session.add(newFile)
+            db.session.commit()
+            newFileCaption = FileCaption(caption=caption[:16000],
+                    target_caption=target_caption[:16000],
+                    file_id=newFile.id,
+            )
+            db.session.add(newFileCaption)
+            db.session.commit()
             concordance_lineNum = concordance_lineNum + 1
             experiment.files.append(newFile)
     db.session.commit()
@@ -592,6 +623,7 @@ def _deleteFile():
     fileId = request.args.get('fileId', None)
 
     currFile = File.query.filter_by(id=fileId).first()
+    currFileCaption = FileCaption.query.filter_by(file_id=fileId).first()
 
     if experiment.uploadType == 'manual' and experiment.category != 'text':
         '''
@@ -611,6 +643,7 @@ def _deleteFile():
         os.remove(filePath)
 
     db.session.delete(currFile)
+    db.session.delete(currFileCaption)
     db.session.commit()
     response = {}
     response['success'] = True
@@ -629,6 +662,7 @@ def _deleteAllFiles():
 
     for fl in allFiles:
         currFile = File.query.filter_by(id=fl.id).first()
+        currFileCaption = FileCaption.query.filter_by(file_id=fl.id).first()
         if experiment.uploadType == 'manual' and experiment.category != 'text':
             experimentDir = os.path.join(app.config['UPLOAD_FOLDER'], str(experimentId))
             if not os.path.exists(experimentDir):
@@ -639,6 +673,7 @@ def _deleteAllFiles():
             filePath = os.path.join(experimentDir, currFile.content)
             os.remove(filePath)
         db.session.delete(currFile)
+        db.session.delete(currFileCaption)
         db.session.commit()
     
     response = {}
@@ -680,7 +715,7 @@ def _updateFileName():
 def _updateFileCaption():
 
     fileId = request.args.get('fileId', None)
-    currentFile = File.query.filter_by(id=fileId).first()
+    currentFile = FileCaption.query.filter_by(file_id=fileId).first()
 
     currentFile.caption = request.args.get('caption', None)
 
@@ -1024,11 +1059,11 @@ def _exportResultsXLS(experimentId):
     for annotator in annotators:
         col += 1
         sheet.write(row, col, annotator.username, style0)
+        col += 1
+        sheet.write(row, col, "Target Caption of " + annotator.username, style0)
 
     col += 1
     sheet.write(row, col, 'Caption', style0)
-    col += 1
-    sheet.write(row, col, 'Target Caption', style0)
     if experiment.uploadType == 'viaSpreadsheet':
         col += 1
         sheet.write(row, col, 'Video Link', style0)
@@ -1050,16 +1085,21 @@ def _exportResultsXLS(experimentId):
                     label = Label.query.filter_by(id=info.label_id).first()
                     label_string.append(label.name)
                 sheet.write(row, col, str(label_string))
+            col += 1
+            cp = AnnotationCaptionInfo.query.filter_by(file_id=f.id, user_id=annotator.id).first()
+            if cp == None:
+                cp_val = FileCaption.query.filter_by(file_id=f.id).first()
+                sheet.write(row, col, cp_val.target_caption)
+            else:
+                sheet.write(row, col, cp.target_caption)
 
         col += 1
-        if f.caption == '':
+        fileCaption = FileCaption.query.filter_by(file_id=f.id).first()
+        if fileCaption.caption == '':
             sheet.write(row, col, 'No Caption Provided')
         else:
-            sheet.write(row, col, f.caption)
+            sheet.write(row, col, fileCaption.caption)
         
-        col += 1
-        sheet.write(row, col, f.target_caption)
-
         if experiment.uploadType == 'viaSpreadsheet':
             col += 1
             sheet.write(row, col, f.content)
@@ -1093,6 +1133,7 @@ def _exportResultsConcordance(experiment):
 
     for annotator in annotators:
         data_headers = ["File Deleted" for itr in range(len(data))]
+        target_caption = ["No Caption Provided" for itr in range(len(data))]
         for f in experiment.files:
             annotation_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=annotator.id).order_by(AnnotationInfo.annotationLevel_id)
             if annotation_info.count() == 0:
@@ -1104,13 +1145,16 @@ def _exportResultsConcordance(experiment):
                     label_string.append(label.name)
                 label_string = str(label_string)
                 data_headers[f.concordance_lineNumber - 1] = label_string
+            cp = AnnotationCaptionInfo.query.filter_by(file_id=f.id, user_id=annotator.id).first()
+            if cp == None:
+                cp_val = FileCaption.query.filter_by(file_id=f.id).first()
+                target_caption[f.concordance_lineNumber - 1] = cp_val.target_caption
+            else:
+                target_caption[f.concordance_lineNumber - 1] = cp.target_caption
         data.insert(col_num, annotator.username, data_headers)
         col_num = col_num + 1
-
-    data_headers = ["File Deleted" for itr in range(len(data))]
-    for f in experiment.files:
-        data_headers[f.concordance_lineNumber - 1] = f.target_caption
-    data.insert(col_num, "Target Caption", data_headers)
+        data.insert(col_num, "Target Caption of " + annotator.username, target_caption)
+        col_num = col_num + 1
 
     filename = str(experiment.id) + '.csv'
 
@@ -1139,8 +1183,8 @@ def _exportResultsCSV(experimentId):
     annotators = [assoc.annotator for assoc in annotators_assoc]
     for annotator in annotators:
         column_headers.append(annotator.username)
+        column_headers.append('Target Caption of ' + annotator.username)
     column_headers.append('Caption')
-    column_headers.append('Target Caption')
     
     if experiment.uploadType == 'viaSpreadsheet':
         column_headers.append('Video Link')
@@ -1160,13 +1204,19 @@ def _exportResultsCSV(experimentId):
                     label = Label.query.filter_by(id=info.label_id).first()
                     label_string.append(label.name)
                 csv_row.append(str(label_string))
-        if f.caption == '':
+            cp = AnnotationCaptionInfo.query.filter_by(file_id=f.id, user_id=annotator.id).first()
+            if cp == None:
+                cp_val = FileCaption.query.filter_by(file_id=f.id).first()
+                csv_row.append(cp_val.target_caption)
+            else:
+                csv_row.append(cp.target_caption)
+        
+        fileCaption = FileCaption.query.filter_by(file_id=f.id).first()
+        if fileCaption.caption == '':
             csv_row.append('No Caption Provided')
         else:
-            csv_row.append(f.caption)
+            csv_row.append(fileCaption.caption)
         
-        csv_row.append(f.target_caption)
-
         if experiment.uploadType == 'viaSpreadsheet':
             csv_row.append(f.content)
         csv_data.append(csv_row)
