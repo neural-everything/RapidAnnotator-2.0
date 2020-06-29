@@ -146,7 +146,7 @@
 
         <tbody>
 
-            {% for file in expFiles.items | reverse %}
+            {% for (file, cp) in exp_files | reverse %}
                 <tr class="" value={{file.id}} id={{file.id}} data-href="">
                 <td style="width: 10.0%; text-align: center">
                     <img class="hidden-element" src="{{url_for('static', filename = 'img/uploading.gif')}}" alt="uploading images" style="width:35%; margin-left: 25%">
@@ -154,7 +154,7 @@
                     <center><span class="uploadedFileText">{{ ('Uploaded') }}</span></center>
                 </td>
                 <td class="fileName" style="width: 30.0%; text-align: center"><p>{{file.name}}</p></td>
-                <td class="fileCaption" style="width: 55.0%; text-align: center"><p>{%- if file.caption -%} {{ file.caption }} {%- else -%} {{('No caption provided')}} {%- endif -%}</p></td>
+                <td class="fileCaption" style="width: 55.0%; text-align: center"><p>{%- if cp.caption -%} {{ cp.caption }} {%- else -%} {{('No caption provided')}} {%- endif -%}</p></td>
                 <td style="width: 5.0%; text-align: center">
                     <button class="deleteFileButton pull-right close" type="button"
                     data-toggle="modal" data-target="#deleteFileModal">&times;</button>
@@ -167,8 +167,7 @@
 </div>
 
 <ul class="pager">
-    {% if expFiles.has_prev %}<li><a href="{{ url_for('add_experiment.index', experimentId=experiment.id, page=expFiles.prev_num) }}">Previous</a></li>{% else %}<li>Previous</li>{% endif %}  
-    {% if expFiles.has_next %}<li><a href="{{ url_for('add_experiment.index', experimentId=experiment.id ,page=expFiles.next_num) }}">Next</a></li>{% else %}<li>Next</li>{% endif %}
+    {{ pagination.links }}
 </ul>
 
 <div id="snackbar1"><strong> Uploading</strong> has been started !</div>
@@ -413,7 +412,7 @@
 
         chooseFilesButton.on("click", function() {
             if ( experimentUploadType == "viaSpreadsheet") {
-                alert('experiment names, caption, content should not exceed 1024, 2000, 32000 characters. If so they will be truncated.');
+                alert('experiment names, caption, content should not exceed 1024, 16000, 32000 characters. If so they will be truncated.');
             }
         })
 

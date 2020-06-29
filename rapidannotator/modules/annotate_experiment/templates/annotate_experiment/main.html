@@ -306,6 +306,9 @@
         
 
         $(document).keyup(function(event) {
+            if(event.target.nodeName == "TEXTAREA"){
+                return;
+            }
             var x = event.charCode || event.keyCode;
             var y = String.fromCharCode(x).toLowerCase();
             var currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
