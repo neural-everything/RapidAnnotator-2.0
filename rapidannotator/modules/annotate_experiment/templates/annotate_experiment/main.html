@@ -6,6 +6,11 @@
   {{ super() }}
   <style type="text/css">
     .important { color: #336699; }
+    .red {
+        color: red;
+    }
+    
+    span.hl { background: yellow; }
   </style>  
 {% endblock head %}
 
@@ -96,17 +101,28 @@
                     <h4></h4>
                 </div>
 
+                <div class="targetCaption hidden-element">
+                    <h4></h4>
+                </div>
+
             </div>
         {% endfor %}
 
         {% for level in experiment.annotation_levels | sort(attribute='level_number')%}
             <div class="col-xs-7 annotationLevel hidden-element" data-index="{{loop.index}}" data-levelid="{{level.id}}">
                 {%- set levelIndex = loop.index %}
-
-
+                {%- if level.instruction != "" -%}
+                    <div class="alert alert-info alert-dismissible">
+                        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                        <span class='glyphicon glyphicon-info-sign my-tooltip' title="Instruction"></span>
+                        &nbsp;{{level.instruction}}
+                    </div>
+                {%- endif -%}
+                
                 <h3 class="labelName">
                     <b>{{level.name}}</b>
                 </h3>
+                        
                 <p>
                     {{level.description}}
                 </p>
@@ -136,7 +152,16 @@
 
     <div class="fileCaption">
         <h4></h4>
-    </div>
+    </div><br>
+
+    <div class="fileTargetCaption">
+        {%- if experiment.displayTargetCaption == 1 -%}
+            <form method="POST" id="targetCaptionForm" name="targetCaptionForm">
+                <b>Target Caption:</b> <br><br>
+                <textarea rows = "5" cols = "170" name = "targetCaptionData" id="targetCaptionData"></textarea>
+            </form>
+        {%- endif -%}
+    </div><br>
 
 </div>
 
@@ -216,6 +241,7 @@
         var preLoadedTill = 0;
         var space_pressed = 0;
         var annotations = {};
+        var already_submitted = {};
         var progress_num = 0;
         var totalAnnotationLevels = {{ totalAnnotationLevels }};
         var keyBindingDict = {{keyBindingDict | safe}};
@@ -264,22 +290,47 @@
         $(".annotationLevel[data-index=1]").removeClass('hidden-element');
 
         labelButton.on('click', function() {
+            labelButton.attr("disabled", "disabled");
             selectedLabel = $(this).data("labelid");
+            if("{{experiment.displayTargetCaption}}" == "True"){
+                var targetCaption = $("#targetCaptionData").val();
+                var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
+                save_targetCaption(currentFileId, targetCaption);
+            }
             nextLevel(selectedLabel);
+            window.setTimeout(function() {
+                labelButton.removeAttr("disabled");
+            }, [800]);
         });
+        
+        
 
         $(document).keyup(function(event) {
+            if(event.target.nodeName == "TEXTAREA"){
+                return;
+            }
             var x = event.charCode || event.keyCode;
             var y = String.fromCharCode(x).toLowerCase();
-            /*for the dict in current index check if the key is there*/
-            $.each( keyBindingDict[currentLevel], function( key, value ) {
-                if( y == value ) {
-                    nextLevel(key);
+            var currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+            var levelId = currentLevelBody.data("levelid");
+            
+            if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio"){
+                var tp = $(".file[data-index='" + currentLoadedFile + "']");
+                tp = tp.find(".clip")[0];
+                if(tp.readyState == 3 || tp.readyState == 4 || tp.readyState == 2){
+                    if(!already_submitted[levelId]){
+                        annotationProcess(y);
+                    }
                 }
-            });
+            }
+            else{
+                if(!already_submitted[levelId]){
+                    annotationProcess(y);
+                }
+            }
             /* undo feature */
             if(event.ctrlKey && y == 'z') {
-                undoAnnotation();
+                undoProcess();
             }
 
             if(x == 32){
@@ -292,13 +343,31 @@
                     space_pressed = (space_pressed + 1)%2;
                 }
             }
+            event.stopImmediatePropagation();
+            event.preventDefault();
 
         });
+
+
+        function annotationProcess(y){
+            /*for the dict in current index check if the key is there*/
+            $.each( keyBindingDict[currentLevel], function( key, value ) {
+                if( y == value ) {
+                    if("{{experiment.displayTargetCaption}}" == "True"){
+                        var targetCaption = $("#targetCaptionData").val();
+                        var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
+                        save_targetCaption(currentFileId, targetCaption);
+                    }
+                    nextLevel(key);
+                }
+            });
+        }
 
         function nextLevel(label) {
             currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
             levelId = currentLevelBody.data("levelid");
             annotations[levelId] = label;
+            already_submitted[levelId] = 1;
             currentLevelBody.addClass('hidden-element');
             if (currentLevel == totalAnnotationLevels) {
                 fileAnnotationCompleted();
@@ -325,18 +394,18 @@
                 currentLevelBody.removeClass('hidden-element');
             }
             if(last_previous == 1){
-                last_previous = 0
+                last_previous = 0;
             }
         }
 
-        undoButton.on('click', function() {
+        function undoProcess(){
             undoButton.attr("disabled", "disabled");
             $('.toggleLooping').removeClass('hidden-element');
             if(last_previous == 1){
                 progress_num = currentFileIndex;
             }
             else{
-                if(currentFileIndex -1 >= 0){
+                if(currentFileIndex - 1 >= 0){
                     progress_num = currentFileIndex - 1;
                 }
             }
@@ -350,7 +419,11 @@
             undoAnnotation();
             window.setTimeout(function() {
                 undoButton.removeAttr("disabled");
-            }, [500]);
+            }, [1200]);
+        }
+
+        undoButton.on('click', function() {
+            undoProcess();
         });
 
         doneButton.on('click', function(){
@@ -402,8 +475,9 @@
         function loadPreviousFile(load_previous) {
             annotations = {};
             var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
+            // console.log(load_previous, currentFileId);
             var data = {
-                'lp': last_previous,
+                'lp': load_previous,
                 'fileId' :          currentFileId,
                 'experimentId' :    "{{experiment.id}}",
             };
@@ -448,13 +522,15 @@
 
             var data = {
                 'fileId' :          currentFileId,
-                'annotations' :     annotations,
-                'labelCount' :     {{labelCount}}, 
+                'annotations' :     annotations, 
+                'labelCount' :     {{labelCount}},
             };
+
             data = JSON.stringify(data);
             $.getJSON(url , data, function(response) {
                 if(response.success) {
                     annotations = {};
+                    already_submitted = {};
                     if(currentFileIndex == {{lastFile}}) {
 
                         //  Code for Progress bar
@@ -559,6 +635,11 @@
             var fileCaption = loadedFile.find('.caption h4').text();
             $('.fileCaption h4').text(fileCaption);
 
+            var targetFileCaption = loadedFile.find('.targetCaption h4').text();
+            if("{{experiment.displayTargetCaption}}"){
+                $("#targetCaptionData").val(targetFileCaption);
+            }
+
         }
 
         function updateFile(index, fileToLoad) {
@@ -634,11 +715,26 @@
             }
 
             var caption = fileToLoad.caption;
+            var target_caption = fileToLoad.target_caption;
             loadedDiv.find('.caption h4').text(caption);
+            loadedDiv.find('.targetCaption h4').text(target_caption);
             loadedDiv.data("fileid", fileToLoad.id);
         }
 
     });
+
+    function save_targetCaption(fileId, targetCaption){
+        var url = "{{ url_for('annotate_experiment.saveTargetCaption')}}";
+        var data = {
+            'fileId' : fileId,
+            'targetCaption': targetCaption,
+        };
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: data,
+        });
+    };
 
     $(document).ready(function(){
         $(".send_notification").click(function(){
@@ -661,6 +757,31 @@
             });
         };
     });
+    
+    if("{{experiment.displayTargetCaption}}"){
+        thisRespondHightlightText(".fileCaption h4");
+    }
+
+    function thisRespondHightlightText(thisDiv){
+        $(thisDiv).on("mouseup", function () {
+            var selectedText = getSelectionText();
+            var replacement = $('<span></span>').attr({'class':'hl'}).html(selectedText);
+            var replacementHtml = $('<div>').append(replacement.clone()).remove().html();
+            var text = $(this).text().replace(selectedText, replacementHtml);
+            $(this).html(text);
+            $("#targetCaptionData").val(selectedText);
+        });
+    }
+
+    function getSelectionText() {
+        var text = "";
+        if (window.getSelection) {
+            text = window.getSelection().toString();
+        } else if (document.selection && document.selection.type != "Control") {
+            text = document.selection.createRange().text;
+        }
+        return text;
+    }
 
 </script>
 

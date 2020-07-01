@@ -43,18 +43,18 @@ class AddExperimentForm(FlaskForm):
     category = SelectField(
         label=_('Type of experiment'),
         description=_("Select the type of files that your experiment has."),
-        choices=[   ('text', 'Text'),
+        choices=[   ('video', 'Video'),
                     ('image', 'Image'),
-                    ('audio', 'Audio'),
-                    ('video', 'Video')],
+                    ('text', 'Text'),
+                    ('audio', 'Audio')],
     )
 
     uploadType = SelectField(
         label=_('File uploading procedure'),
         description=_("Select the way in which you wish to upload files."),
-        choices=[   ('manual', 'manual'),
-                    ('viaSpreadsheet', 'viaSpreadsheet'),
-                    ('fromConcordance', 'fromConcordance')],
+        choices=[   ('fromConcordance', 'fromConcordance'),
+                    ('manual', 'manual'),
+                    ('viaSpreadsheet', 'viaSpreadsheet')],
     )
 
     def validate_name(self, name):

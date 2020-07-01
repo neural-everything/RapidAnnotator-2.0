@@ -6,7 +6,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 from rapidannotator import db
 from rapidannotator import bcrypt
 from rapidannotator.models import User, Experiment, AnnotatorAssociation, File, \
-    AnnotationInfo, AnnotationLevel, Label
+    AnnotationInfo, AnnotationLevel, Label, FileCaption, AnnotationCaptionInfo
 from rapidannotator.modules.annotate_experiment import blueprint
 from .api import isAnnotator
 
@@ -128,13 +128,20 @@ def getDefaultKey(keySet):
 '''
 def _getFile(experimentId, fileIndex, start):
     experiment = Experiment.query.filter_by(id=experimentId).first()
-    currentFile = experiment.files.order_by(File.id)[fileIndex + start]    
+    currentFile = experiment.files.order_by(File.id)[fileIndex + start]
+    cp = FileCaption.query.filter_by(file_id = currentFile.id).first()
+    caption_info = AnnotationCaptionInfo.query.filter_by(user_id=current_user.id, file_id=currentFile.id).first()
+    if caption_info == None:
+        target_caption = cp.target_caption
+    else:
+        target_caption = caption_info.target_caption
 
     currentFile = {
         'id' : currentFile.id,
         'name' : currentFile.name,
         'content' : currentFile.content,
-        'caption' : currentFile.caption,
+        'caption' : cp.caption,
+        'target_caption': target_caption,
     }
     return currentFile
 
@@ -179,8 +186,8 @@ def deleteAnnotation():
     experimentId = request.form.get('experimentId', None)
     fileId = request.form.get('fileId', None)
     lp = request.form.get('lp', None)
-    # if int(lp) == 0:
-        # fileId = int(fileId) - 1
+    if int(lp) == 0:
+        fileId = int(fileId) - 1
 
     AnnotationInfo.query.filter(and_(AnnotationInfo.user_id==current_user.id, \
                                     AnnotationInfo.file_id==fileId)\
@@ -219,11 +226,15 @@ def _addAnnotationInfo():
     fileId = arguments.get('fileId', None)
     annotations = arguments.get('annotations')
     prevLabelCount = arguments.get('labelCount', None)
+    # targetCaptionData = arguments.get('targetCaptionData', None)
 
     ''' For displaying a warning if the labels got changed at any time'''
     labelCount = 0
 
-    experimentId = File.query.filter_by(id=fileId).first().experiment_id
+    fileItem = File.query.filter_by(id=fileId).first()
+    # fileItem.target_caption = targetCaptionData
+
+    experimentId = fileItem.experiment_id
     
     annotationLevels = AnnotationLevel.query.filter_by(experiment_id=experimentId).all()
     for level in annotationLevels:
@@ -283,6 +294,24 @@ def checkStatus():
         experiment.status = 'Completed'
         experiment.is_done = 1
         db.session.commit()
+    response = {}
+    response['success'] = True
+    return jsonify(response)
+
+
+@blueprint.route('/saveTargetCaption', methods=["POST"])
+def saveTargetCaption():
+    fileId = request.form.get('fileId', None)
+    targetCaption = request.form.get('targetCaption', None)
+    annotationCaptionInfo = AnnotationCaptionInfo.query.filter_by(file_id=fileId, user_id=current_user.id).first()
+    if annotationCaptionInfo == None:
+        annotationCaptionInfo = AnnotationCaptionInfo(file_id=fileId, user_id=current_user.id, target_caption=targetCaption)
+        db.session.add(annotationCaptionInfo)
+        db.session.commit()
+    else:
+        annotationCaptionInfo.target_caption = targetCaption
+        db.session.commit()
+
     response = {}
     response['success'] = True
     return jsonify(response)
