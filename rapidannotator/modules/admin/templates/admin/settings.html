@@ -22,12 +22,12 @@
 
 <div class="container">
     <!-- Add User Buttion -->
-    <a data-toggle="modal" data-target="#userDetailsId" class="btn btn-warning pull-left">
-            <span class="glyphicon glyphicon-plus-sign"></span> <span style="color:black; font-size: 1em"> Add User </span>
+    <a data-toggle="modal" data-target="#userDetailsId" class="btn btn-primary pull-left">
+            <span class="glyphicon glyphicon-plus-sign"></span> <span style="font-size: 1em"> Add User </span>
     </a>
 
     <!-- See All Experiments Buttion -->
-    <button type="button" class="btn btn-labeled btn-large btn-danger" onclick="goToExperiment();" style="font-size:1em; margin-left: 1%">
+    <button type="button" class="btn btn-labeled btn-large btn-primary" onclick="goToExperiment();" style="font-size:1em; margin-left: 1%">
         <span class="btn-label"><i class="glyphicon glyphicon-list"></i></span> All Experiments
     </button>
 </div>
@@ -37,7 +37,7 @@
     <table id="cssTable" class="table table-hover table-striped" style="margin-top:3%">
         <thead>
             <tr class="">
-                <th style="width: 5.0%">{{ ('Index') }}</th>
+                <th style="width: 5.0%">{{ ('Gravatar') }}</th>
                 <th style="width: 21.0%">{{ ('User Name') }}</th>
                 <th style="width: 23.0%">{{ ('Full Name') }}</th>
                 <th style="width: 28.0%">{{ ('Email') }}</th>
@@ -51,7 +51,7 @@
                 {%- set userProfile_url = url_for('admin.editUserProfile', userId = user.id) %}
                 {%- set seeProfile_url = url_for('admin.seeProfile', userId = user.id) %}
                 <tr>
-                    <td style="width: 10.0%" > {{ loop.index }} &nbsp;<img src="{{ user.avatar(36) }}"></td>
+                    <td style="width: 10.0%" > <img src="{{ user.avatar(30) }}"></td>
                     <td style="width: 21.0%" > 
                         {%- if user.admin -%}
                             {{user.username}} <span class="badge badge-pill badge-dark">Admin</span>
@@ -64,7 +64,7 @@
                     <td style="width: 28.0%"> {{user.email}} </td>                    
                     <td style="width: 8.0%" class="">
                         {%- if user.admin -%}
-                            <button type="button" class="btn btn-labeled btn-sm btn-danger" style="font-size:0.65em">
+                            <button type="button" class="btn btn-labeled btn-sm btn-danger" style="font-size:0.65em" onclick="alert('Admin cannot be deleted')">
                                 <span class="btn-label"><i class="glyphicon glyphicon-remove"></i></span>
                             </button>
                         {%- else -%}

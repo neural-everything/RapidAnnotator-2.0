@@ -31,6 +31,7 @@
                     <th>{{('Creation Date')}}</th>
                     <th>{{('Status')}}</th>
                     <th>{{('Delete Project')}}</th>
+                    <th>{{('Owners')}}</th>
                 </tr>
             </thead>
             <tbody>
@@ -53,6 +54,17 @@
                                 <span class="deleteOwnerButton pull-right glyphicon glyphicon-trash btn-space"
                                     data-toggle="modal" data-target="#deleteProjectModal" style="margin-right:80%"></span>
                             </a>
+                        </td>
+                        <td>
+                            <div class="dropdown">
+                                <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Owners
+                                <span class="caret"></span></button>
+                                <ul class="dropdown-menu">
+                                    {% for owner in experiment.owners %}
+                                        <li><a href=""> {{owner.username}} </a></li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
                         </td>
                     </tr>
                 {% endfor %}
