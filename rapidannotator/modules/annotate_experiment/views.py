@@ -11,7 +11,7 @@ from rapidannotator.modules.annotate_experiment import blueprint
 from .api import isAnnotator
 
 from sqlalchemy import and_
-import json
+import json, csv, os
 
 @blueprint.before_request
 def before_request():
@@ -121,6 +121,54 @@ def getDefaultKey(keySet):
             return k
     return ''
 
+def getContextBTAT(string):
+    txt = string.split("/")
+    context = txt[0].split('_')[0]
+    if txt[2] == 'NA':
+        before_time = float(txt[1])
+    else:
+        try:
+            before_time = float(txt[1]) + (float(txt[2])/100.0)
+        except:
+            before_time = float(txt[2])
+    if txt[4] == 'NA':
+        after_time = float(txt[3])
+    else:
+        try:
+            after_time = float(txt[3]) + (float(txt[4])/100.0)
+        except:
+            after_time = float(txt[4])
+    return context, before_time, after_time
+
+
+def getRequiredCaption(time_limit, context, operator):
+    req_caption = ''
+    for cpt in context:
+        caption, bt, at = getContextBTAT(cpt)
+        if operator(bt, time_limit):
+            break
+        req_caption = req_caption + caption + ' '
+    return req_caption
+
+
+def get_tagged_context(inputPath, concordance_line_number, before_time, after_time):
+    with open(inputPath, encoding='utf-8') as tsvfile:
+            in_txt = csv.reader(tsvfile, delimiter = ',')
+            text = list(in_txt)[concordance_line_number]
+            tagged_context_before, tagged_quey_item, tagged_context_after = text[5], text[6], text[7]
+            tagged_context_before = tagged_context_before.split(' ')
+            tagged_context_before.reverse()
+            tagged_context_after = tagged_context_after.split(' ')
+    query_context, query_bt, query_at = getContextBTAT(tagged_quey_item)
+    import operator as op
+    left_caption = getRequiredCaption(query_bt - float(before_time), tagged_context_before, op.lt)
+    right_caption = getRequiredCaption(query_bt + float(after_time), tagged_context_after, op.gt)
+    left_caption = left_caption.split(' ')
+    left_caption.reverse()
+    req_tagged_caption = ' '.join(left_caption) + ' ' + query_context + ' ' + right_caption
+    return req_tagged_caption
+
+
 '''
     .. params:
         experimentId: id of the experiment
@@ -135,12 +183,21 @@ def _getFile(experimentId, fileIndex, start):
         target_caption = cp.target_caption
     else:
         target_caption = caption_info.target_caption
+    
+    if experiment.uploadType == 'fromConcordance':
+        from rapidannotator import app
+        experimentDIR = os.path.join(app.config['UPLOAD_FOLDER'], str(experimentId))
+        inputConcordance = os.path.join(experimentDIR, 'concordance.csv')
+        tagged_caption = get_tagged_context(inputConcordance, currentFile.concordance_lineNumber, \
+            experiment.display_time.before_time, experiment.display_time.after_time)
+    else:
+        tagged_caption = cp.caption
 
     currentFile = {
         'id' : currentFile.id,
         'name' : currentFile.name,
         'content' : currentFile.content,
-        'caption' : cp.caption,
+        'caption' : tagged_caption,
         'target_caption': target_caption,
     }
     return currentFile
