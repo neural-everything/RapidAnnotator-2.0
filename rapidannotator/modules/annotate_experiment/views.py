@@ -124,30 +124,46 @@ def getDefaultKey(keySet):
 def getContextBTAT(string):
     txt = string.split("/")
     context = txt[0].split('_')[0]
+    unaligned = False
     if txt[2] == 'NA':
         before_time = float(txt[1])
+        unaligned = True
     else:
         try:
             before_time = float(txt[1]) + (float(txt[2])/100.0)
         except:
             before_time = float(txt[2])
+            unaligned = True
     if txt[4] == 'NA':
         after_time = float(txt[3])
+        unaligned = True
     else:
         try:
             after_time = float(txt[3]) + (float(txt[4])/100.0)
         except:
             after_time = float(txt[4])
-    return context, before_time, after_time
+            unaligned = True
+    return context, before_time, after_time, unaligned
 
 
 def getRequiredCaption(time_limit, context, operator):
     req_caption = ''
     for cpt in context:
-        caption, bt, at = getContextBTAT(cpt)
+        caption, bt, at, _ = getContextBTAT(cpt)
         if operator(bt, time_limit):
             break
         req_caption = req_caption + caption + ' '
+    return req_caption
+
+def getRequiredCaptionUnaligned(time_limit, context):
+    req_caption = ''
+    limit = int(time_limit*float(3))
+    for cpt in context:
+        caption, bt, at, _ = getContextBTAT(cpt)
+        if limit <= 0:
+            break
+        req_caption = req_caption + caption + ' '
+        limit = limit - 1
     return req_caption
 
 
@@ -159,10 +175,14 @@ def get_tagged_context(inputPath, concordance_line_number, before_time, after_ti
             tagged_context_before = tagged_context_before.split(' ')
             tagged_context_before.reverse()
             tagged_context_after = tagged_context_after.split(' ')
-    query_context, query_bt, query_at = getContextBTAT(tagged_quey_item)
+    query_context, query_bt, query_at, unaligned = getContextBTAT(tagged_quey_item)
     import operator as op
-    left_caption = getRequiredCaption(query_bt - float(before_time), tagged_context_before, op.lt)
-    right_caption = getRequiredCaption(query_bt + float(after_time), tagged_context_after, op.gt)
+    if not unaligned:
+        left_caption = getRequiredCaption(query_bt - float(before_time), tagged_context_before, op.lt)
+        right_caption = getRequiredCaption(query_bt + float(after_time), tagged_context_after, op.gt)
+    else:
+        left_caption = getRequiredCaptionUnaligned(float(before_time), tagged_context_before)
+        right_caption = getRequiredCaptionUnaligned(float(after_time), tagged_context_after)
     left_caption = left_caption.split(' ')
     left_caption.reverse()
     req_tagged_caption = ' '.join(left_caption) + ' ' + query_context + ' ' + right_caption

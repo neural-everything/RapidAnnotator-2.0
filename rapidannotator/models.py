@@ -580,6 +580,12 @@ class DisplayTime(db.Model):
     '''
     after_time = db.Column(db.Float, nullable=False, server_default="-1")
 
+    '''
+        The number of words per second used to display unaligned captions relative to before
+        and after time.
+    '''
+    num_words = db.Column(db.Integer, nullable=False, server_default="3")
+
     def __str__(self):
         """Representation."""
         return 'DisplayTime <id={0.id}, \

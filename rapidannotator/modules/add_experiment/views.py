@@ -72,12 +72,14 @@ def _addDisplayTimeDetails():
 
     beforeTime = request.args.get('beforeTime', None)
     afterTime = request.args.get('afterTime', None)
+    wordTime = request.args.get('wordTime', None)
     experimentId = request.args.get('experimentId', None)
 
     experiment = Experiment.query.filter_by(id=experimentId).first()
     experiment.display_time = DisplayTime(
         before_time = beforeTime,
         after_time = afterTime,
+        num_words = wordTime,
     )
     db.session.commit()
     response = {}
