@@ -1,0 +1,189 @@
+{% extends "admin/base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %} Admin {% endblock title %}
+{% block head %}
+  {{ super() }}
+  <style type="text/css">
+    .important { color: #336699; }
+    #cssTable td th
+    {
+        text-align: center; 
+        vertical-align: middle;
+    }
+    
+  </style>
+{% endblock head %}
+
+
+{% block admin_page %}
+
+
+
+<div class="container">
+    <!-- Add User Buttion -->
+    <a data-toggle="modal" data-target="#userDetailsId" class="btn btn-primary pull-left">
+            <span class="glyphicon glyphicon-plus-sign"></span> <span style="font-size: 1em"> Add User </span>
+    </a>
+
+    <!-- See All Experiments Buttion -->
+    <button type="button" class="btn btn-labeled btn-large btn-primary" onclick="goToExperiment();" style="font-size:1em; margin-left: 1%">
+        <span class="btn-label"><i class="glyphicon glyphicon-list"></i></span> All Experiments
+    </button>
+</div>
+
+<!-- Table showing User information to the Admins -->
+<div class="container">
+    <table id="cssTable" class="table table-hover table-striped" style="margin-top:3%">
+        <thead>
+            <tr class="">
+                <th style="width: 5.0%">{{ ('Gravatar') }}</th>
+                <th style="width: 21.0%">{{ ('User Name') }}</th>
+                <th style="width: 23.0%">{{ ('Full Name') }}</th>
+                <th style="width: 28.0%">{{ ('Email') }}</th>
+                <th style="width: 8.0%">{{ ('Delete') }}</th>
+                <th style="width: 8.0%">{{ ('Edit') }}</th>
+                <th style="width: 8.0%">{{ ('Full Profile') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+                {%- set userProfile_url = url_for('admin.editUserProfile', userId = user.id) %}
+                {%- set seeProfile_url = url_for('admin.seeProfile', userId = user.id) %}
+                <tr>
+                    <td style="width: 10.0%" > <img src="{{ user.avatar(30) }}"></td>
+                    <td style="width: 21.0%" > 
+                        {%- if user.admin -%}
+                            {{user.username}} <span class="badge badge-pill badge-dark">Admin</span>
+                        {%- else -%}
+                            {{user.username}}
+                        {%- endif -%}
+                        
+                    </td>
+                    <td style="width: 23.0%"> {{user.fullname}} </td>
+                    <td style="width: 28.0%"> {{user.email}} </td>                    
+                    <td style="width: 8.0%" class="">
+                        {%- if user.admin -%}
+                            <button type="button" class="btn btn-labeled btn-sm btn-danger" style="font-size:0.65em" onclick="alert('Admin cannot be deleted')">
+                                <span class="btn-label"><i class="glyphicon glyphicon-remove"></i></span>
+                            </button>
+                        {%- else -%}
+                            <a value="{{ user.id }}" onclick="setUserId({{user.id}});">
+                                <span class="deleteUserButton pull-right glyphicon glyphicon-trash btn-space"
+                                    data-toggle="modal" data-target="#deleteUserModal" style="margin-right:80%"></span>
+                            </a>
+                        {%- endif -%}
+                    </td>
+                    <td style="width: 8.0%;" class="">
+                        <a  value="{{ user.id }}" onClick="document.location.href='{{userProfile_url}}';">
+                            <span class="glyphicon glyphicon-pencil btn-space" style="margin-right:80%"></span>
+                        </a>
+                    </td>
+                    <td style="width: 8.0%">
+                        <button class="btn btn-primary" style="font-size:0.9em" onClick="document.location.href='{{seeProfile_url}}';"> 
+                            See Profile 
+                        </button>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+
+<!-- Add User Modal by Admin -->
+<div class="modal fade" id="userDetailsId" role="dialog" tabindex="-1"
+    aria-labelledby="userDetailsId" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Enter User Details</h4>
+      </div>
+        <div class="modal-body">
+            <form method="POST" name="userDetails" action = "{{ url_for('admin.addUser') }}">
+                {% for field in addUserForm %}
+                    {% if field.widget.input_type == 'hidden' %}
+                        {{ field() }}
+                    {% else %}
+                        <div style="line-height:110%">{{ render_field(field, autofocus=True, placeholder=field.label.text) }}</div>
+                    {% endif %}
+                {% endfor %}
+                <div class="form-actions">
+                    <button type="submit" name="submit" value="userDetails" class="btn btn-primary"> {{ ('Add User') }}</button>
+                    <button type="button" class="btn btn-default pull-right" data-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete User Modal by Admin -->
+<div class="modal fade" id="deleteUserModal" role="dialog" tabindex="-1"
+    aria-labelledby="deleteUserModal" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title"><strong>Want to delete this User? </strong><br><b>Note: </b>once deleted the user can not be recovered by any means.</h4>
+      </div>
+        <div class="modal-body">
+            <form method="POST" id="deleteUserForm" name="deleteUserForm">
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-danger"> {{ ('Delete') }}</button>
+                    <button type="button" class="btn btn-default pull-right" data-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+        </div>
+    </div>
+  </div>
+</div>
+
+
+<script type="text/javascript">
+    $(window).on('load',function(){
+        var errors = "{{errors}}";
+
+        if( "{{ errors }}" == "addUserErrors") {
+            $('#userDetailsId').modal('show');
+        }
+    });
+
+    var userId = -1;
+    
+    function setUserId(id){
+        userId = id;
+    };
+
+    function goToExperiment(){
+        window.location.replace("{{url_for('admin.allExperiments')}}");
+    }
+
+    $(function(){
+        $('#deleteUserForm').on('submit', function(e) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            var url = "{{ url_for('admin._deleteUser')}}";
+            var data = {
+                'userId' : userId,
+            };
+
+            $.getJSON(url , data, function(response) {
+                if(response.success) {
+                    window.location.replace("{{url_for('admin.settings')}}");
+                } else {
+                }
+            });
+        })
+    });
+
+</script>
+
+{% endblock admin_page %}

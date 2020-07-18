@@ -1,4 +1,4 @@
-"""Forms for Login/Registeration."""
+"""Forms for AddExperiment/UpdateInformation."""
 
 from flask_babelex import lazy_gettext as _
 from flask_login import current_user
