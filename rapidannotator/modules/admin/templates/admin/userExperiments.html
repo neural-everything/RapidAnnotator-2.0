@@ -1,0 +1,184 @@
+{% extends "admin/base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %} Admin {% endblock title %}
+{% block head %}
+  {{ super() }}
+  <style type="text/css">
+    .important { color: #336699; }
+  </style>
+{% endblock head %}
+
+
+{% block admin_page %}
+
+<div>
+    <button class="btn btn-danger pull-left" style="font-size:0.9em; margin-left: 1em" onclick="goBack();">
+        <span class="glyphicon glyphicon-arrow-left"></span> Back
+    </button>
+    <div style="font-size:2em; margin-left: 40%"> <img src="{{ user.avatar(36) }}"> {{user.username}}</div>
+    <br><br>
+</div>
+
+<div class="container">
+        <ul class="nav nav-tabs">
+            <li class="active"><a data-toggle="tab" href="#myExperiments">{{(' Experiments')}}</a></li>
+            <li><a data-toggle="tab" href="#experimentsToAnnotate">{{(' Experiments to Annotate')}}</a></li>
+        </ul>
+        <br>
+    </div>
+    
+    <div class="container">
+    
+      <div class="tab-content">
+        <div id="myExperiments" class="tab-pane fade in active">
+            <div>
+                <table class="table table-hover table-striped">
+                    <thead>
+                        <tr>
+                            <th>{{('Name')}}</th>
+                            <th>{{('Description')}}</th>
+                            <th>{{('Type')}}</th>
+                            <th>{{('Creation Date')}}</th>
+                            <th>{{('Status')}}</th>
+                            <th>{{('Delete Project')}}</th>
+                            <th>{{('Owners')}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for experiment in userExperiments %}
+                            {%- set experiment_url = url_for('add_experiment.index', experimentId = experiment.id, page = '1') %}
+    
+                            <tr>
+                                <td onClick="document.location.href='{{ experiment_url }}';">{{experiment.name}}</td>
+                                <td onClick="document.location.href='{{ experiment_url }}';">{{experiment.description}}</td>
+                                <td onClick="document.location.href='{{ experiment_url }}';" style="text-transform:capitalize;">{{experiment.category}}</td>
+                                <td onClick="document.location.href='{{ experiment_url }}';">{{experiment.created_at | datetimeformat('%d-%m-%Y')}}</td>
+                                {%- if (experiment.status == 'Completed') -%}
+                                    <td style="color: green;" onClick="document.location.href='{{ experiment_url }}';"> {{experiment.status}}</td>
+                                {%- endif -%}
+                                {%- if (experiment.status == 'In Progress') -%}
+                                    <td style="color: blue;" onClick="document.location.href='{{ experiment_url }}';"> {{experiment.status}}</td>
+                                {%- endif -%}
+                                <td class="">
+                                    <a  value="{{ experiment.id }}" onclick="setExperimentId({{experiment.id}});">
+                                        <span class="deleteOwnerButton pull-right glyphicon glyphicon-trash btn-space"
+                                            data-toggle="modal" data-target="#deleteProjectModal" style="margin-right:80%"></span>
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Owners
+                                        <span class="caret"></span></button>
+                                        <ul class="dropdown-menu">
+                                            {% for owner in experiment.owners %}
+                                                <li><a href=""> {{owner.username}} </a></li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+    
+                    </tbody>
+                </table>
+            </div>
+    
+        </div>
+        <div id="experimentsToAnnotate" class="tab-pane fade">
+          <div>
+              <table class="table table-hover table-striped">
+                  <thead>
+                      <tr>
+                          <th>{{('Name')}}</th>
+                          <th>{{('Description')}}</th>
+                          <th>{{('Type')}}</th>
+                          <th>{{('Creation Date')}}</th>
+                          <th>{{('Status')}}</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {% for experiment in userExperimentsToAnnotate %}
+                          {%- set experiment_url = url_for('annotate_experiment.index', experimentId = experiment.id) %}
+    
+                          <tr class='clickable-row'
+                              data-href="{{ experiment_url }}">
+                              <td>{{experiment.name}}</td>
+                              <td>{{experiment.description}}</td>
+                              <td>{{experiment.category}}</td>
+                              <td>{{experiment.created_at | datetimeformat('%d-%m-%Y')}}</td>
+                              {%- if (experiment.status == 'Completed') -%}
+                                <td style="color: green;"> {{experiment.status}}</td>
+                              {%- endif -%}
+                              {%- if (experiment.status == 'In Progress') -%}
+                                <td style="color: blue;"> {{experiment.status}} </td>
+                              {%- endif -%}
+                          </tr>
+                      {% endfor %}
+    
+                  </tbody>
+              </table>
+          </div>
+    
+        </div>
+      </div>
+    
+    </div>
+    
+    
+<!-- Delete-Project-Modal -->
+<div class="modal fade" id="deleteProjectModal" role="dialog" tabindex="-1"
+    aria-labelledby="deleteProjectModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+        <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title"><strong>Want to delete this Project? </strong><br><b>Note: </b>once deleted the project can not be recovered by any means.</h4>
+        </div>
+        <div class="modal-body">
+            <form method="POST" id="deleteProjectForm" name="deleteProjectForm">
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-danger"> {{ ('Delete') }}</button>
+                    <button type="button" class="btn btn-default pull-right" data-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+        </div>
+    </div>
+    </div>
+</div>
+    
+<script type="text/javascript">
+    
+    var ExperimentId = -1;
+    
+    function setExperimentId(id){
+        ExperimentId = id;
+    };
+    
+    function goBack(){
+        document.location.href = "{{url_for('admin.seeProfile', userId = userId)}}";
+    }
+
+    $(function(){
+        $('#deleteProjectForm').on('submit', function(e) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            var url = "{{ url_for('add_experiment._deleteExperiment')}}";
+            var data = {
+                'experimentId' : ExperimentId,
+            };
+
+            $.getJSON(url , data, function(response) {
+                if(response.success) {
+                    var goUrl = "{{url_for('admin.seeProfile', userId = userId)}}";
+                    window.location.replace(goUrl);
+                } else {
+                }
+            });
+        })
+    });
+</script>
+
+{% endblock admin_page %}

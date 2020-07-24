@@ -8,6 +8,7 @@ from flask_security import RoleMixin
 
 from rapidannotator.validators import validate_username
 from rapidannotator import login
+from hashlib import md5
 
 db = SQLAlchemy()
 
@@ -89,6 +90,11 @@ class User(UserMixin, db.Model):
 
     def is_admin(self):
         return self.admin
+    
+    def avatar(self, size):
+        digest = md5(self.email.lower().encode('utf-8')).hexdigest()
+        return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
+            digest, size)
 
     '''List of the experiments owns.'''
     my_experiments = db.relationship("Experiment", secondary=ExperimentOwner,
@@ -579,6 +585,12 @@ class DisplayTime(db.Model):
     ..  Default value(-1) implies the video will be played till the end.
     '''
     after_time = db.Column(db.Float, nullable=False, server_default="-1")
+
+    '''
+        The number of words per second used to display unaligned captions relative to before
+        and after time.
+    '''
+    num_words = db.Column(db.Integer, nullable=False, server_default="3")
 
     def __str__(self):
         """Representation."""

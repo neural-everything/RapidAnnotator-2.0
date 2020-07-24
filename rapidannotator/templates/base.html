@@ -57,7 +57,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.min.js" crossorigin="anonymous"></script>
     
     <style>
-    .notification .badge {
+    .notification .notifBadge {
         position: absolute;
         top: 8px;
         right: 7px;
@@ -94,38 +94,53 @@
 
   <div id="navbar1" class="navbar-collapse collapse">
       {%- if current_user.is_authenticated -%}
-          <ul class="nav navbar-nav">
-              <li><a href="{{ url_for('home.index') }}">{{ ('Home') }}</a></li>
-              {%- if not current_user.is_experimenter() -%}
-                  <li class="askRightsButton hidden-element" value="experimenter" data-toggle="modal" data-target="#rightsModalId">
-                      <a href="#">{{ ('Ask for Experimenter Rights') }}</a>
-                  </li>
-              {%- endif -%}
-              {%- if not current_user.is_admin() -%}
-                  <li class="askRightsButton hidden-element" value="admin" data-toggle="modal" data-target="#rightsModalId">
-                      <a href="#">{{ ('Ask for Admin Rights') }}</a>
-                  </li>
-              {%- endif -%}
-              {%- if current_user.is_admin() -%}
-                  <li>
-                      <a href="{{ url_for('admin.index') }}">{{ ('Admin Panel') }}</a>
-                  </li>
-              {%- endif -%}
-                <li>
-                    <a class="notification" href="{{ url_for('notification.index') }}"><i class="fa fa-bell" style="font-size:16px"></i>
-                        <!-- <span>{{ ('Notifications') }}</span> -->
-                        <span class="badge hidden-element">3</span>
-                    </a>
+        <ul class="nav navbar-nav">
+            <li><a href="{{ url_for('home.index') }}"> <span class="glyphicon glyphicon-home"></span> {{ ('Home') }}</a></li>
+            {%- if not current_user.is_experimenter() -%}
+                <li class="askRightsButton hidden-element" value="experimenter" data-toggle="modal" data-target="#rightsModalId">
+                    <a href="#">{{ ('Ask for Experimenter Rights') }}</a>
                 </li>
-          </ul>
+            {%- endif -%}
+            {%- if not current_user.is_admin() -%}
+                <li class="askRightsButton hidden-element" value="admin" data-toggle="modal" data-target="#rightsModalId">
+                    <a href="#">{{ ('Ask for Admin Rights') }}</a>
+                </li>
+            {%- endif -%}
+            {%- if current_user.is_admin() -%}
+                <li>
+                    <a href="{{ url_for('admin.index') }}">{{ ('Admin Panel') }}</a>
+                </li>
+            {%- endif -%}
+            <li>
+                <a class="notification" href="{{ url_for('notification.index') }}"><i class="fa fa-bell" style="font-size:16px"></i>
+                    <span class="notifBadge hidden-element">3</span>
+                </a>
+            </li>
+        </ul>
+        <!-- {%- if current_user.is_admin() -%}
+            <ul class="nav navbar-nav" style="margin-left:25%; margin-top: 1%">
+                <li class="search-container">
+                    <form  name="searchForm" method="POST" action = "{{ url_for('admin.searchItems') }}">
+                        <input type="text" placeholder="Search...." name="search" id="search" style="border-radius: 2px; border: 1px solid black;">
+                        <button type="submit" style="border-radius: 4px; color: white; background-color: rgb(173, 169, 169); border: 1px solid grey;"><i class="fa fa-search"></i></button>
+                    </form>
+                </li>
+            </ul>
+        {%- endif -%} -->
       {% endif %}
       <ul class="nav navbar-nav navbar-right">
           {% if current_user.is_authenticated %}
-            <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#" style="width:100%; margin-left:-42%">  <span class="glyphicon
-                glyphicon-user"></span> Account <span class="caret"></span></a>
+            <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#" style="width:100%; margin-left:-15%">  
+                <img src="{{ current_user.avatar(20) }}"> {{current_user.username}} <span class="caret"></span></a>
                 <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    {%- if current_user.is_admin() -%}
+                        <li><a class="dropdown-item" href="{{url_for('admin.settings')}}"> 
+                                <span class="glyphicon glyphicon-cog"></span> Settings
+                                </a>
+                        </li>
+                    {%- endif -%}
                     <li><a class="dropdown-item" href="{{url_for('home.updateInfo')}}"> 
-                        <span class="glyphicon glyphicon-cog"></span> Settings
+                        <span class="glyphicon glyphicon-pencil"></span> Update Profile
                         </a>
                     </li>
                     <li>
@@ -208,142 +223,113 @@
 </div>
 
 
-    <!-- {% with messages = get_flashed_messages() %}
+<div class ="container-fluid msg1">
+    {%  with messages = get_flashed_messages() %}
     {% if messages %}
-        <div class ="alert alert-dismissible fixed alert-success">
-            {% for message in messages %}
-            <div class ="container" role="alert">
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span></button>
-                {{ message }}
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
-    {% endwith %} -->
-
-
-    <div class ="container-fluid msg1">
-        {%  with messages = get_flashed_messages() %}
-        {% if messages %}
-            {% for message in messages %}
-                <div class ="alert alert-success alert-dismissible fade in" role="alert">
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span></button>
-                    <strong>{{ message }}</strong>
-                </div>
-            {% endfor %}
-        {% endif %}
-        {% endwith %}
-    </div>
-
-<!--
-    <div class ="container-fluid">
-        {%  with messages = get_flashed_messages() %}
-        {% if messages %}
-            {% for message in messages %}
-            <div class ="alert alert-warning alert-dismissible fade in" role="alert">
+        {% for message in messages %}
+            <div class ="alert alert-success alert-dismissible fade in" role="alert">
             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                 <span aria-hidden="true">&times;</span></button>
                 <strong>{{ message }}</strong>
             </div>
-            {% endfor %}
-        {% endif %}
-        {% endwith %}
-    </div> -->
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+</div>
 
-    <div id="content">{% block page_body %}{% endblock page_body %}
+<div id="content">
+{% block page_body %}{% endblock page_body %}
 
-        <script charset="utf-8" type="text/javascript">
-            $(function() {
+<script charset="utf-8" type="text/javascript">
+    $(function() {
 
-                function checkRights() {
-                    var url = "{{ url_for('home.checkRights')}}";
-                    var data = {};
+        function checkRights() {
+            var url = "{{ url_for('home.checkRights')}}";
+            var data = {};
 
-                    $.getJSON(url , data, function(response) {
-                        if(response.success) {
-                            kk = response;
-                            if( !response.experimenterRequest ) {
-                                $(".askRightsButton[value='experimenter']").removeClass('hidden-element');
-                            }
-                            if( !response.adminRequest ) {
-                                $(".askRightsButton[value='admin']").removeClass('hidden-element');
-                            }
-                        }
-                        else{
-                            $(".askRightsButton[value='admin']").removeClass('hidden-element');
-                        }
-                    });
-                }
-
-                checkRights();
-                var askFor;
-
-                $('.askRightsButton').on('click', function() {
-                    askFor = $(this).attr('value');
-                })
-                var rightsForm = $('#rightsForm');
-
-                function addRightNotification(data){
-                    var url = "{{ url_for('notification._rightNotification')}}";
-                    $.getJSON(url , data, function(response) {
-                        if(response.success){
-                            $(".askRightsButton[value=" + askFor + "]").addClass('hidden-element');
-                            alert('request has been sent and would be soon reviewed by admins');
-                        }
-                    });
-                };
-
-                rightsForm.on('submit', function(e) {
-                    e.stopImmediatePropagation();
-                    e.preventDefault();
-
-                    var message = $(this).find("input[name='message']").val();
-                    var url = "{{ url_for('home.askRights')}}";
-                    var data = {
-                        'message' : message,
-                        'role' : askFor,
-                    };
-
-                    $.getJSON(url , data, function(response) {
-                        if(response.success) {
-                            $('#rightsModalId').modal('hide');
-                            $('#rightsForm').find('input').val("");
-                            addRightNotification(data);
-                        }
-                    });
-
-                })
-
-                $( "div.msg1" ).fadeIn(600).delay(3000).fadeOut(700);
-
-            });
-
-            $(document).ready(function() {
-                // auto refresh page after 4 second
-                setInterval('refreshNotification()', 400000);
-            });
- 
-            function refreshNotification() {
-                var data = {};  
-                $.ajax({
-                    url: "{{ url_for('notification.getNumNotif')}}",
-                    type: "POST",
-                    data : data,
-                    async: true,
-                    success: function(response) {
-                        if(response.numNotif > 0){
-                            $('.badge').text(response.numNotif);
-                            $('.badge').removeClass('hidden-element');
-                        }
-                        else{
-                            $('.badge').addClass('hidden-element');
-                        }
+            $.getJSON(url , data, function(response) {
+                if(response.success) {
+                    kk = response;
+                    if( !response.experimenterRequest ) {
+                        $(".askRightsButton[value='experimenter']").removeClass('hidden-element');
                     }
-                });
+                    if( !response.adminRequest ) {
+                        $(".askRightsButton[value='admin']").removeClass('hidden-element');
+                    }
+                }
+                else{
+                    $(".askRightsButton[value='admin']").removeClass('hidden-element');
+                }
+            });
+        }
+
+        checkRights();
+        var askFor;
+
+        $('.askRightsButton').on('click', function() {
+            askFor = $(this).attr('value');
+        })
+        var rightsForm = $('#rightsForm');
+
+        function addRightNotification(data){
+            var url = "{{ url_for('notification._rightNotification')}}";
+            $.getJSON(url , data, function(response) {
+                if(response.success){
+                    $(".askRightsButton[value=" + askFor + "]").addClass('hidden-element');
+                    alert('request has been sent and would be soon reviewed by admins');
+                }
+            });
+        };
+
+        rightsForm.on('submit', function(e) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+
+            var message = $(this).find("input[name='message']").val();
+            var url = "{{ url_for('home.askRights')}}";
+            var data = {
+                'message' : message,
+                'role' : askFor,
+            };
+
+            $.getJSON(url , data, function(response) {
+                if(response.success) {
+                    $('#rightsModalId').modal('hide');
+                    $('#rightsForm').find('input').val("");
+                    addRightNotification(data);
+                }
+            });
+
+        })
+
+        $( "div.msg1" ).fadeIn(600).delay(3000).fadeOut(700);
+
+    });
+
+    $(document).ready(function() {
+        // auto refresh page after 40 second
+        setInterval('refreshNotification()', 40000);
+    });
+
+    function refreshNotification() {
+        var data = {};  
+        $.ajax({
+            url: "{{ url_for('notification.getNumNotif')}}",
+            type: "POST",
+            data : data,
+            async: true,
+            success: function(response) {
+                if(response.numNotif > 0){
+                    $('.notifBadge').text(response.numNotif);
+                    $('.notifBadge').removeClass('hidden-element');
+                }
+                else{
+                    $('.notifBadge').addClass('hidden-element');
+                }
             }
-        </script>
-    </div>
+        });
+    }
+
+</script></div>
 </body>
 </html>

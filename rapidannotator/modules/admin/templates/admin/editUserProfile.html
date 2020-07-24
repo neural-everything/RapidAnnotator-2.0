@@ -1,0 +1,61 @@
+{% extends "home/base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %} Update Information {% endblock title %}
+{% block head %}
+  {{ super() }}
+  <style type="text/css">
+    .important { color: #336699; }
+    
+  </style>
+{% endblock head %}
+
+{% block home_body %}
+    
+    <button class="btn btn-danger pull-left" style="font-size:0.9em; margin-left: 1em" onclick="goBack();">
+        <span class="glyphicon glyphicon-arrow-left"></span> Back
+    </button>
+    <div style="font-size: 150%;margin-left: 43%; margin-bottom: 4%"><strong> <p> Edit Profile </p></strong></div>
+    <div class="alert alert-danger error hidden-element" id = "error" style="width:35%; margin-left: 32%; margin-bottom: 2%">
+        <strong> Error in Updating Information!</strong>
+    </div>
+    <form method="POST" name="update_form" action = "{{ url_for('admin.updateInfo') }}" novalidate>
+        <div style="width: 30%; margin-left: 35%; margin-top: -2%">
+            {% for field in editProfileForm %}
+                {% if field.widget.input_type == 'hidden' %}
+                    {{ field() }}
+                {% else %}
+                    {{ render_field(field, autofocus=True, placeholder=field.label.text) }}
+                {% endif %}
+            {% endfor %}
+            {%- if not user.admin -%}
+                <div class="form-check-inline">
+                    <label class="form-check-label" for="radio1">Want to make Admin?</label>
+                    <input class="form-check-input" id="radio1" name="optradio" type="radio" value="yes"> Yes
+                    <input class="form-check-input" id="radio2" name="optradio" type="radio" value="no" checked> No
+                </div>
+            {%- endif -%}
+            <input type="hidden" id="userId" name="userId" value="{{user.id}}">
+            <div class="form-actions">
+                <button type="submit" name="submit" value="updateCredentials" class="btn btn-primary"> {{ ('Update') }}</button>
+            </div>
+        </div>
+    </form>
+    <div class="footer">
+        <p></p><br><br>
+    </div>
+
+    <script type="text/javascript">
+        $(window).on('load',function(){
+            var errors = "{{errors}}";
+    
+            if( "{{ errors }}" == "updateErrors") {
+                $('#error').removeClass('hidden-element').fadeIn(600).delay(2500).fadeOut(700);
+            }
+        });
+
+        function goBack(){
+            document.location.href = "{{url_for('admin.settings')}}";
+        }
+    </script>
+{% endblock home_body %}

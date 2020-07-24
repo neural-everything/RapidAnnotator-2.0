@@ -1,0 +1,80 @@
+{% extends "admin/base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %} Admin {% endblock title %}
+{% block head %}
+  {{ super() }}
+  <!-- <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet"> -->
+  <style type="text/css">
+    .important { color: #336699; }
+    /* .jumbotron{
+        width: 1000px;
+        margin-left: 100px
+    } */
+    .jumbotron{
+        padding:2rem 4rem;
+        margin-bottom:1rem;
+        background-color:rgb(239, 236, 248);
+        width: 1000px;
+        margin-left: 100px;
+        margin-top: 30px;
+    }
+
+  </style>
+{% endblock head %}
+
+{% block admin_page %}
+    
+    <button class="btn btn-danger pull-left" style="font-size:0.9em; margin-left: 1em" onclick="goBack();">
+        <span class="glyphicon glyphicon-arrow-left"></span> Back
+    </button><br>
+    
+    <div class="jumbotron">
+        <table>
+            <tr class= "row">
+                <td class="collumn"> <img src="{{user.avatar(120) }}">  &nbsp; &nbsp; </div>  
+                <td class = collumn>
+                    <div style="font-size: 40px"> {{user.fullname}}</div>
+                    <div style="font-size: 20px"> @{{user.username}}</div>
+                    <div style="font-size: 20px"> <span class="glyphicon glyphicon-envelope"></span>  <a href = "mailto: {{user.email}}"> {{user.email}} </a></div>
+                </td>
+            </tr>
+        </table>
+        <br>
+
+        <p class="lead">
+            {%- if user.admin -%}
+                <span class="badge badge-pill" style="color:#fff; background-color:rgba(39, 134, 26, 0.815); border-radius: 0%;">Admin</span>
+            {%- else -%}
+            <span class="badge badge-pill" style="color:#fff; background-color:rgba(39, 134, 26, 0.815); border-radius: 0%;"> Not an Admin</span>
+            {%- endif -%}
+            &nbsp;&nbsp;
+            {%- if user.experimenter -%}
+                <span class="badge badge-pill" style="color:#fff; background-color:rgba(156, 18, 115, 0.815); border-radius: 0%;">Experimenter</span>
+            {%- else -%}
+            <span class="badge badge-pill" style="color:#fff; background-color:rgba(156, 18, 115, 0.815);">Not an Experimenter</span>
+            {%- endif -%}
+        </p>
+        <hr class="my-4">
+        <p class="lead">
+            {%- set userProgress_url = url_for('admin.userProgress', userId = user.id) %}
+            <a class="btn btn-primary btn-lg" role="button" onClick="document.location.href='{{userProgress_url}}';">Check Progress</a>
+            {%- set userExperiments_url = url_for('admin.userExperiments', userId = user.id) %}
+            <a class="btn btn-primary btn-lg" role="button" onClick="document.location.href='{{userExperiments_url}}';">View Experiments </a>
+        </p>
+    </div>
+
+    <script type="text/javascript">
+        $(window).on('load',function(){
+            var errors = "{{errors}}";
+    
+            if( "{{ errors }}" == "updateErrors") {
+                $('#error').removeClass('hidden-element').fadeIn(600).delay(2500).fadeOut(700);
+            }
+        });
+
+        function goBack(){
+            document.location.href = "{{url_for('admin.settings')}}";
+        }
+    </script>
+{% endblock admin_page %}

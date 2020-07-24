@@ -146,10 +146,15 @@
     </button>
 
     &nbsp;&nbsp;
+    
     <button class="btn btn-danger dropdown-toggle pull-right" type="button" id="addAnnotators"
         data-target="#deleteProjectModal" data-toggle="modal">
         Delete Project
         <span class="glyphicon glyphicon-trash"></span>
+    </button>
+    <button class="btn btn-danger dropdown-toggle pull-right" style="margin-right:1em;" type="button" id="displayWords"
+        data-target="#displayWordsModalId" data-toggle="modal">
+        Display Words/Second
     </button>
 </div>
 <div id="snackbar3"><strong> Message </strong></div>
@@ -163,10 +168,10 @@
   <div class="modal-dialog modal-sm">
     <!-- Modal content-->
     <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
-        <h4 class="modal-title">Enter the play time details of the clips</h4>
-      </div>
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title">Enter the play time details of the clips</h4>
+        </div>
         <div class="modal-body">
             <form method="POST" id="displayTimeForm" name="displayTimeForm">
 
@@ -186,8 +191,36 @@
                 </div>
             </form>
         </div>
-        <div class="modal-footer">
+        <div class="modal-footer"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Display-Words-Modal -->
+<div class="modal fade" id="displayWordsModalId" role="dialog" tabindex="-1"
+    aria-labelledby="displayWordsModalId" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <!-- Modal content-->
+    <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title">Enter No. of words per second for unaligned caption display</h4>
         </div>
+        <div class="modal-body">
+            <form method="POST" id="displayWordsForm" name="displayWordsForm">
+
+                <b> No. of Words/Sec</b>
+                <input type="number" name="wordTime" id="wordTime" step="1" class="form-control validate"
+                value="{{experiment.display_time.num_words}}" placeholder="{{experiment.display_time.num_words}}">
+                <span class="help-block"><small> No. of words used per second relative to before and after time for displaying unaligned captions</small></span>
+                <br>
+                <div class="form-actions">
+                    <button type="submit" name="submit" class="btn btn-primary"> {{ ('Submit') }}</button>
+                    <button type="button" id="submitLater" class="btn btn-default pull-right" data-dismiss="modal">{{ ('Cancel') }}</button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer"></div>
     </div>
   </div>
 </div>
@@ -567,6 +600,7 @@
         var selectedAnnotator = '#addAnnotatorsMenu li a';
         var selectedOwner = '#addOwnersMenu li a';
         var displayTimeForm = $('#displayTimeForm');
+        var displayWordsForm = $('#displayWordsForm');
         var submitLater = $('#submitLater');
         // var addLableButtonId = $('#addLableButtonId');
 
@@ -575,20 +609,32 @@
             e.preventDefault();
             var beforeTime = $('input[name="beforeTime"]').val();
             var afterTime = $('input[name="afterTime"]').val();
-            setDisplayTime(beforeTime, afterTime);
+            var wordTime = $('input[name="wordTime"]').val();
+            setDisplayTime(beforeTime, afterTime, wordTime);
         });
 
-        function setDisplayTime(beforeTime, afterTime) {
+        displayWordsForm.on('submit', function(e) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            var beforeTime = $('input[name="beforeTime"]').val();
+            var afterTime = $('input[name="afterTime"]').val();
+            var wordTime = $('input[name="wordTime"]').val();
+            setDisplayTime(beforeTime, afterTime, wordTime);
+        });
+
+        function setDisplayTime(beforeTime, afterTime, wordTime) {
             var url = "{{ url_for('add_experiment._addDisplayTimeDetails')}}";
             var data = {
                 'beforeTime' : beforeTime,
                 'afterTime' : afterTime,
+                'wordTime' : wordTime,
                 'experimentId' : "{{ experiment.id }}",
             };
 
             $.getJSON(url , data, function(response) {
                 if(response.success) {
                     $('#displayTimeModalId').modal('hide');
+                    $('#displayWordsModalId').modal('hide');
                 }
                 else {
                     /*do something here*/
