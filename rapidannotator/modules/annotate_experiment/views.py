@@ -224,6 +224,7 @@ def _getFile(experimentId, fileIndex, start):
         'content' : currentFile.content,
         'caption' : tagged_caption,
         'target_caption': target_caption,
+        'edge_link': currentFile.edge_link,
     }
     return currentFile
 

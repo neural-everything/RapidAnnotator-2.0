@@ -495,6 +495,8 @@ class File(db.Model):
     '''
     content = db.Column(db.String(11000), nullable=False, server_default='')
 
+    edge_link = db.Column(db.String(200), nullable=False, server_default='NA')
+
     concordance_lineNumber = db.Column(db.Integer, nullable=False, server_default='1')
 
     display_order = db.Column(db.Integer, nullable=False, server_default='0')

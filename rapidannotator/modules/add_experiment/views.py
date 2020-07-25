@@ -580,6 +580,7 @@ def addFilesFromConcordance(experimentId, concordance):
                 content = row["Screenshot"]
             else:
                 content = caption
+            edge_link = row["Video URL"]
             if readnamefromattributetext_file:
                 name_temp = (row["Structure ``text_file''"]).replace(".txt", "")
                 name_match = re.search("([0-9]{4}-[0-9]{2}-[0-9]{2}_.*)$", name_temp)
@@ -602,6 +603,7 @@ def addFilesFromConcordance(experimentId, concordance):
                     experiment_id=experimentId,
                     concordance_lineNumber=concordance_lineNum,
                     display_order = display_order,
+                    edge_link = edge_link,
             )
             db.session.add(newFile)
             db.session.commit()

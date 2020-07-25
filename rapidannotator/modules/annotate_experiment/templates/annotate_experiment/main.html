@@ -73,12 +73,16 @@
                     {%- if experiment.uploadType == 'NOTviaSpreadsheet' -%}
                         <a href="" target="_blank">Click here</a>
                     {%- else -%}
-                    <video class="clip" width="400" controls>
-                        <source src="" type="video/mp4">
-                        Your browser does not support HTML5 video.
-                    </video>
-                    <br>
-                    <a href="##" id="sourceLink" target="_blank" style="margin-left:30%">Source Link</a>
+                        <video class="clip" width="400" controls>
+                            <source src="" type="video/mp4">
+                            Your browser does not support HTML5 video.
+                        </video>
+                        <br>
+                        {%- if experiment.uploadType == 'fromConcordance' -%}
+                            <a href="" id="edgeLink" target="_blank" style="margin-left:30%">See more context in Edge</a>
+                        {%- else -%}
+                            <a href="##" id="sourceLink" target="_blank" style="margin-left:30%">Source Link</a>
+                        {%- endif -%}
                     {%- endif -%}
                 {%- elif experiment.category == 'audio' -%}
                     {%- if experiment.uploadType == 'NOTviaSpreadsheet' -%}
@@ -88,7 +92,7 @@
                         <source src="" type="audio/wav">
                         Your browser does not support HTML5 audio.
                     </audio>
-                    <a href="##" id="sourceLink" target="_blank" style="margin-left:30%">Source Link</a>
+                    <a href="" id="sourceLink" target="_blank" style="margin-left:30%">Source Link</a>
                     {%- endif -%}
                 {%- elif experiment.category == 'image' -%}
                     <img class="annotationWindow" src="" alt="">
@@ -652,7 +656,7 @@
 
             if( "{{ experiment.uploadType }}" === "viaSpreadsheet" ){
                 var url = fileToLoad.content;
-                $("#sourceLink").attr('href', url);
+                loadedDiv.find('a').attr('href', url);
             }
             else if( "{{ experiment.uploadType }}" === "fromConcordance" ){
                 if ("{{ experiment.category }}" == "image")
@@ -683,6 +687,10 @@
 					}
 					var endtime = parseFloat(temp_endtime[1]) + after_time;
 					var url = temp_list[0] + "&start=" + starttime.toString() + "&end=" + endtime.toString();
+                    if( "{{ experiment.category }}" === "video"){
+                        var url_tp = fileToLoad.edge_link;
+                        loadedDiv.find('a').attr('href', url_tp);
+                    }
                 }
             }
             else{
