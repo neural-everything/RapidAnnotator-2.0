@@ -11,6 +11,10 @@
     }
     
     span.hl { background: yellow; }
+    * {
+ 	 	box-sizing: border-box;
+	}
+
   </style>  
 {% endblock head %}
 
@@ -27,7 +31,7 @@
         <h3 style="display: inline"><b>{{ experiment.name }}</b></h3>
     </div>
 
-    <div style="display: inline; margin-left: 35%; margin-right: 25%">
+    <div style="display: inline; margin-left: 27%; margin-right: 15%">
         <b id="prg" style="font-size: 18px;"> Progress: {{currentFileIndex}} / {{lastFile + 1}}</b>
     </div>
 
@@ -53,9 +57,15 @@
             {%- if (experiment.uploadType == 'manual') -%}
             {%- endif -%}
         {%- endif -%}
+        {%- if (experiment.category == 'video') -%}
+            <button class="fsMode btn btn-primary btn-group btn-group-inline btn-space"
+                type="button"> Fullscreen Mode</button>
+        {%- endif -%}
     </div>
 
-    <div class="progress" style="width:50%; margin-left: 20%; margin-right: 80%">
+
+
+    <div class="progress" style="width:40%; margin-left: 20%; margin-right: 80%">
         <div class="progress-bar progress-bar-info progress-bar-striped  active" id = "progress-bar" role="progressbar" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100" style="width: {{progress_width}}%">
                 <div id="preview" style="color:black"> {{progress_width}}%</div>
         </div>
@@ -73,7 +83,7 @@
                     {%- if experiment.uploadType == 'NOTviaSpreadsheet' -%}
                         <a href="" target="_blank">Click here</a>
                     {%- else -%}
-                        <video class="clip" width="400" controls>
+                        <video class="clip" id= "clip" width="400" controls autoplay>
                             <source src="" type="video/mp4">
                             Your browser does not support HTML5 video.
                         </video>
@@ -111,47 +121,48 @@
 
             </div>
         {% endfor %}
+        <div class="annotationLevelArea">
+	        {% for level in experiment.annotation_levels | sort(attribute='level_number')%}
+	            <div class="col-xs-7 annotationLevel hidden-element" data-index="{{loop.index}}" data-levelid="{{level.id}}">
+	                {%- set levelIndex = loop.index %}
+	                {%- if level.instruction != "" -%}
+	                    <div class="alert alert-info alert-dismissible">
+	                        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+	                        <span class='glyphicon glyphicon-info-sign my-tooltip' title="Instruction"></span>
+	                        &nbsp;{{level.instruction}}
+	                    </div>
+	                {%- endif -%}
+	                
+	                <h3 class="labelName">
+	                    <b>{{level.name}}</b>
+	                </h3>
+	                        
+	                <p>
+	                    {{level.description}}
+	                </p>
 
-        {% for level in experiment.annotation_levels | sort(attribute='level_number')%}
-            <div class="col-xs-7 annotationLevel hidden-element" data-index="{{loop.index}}" data-levelid="{{level.id}}">
-                {%- set levelIndex = loop.index %}
-                {%- if level.instruction != "" -%}
-                    <div class="alert alert-info alert-dismissible">
-                        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-                        <span class='glyphicon glyphicon-info-sign my-tooltip' title="Instruction"></span>
-                        &nbsp;{{level.instruction}}
-                    </div>
-                {%- endif -%}
-                
-                <h3 class="labelName">
-                    <b>{{level.name}}</b>
-                </h3>
-                        
-                <p>
-                    {{level.description}}
-                </p>
+	                <h4><b>
+	                    {{ ('Key Bindings') }}
+	                </b></h4>
 
-                <h4><b>
-                    {{ ('Key Bindings') }}
-                </b></h4>
+	                <ul class="labelKeyBindings">
+	                    {% for label in level.labels %}
+	                    <li data-key="{{label.key_binding}}" data-labelid="{{label.id}}">
+	                        <p> {{keyBindingDict[levelIndex][label.id]}} : {{label.name}}</p>
+	                    </li>
+	                    {% endfor %}
+	                </ul>
 
-                <ul class="labelKeyBindings">
-                    {% for label in level.labels %}
-                    <li data-key="{{label.key_binding}}" data-labelid="{{label.id}}">
-                        <p> {{keyBindingDict[levelIndex][label.id]}} : {{label.name}}</p>
-                    </li>
-                    {% endfor %}
-                </ul>
+	                {% for label in level.labels %}
+	                <button type="button" class="labelButton btn btn-primary btn-group btn-group-inline
+	                    btn-space btn-space-top" data-labelid="{{label.id}}">
+	                    {{ label.name }}
+	                </button>
+	                {% endfor %}
 
-                {% for label in level.labels %}
-                <button type="button" class="labelButton btn btn-primary btn-group btn-group-inline
-                    btn-space btn-space-top" data-labelid="{{label.id}}">
-                    {{ label.name }}
-                </button>
-                {% endfor %}
-
-            </div>
-        {% endfor %}
+	            </div>
+	        {% endfor %}
+    	</div>
     </div>
 
     <div class="fileCaption">
@@ -166,7 +177,10 @@
             </form>
         {%- endif -%}
     </div><br>
+</div>
 
+<div class="content hidden-element" style="position: fixed; bottom: 0; background: rgba(0, 0, 0, 0.5); color: #f1f1f1; width: 100%; padding: 10px;">
+    <button id="exitFsMode" style="width: 120px; font-size: 12px; padding: 10px; border: none;background: #000; color: #fff; cursor: pointer;"> Exit FullScreen </button>
 </div>
 
 <div class="container hidden-element thanksNote">
@@ -229,11 +243,69 @@
 
         });
 
-        /* [TODO] stop clips using before_time */
+        $("#exitFsMode").hover(function(){
+            $(this).css("background-color", "#ddd");
+            $(this).css("color", "black");
+            }, function(){
+            $(this).css("background-color", "#000");
+            $(this).css("color", "#fff");
+        });
 
-        /* TODO Done change type="video/mp4" */
-        /* TODO! add="video/avi" */
-        /* TODO! take care of same names */
+        var fsModeButton = $('.fsMode');
+        var fsModeVal = 0;
+
+        fsModeButton.on('click', function() {
+            var myVideo = $('.clip');
+            myVideo.css('position', 'fixed');
+            myVideo.css('right', 0);
+            myVideo.css('bottom', 0);
+            // myVideo.css('top', -1);
+            // myVideo.css('margin-top', "5%");
+            myVideo.css('min-width', '100%');
+            myVideo.css('min-height', '120%');
+
+            var annotationLevelArea = $('.annotationLevelArea');
+            annotationLevelArea.addClass('hidden-element');
+
+            var fileCaptionArea = $('.fileCaption');
+            fileCaptionArea.addClass('hidden-element');
+
+            var fileTargetCaptionArea = $('.fileTargetCaption');
+            fileTargetCaptionArea.addClass('hidden-element');
+
+            var exitFsModeButton = $('.content');
+            exitFsModeButton.removeClass('hidden-element');
+
+            fsModeVal = 1;
+        });
+
+        var exitFsModeButton = $('#exitFsMode');
+        exitFsModeButton.on('click', function() {
+            var myVideo = $('.clip');
+            myVideo.removeAttr("style");
+            myVideo.css('position', '');
+            myVideo.css('right', '');
+            myVideo.css('bottom', '');
+            myVideo.css('top', '');
+            myVideo.css('min-width', '');
+            myVideo.css('min-height', '');
+
+            var annotationLevelArea = $('.annotationLevelArea');
+            annotationLevelArea.removeClass('hidden-element');
+
+            var fileCaptionArea = $('.fileCaption');
+            fileCaptionArea.removeClass('hidden-element');
+
+            var fileTargetCaptionArea = $('.fileTargetCaption');
+            fileTargetCaptionArea.removeClass('hidden-element');
+
+            var exitFsModeButton = $('.content');
+            exitFsModeButton.addClass('hidden-element');
+
+            fsModeVal = 0;
+        });
+
+        
 
         /*level indexing is 1 based*/
         var last_previous = 0   // Used for Undoing the Last annotation 
@@ -310,6 +382,7 @@
         
 
         $(document).keyup(function(event) {
+            
             if(event.target.nodeName == "TEXTAREA"){
                 return;
             }
@@ -355,6 +428,9 @@
 
         function annotationProcess(y){
             /*for the dict in current index check if the key is there*/
+            document.fullscreenElement = false;
+            document.exitFullscreen();
+
             $.each( keyBindingDict[currentLevel], function( key, value ) {
                 if( y == value ) {
                     if("{{experiment.displayTargetCaption}}" == "True"){
