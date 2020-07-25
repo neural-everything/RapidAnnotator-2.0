@@ -17,7 +17,7 @@ from flask_paginate import Pagination, get_page_args
 from sqlalchemy import and_
 import os, csv, re
 
-import xlwt, xlrd, pandas
+import xlwt, xlrd, pandas, datetime, random
 
 @blueprint.before_request
 def before_request():
@@ -594,11 +594,14 @@ def addFilesFromConcordance(experimentId, concordance):
                 timeresults = re.search("start=(.*)&end=(.*)$", row["Video Snippet"])
                 name = name + "__" + timeresults.group(1) + "-" + timeresults.group(2)
             
+            random.seed(datetime.datetime.now())
+            display_order = random.randint(1, 506070800)
             
             newFile = File(name=name[:1024],
                     content=content[:32000],
                     experiment_id=experimentId,
                     concordance_lineNumber=concordance_lineNum,
+                    display_order = display_order,
             )
             db.session.add(newFile)
             db.session.commit()

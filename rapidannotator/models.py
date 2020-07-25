@@ -249,6 +249,13 @@ class Experiment(db.Model):
     """
     countLabel = db.Column(db.Integer, nullable=False, server_default='-1')
 
+    displayType = db.Column(
+        db.Enum('fcfs', 'random',
+        name='displayType'),
+        nullable=False,
+        server_default='fcfs',
+    )
+
     """ One to One relation
     ..  For Audio / Video Experiments:
     ..  details of duration of the display time of the audio / video.
@@ -488,10 +495,9 @@ class File(db.Model):
     '''
     content = db.Column(db.String(11000), nullable=False, server_default='')
 
-    ''' isSelected 
-    ..  Flag for if the file is selected in the random order or not 
-    '''
     concordance_lineNumber = db.Column(db.Integer, nullable=False, server_default='1')
+
+    display_order = db.Column(db.Integer, nullable=False, server_default='0')
 
     """ One to Many relation
     ..  For File:

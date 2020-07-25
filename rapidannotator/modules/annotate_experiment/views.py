@@ -11,7 +11,7 @@ from rapidannotator.modules.annotate_experiment import blueprint
 from .api import isAnnotator
 
 from sqlalchemy import and_
-import json, csv, os
+import json, csv, os, random
 
 @blueprint.before_request
 def before_request():
@@ -195,8 +195,13 @@ def get_tagged_context(inputPath, concordance_line_number, before_time, after_ti
         fileIndex: index of the file to fetch
 '''
 def _getFile(experimentId, fileIndex, start):
+    
     experiment = Experiment.query.filter_by(id=experimentId).first()
-    currentFile = experiment.files.order_by(File.id)[fileIndex + start]
+    if experiment.displayType == 'fcfs':
+        currentFile = experiment.files.order_by(File.id)[fileIndex + start]
+    else:
+        currentFile = experiment.files.order_by(File.display_order)[fileIndex + start]
+    
     cp = FileCaption.query.filter_by(file_id = currentFile.id).first()
     caption_info = AnnotationCaptionInfo.query.filter_by(user_id=current_user.id, file_id=currentFile.id).first()
     if caption_info == None:
@@ -223,7 +228,6 @@ def _getFile(experimentId, fileIndex, start):
     return currentFile
 
 '''
-    TODO? NOT USED YET
     .. updates the value of current to the value given in params
 '''
 def _updateCurrentFileIndex(experimentId, currentFileIndex):
