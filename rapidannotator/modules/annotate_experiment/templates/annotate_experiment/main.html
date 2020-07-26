@@ -59,7 +59,7 @@
         {%- endif -%}
         {%- if (experiment.category == 'video') -%}
             <button class="fsMode btn btn-primary btn-group btn-group-inline btn-space"
-                type="button"> Fullscreen Mode</button>
+                type="button" id="fsMode"> Fullscreen Mode</button>
         {%- endif -%}
     </div>
 
@@ -253,6 +253,32 @@
             $(this).css("color", "#fff");
         });
 
+        function openFullscreen() {
+          var elem = document.getElementById("clip");
+          console.log(elem)
+          if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+          } else if (elem.mozRequestFullScreen) { /* Firefox */
+            elem.mozRequestFullScreen();
+          } else if (elem.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+            elem.webkitRequestFullscreen();
+          } else if (elem.msRequestFullscreen) { /* IE/Edge */
+            elem.msRequestFullscreen();
+          }
+        }
+
+        function closeFullscreen() {
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          } else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+          } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+          } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+          }
+        }
+
         var fsModeButton = $('.fsMode');
         var fsModeVal = 0;
 
@@ -263,6 +289,7 @@
 
         	var file = $('.file');
         	var myVideo = file.find('.clip');
+            openFullscreen();
 
             myVideo.css('position', 'fixed');
             myVideo.css('left', 0);
@@ -286,6 +313,8 @@
             exitFsModeButton.removeClass('hidden-element');
 
             fsModeVal = 1;
+            toggleFullScreen();
+
         });
 
         var exitFsModeButton = $('#exitFsMode');
@@ -315,6 +344,7 @@
             exitFsModeButton.addClass('hidden-element');
 
             fsModeVal = 0;
+            closeFullscreen();
         });
 
         
@@ -448,9 +478,6 @@
 
         function annotationProcess(y){
             /*for the dict in current index check if the key is there*/
-            document.fullscreenElement = false;
-            document.exitFullscreen();
-
             $.each( keyBindingDict[currentLevel], function( key, value ) {
                 if( y == value ) {
                     if("{{experiment.displayTargetCaption}}" == "True"){
