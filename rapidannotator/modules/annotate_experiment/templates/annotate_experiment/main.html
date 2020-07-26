@@ -83,10 +83,12 @@
                     {%- if experiment.uploadType == 'NOTviaSpreadsheet' -%}
                         <a href="" target="_blank">Click here</a>
                     {%- else -%}
-                        <video class="clip" id= "clip" width="400" controls autoplay>
-                            <source src="" type="video/mp4">
-                            Your browser does not support HTML5 video.
-                        </video>
+                    	<div class="glass">
+	                        <video class="clip" id= "clip" width="400" controls autoplay>
+	                            <source src="" type="video/mp4">
+	                            Your browser does not support HTML5 video.
+	                        </video>
+	                    </div>
                         <br>
                         {%- if experiment.uploadType == 'fromConcordance' -%}
                             <a href="" id="edgeLink" target="_blank" style="margin-left:30%">See more context in Edge</a>
@@ -255,14 +257,23 @@
         var fsModeVal = 0;
 
         fsModeButton.on('click', function() {
-            var myVideo = $('.clip');
+
+        	var annotationArea = $('.glass');
+        	annotationArea.css('min-width', '100%');
+
+        	var file = $('.file');
+        	var myVideo = file.find('.clip');
+
+            myVideo.removeAttr('loop');
             myVideo.css('position', 'fixed');
+            myVideo.css('left', 0);
             myVideo.css('right', 0);
             myVideo.css('bottom', 0);
             // myVideo.css('top', -1);
-            // myVideo.css('margin-top', "5%");
-            myVideo.css('min-width', '100%');
-            myVideo.css('min-height', '120%');
+            // myVideo.css('margin-top', "2%");
+            myVideo.css('width', '100%');
+            myVideo.css('height', '100%');
+            myVideo.css('display', "block");
 
             var annotationLevelArea = $('.annotationLevelArea');
             annotationLevelArea.addClass('hidden-element');
@@ -281,7 +292,9 @@
 
         var exitFsModeButton = $('#exitFsMode');
         exitFsModeButton.on('click', function() {
-            var myVideo = $('.clip');
+        	var file = $('.file'); 
+            var myVideo = file.find('.clip');
+            myVideo.attr('loop', 'loop');
             myVideo.removeAttr("style");
             myVideo.css('position', '');
             myVideo.css('right', '');
@@ -289,6 +302,7 @@
             myVideo.css('top', '');
             myVideo.css('min-width', '');
             myVideo.css('min-height', '');
+            myVideo.css('display', "");
 
             var annotationLevelArea = $('.annotationLevelArea');
             annotationLevelArea.removeClass('hidden-element');
@@ -396,12 +410,19 @@
                 tp = tp.find(".clip")[0];
                 if(tp.readyState == 3 || tp.readyState == 4 || tp.readyState == 2){
                     if(!already_submitted[levelId]){
+                        stopThisClip(currentLoadedFile);
                         annotationProcess(y);
+                        var f = $(".file[data-index='" + divIndex + "']");
+            			console(f);
+            			// if (f.length != 0) {
+                			// f.find(".clip")[0].pause();
+            			// }
                     }
                 }
             }
             else{
                 if(!already_submitted[levelId]){
+                    stopThisClip(currentLoadedFile);
                     annotationProcess(y);
                 }
             }
