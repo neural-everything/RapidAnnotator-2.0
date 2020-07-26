@@ -84,7 +84,7 @@
                         <a href="" target="_blank">Click here</a>
                     {%- else -%}
                     	<div class="glass">
-	                        <video class="clip" id= "clip" width="400" controls autoplay>
+	                        <video class="clip" id= "clip" width="400" controls>
 	                            <source src="" type="video/mp4">
 	                            Your browser does not support HTML5 video.
 	                        </video>
@@ -264,13 +264,11 @@
         	var file = $('.file');
         	var myVideo = file.find('.clip');
 
-            myVideo.removeAttr('loop');
             myVideo.css('position', 'fixed');
             myVideo.css('left', 0);
             myVideo.css('right', 0);
             myVideo.css('bottom', 0);
-            // myVideo.css('top', -1);
-            // myVideo.css('margin-top', "2%");
+            myVideo.css('object-fit', 'cover');
             myVideo.css('width', '100%');
             myVideo.css('height', '100%');
             myVideo.css('display', "block");
@@ -294,7 +292,6 @@
         exitFsModeButton.on('click', function() {
         	var file = $('.file'); 
             var myVideo = file.find('.clip');
-            myVideo.attr('loop', 'loop');
             myVideo.removeAttr("style");
             myVideo.css('position', '');
             myVideo.css('right', '');
@@ -303,6 +300,7 @@
             myVideo.css('min-width', '');
             myVideo.css('min-height', '');
             myVideo.css('display', "");
+            myVideo.css('object-fit', '');
 
             var annotationLevelArea = $('.annotationLevelArea');
             annotationLevelArea.removeClass('hidden-element');
@@ -410,20 +408,21 @@
                 tp = tp.find(".clip")[0];
                 if(tp.readyState == 3 || tp.readyState == 4 || tp.readyState == 2){
                     if(!already_submitted[levelId]){
-                        stopThisClip(currentLoadedFile);
                         annotationProcess(y);
-                        var f = $(".file[data-index='" + divIndex + "']");
-            			console(f);
-            			// if (f.length != 0) {
-                			// f.find(".clip")[0].pause();
-            			// }
+                        $(".clip").each(function(){
+                        	$(this).get(0).pause();
+                        	console.log($(this).get(0));
+                        });
+
                     }
                 }
             }
             else{
                 if(!already_submitted[levelId]){
-                    stopThisClip(currentLoadedFile);
                     annotationProcess(y);
+                    $(".clip").each(function(){
+                        $(this).get(0).pause();
+                    });
                 }
             }
             /* undo feature */
