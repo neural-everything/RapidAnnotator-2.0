@@ -1055,7 +1055,7 @@ def _exportResultsXLS(experimentId):
     
     excel_file = xlwt.Workbook()
     sheet = excel_file.add_sheet('results')
-    style0 = xlwt.easyxf('font: name Times New Roman, color-index black, bold on')
+    style0 = xlwt.easyxf('font: name Arial, color-index black, bold on')
     sheet.col(0).width = 256 * 40
     row, col = 0, 0
     sheet.write(row, col, 'File Name', style0)
@@ -1063,10 +1063,12 @@ def _exportResultsXLS(experimentId):
     
     annotators_assoc = experiment.annotators
     annotators = [assoc.annotator for assoc in annotators_assoc]
+    annotation_levels = AnnotationLevel.query.filter_by(experiment_id=experimentId).all()
     for annotator in annotators:
         col += 1
-        sheet.write(row, col, annotator.username, style0)
-        col += 1
+        for level in annotation_levels:
+            sheet.write(row, col, annotator.username + " ( Level " + str(level.level_number) + " )", style0)
+            col += 1
         sheet.write(row, col, "Target Caption of " + annotator.username, style0)
 
     col += 1
@@ -1083,16 +1085,15 @@ def _exportResultsXLS(experimentId):
         col = 0
         for annotator in annotators:
             col += 1
-            annotation_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=annotator.id).order_by(AnnotationInfo.annotationLevel_id)
-            if annotation_info.count() == 0:
-                sheet.write(row, col, RESERVED_LABEL)
-            else:
-                label_string = []
-                for info in annotation_info:
-                    label = Label.query.filter_by(id=info.label_id).first()
-                    label_string.append(label.name)
-                sheet.write(row, col, str(label_string))
-            col += 1
+            for level in annotation_levels:
+                annotation_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=annotator.id, annotationLevel_id=level.id).order_by(AnnotationInfo.annotationLevel_id)
+                if annotation_info.count() == 0:
+                    sheet.write(row, col, RESERVED_LABEL)
+                else:
+                    for info in annotation_info:
+                        label = Label.query.filter_by(id=info.label_id).first()
+                        sheet.write(row, col, str(label.name))
+                col += 1
             cp = AnnotationCaptionInfo.query.filter_by(file_id=f.id, user_id=annotator.id).first()
             if cp == None:
                 cp_val = FileCaption.query.filter_by(file_id=f.id).first()
@@ -1136,30 +1137,31 @@ def _exportResultsConcordance(experiment):
     RESERVED_LABEL = '99999'
     annotators_assoc = experiment.annotators
     annotators = [assoc.annotator for assoc in annotators_assoc]
+    annotation_levels = AnnotationLevel.query.filter_by(experiment_id=experiment.id).all()
     col_num = len(data.axes[1])
 
     for annotator in annotators:
-        data_headers = ["File Deleted" for itr in range(len(data))]
+        for level in annotation_levels:
+            data_headers = ["File Deleted" for itr in range(len(data))]
+            for f in experiment.files:           
+                annotation_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=annotator.id, annotationLevel_id=level.id).order_by(AnnotationInfo.annotationLevel_id)
+                if annotation_info.count() == 0:
+                    data_headers[f.concordance_lineNumber - 1] = RESERVED_LABEL
+                else:
+                    for info in annotation_info:
+                        label = Label.query.filter_by(id=info.label_id).first()
+                        data_headers[f.concordance_lineNumber - 1] = str(label.name)
+            data.insert(col_num, annotator.username + " ( Level " + str(level.level_number) + " )" , data_headers)
+            col_num += 1
+
         target_caption = ["No Caption Provided" for itr in range(len(data))]
-        for f in experiment.files:
-            annotation_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=annotator.id).order_by(AnnotationInfo.annotationLevel_id)
-            if annotation_info.count() == 0:
-                data_headers[f.concordance_lineNumber - 1] = RESERVED_LABEL
-            else:
-                label_string = []
-                for info in annotation_info:
-                    label = Label.query.filter_by(id=info.label_id).first()
-                    label_string.append(label.name)
-                label_string = str(label_string)
-                data_headers[f.concordance_lineNumber - 1] = label_string
+        for f in experiment.files: 
             cp = AnnotationCaptionInfo.query.filter_by(file_id=f.id, user_id=annotator.id).first()
             if cp == None:
                 cp_val = FileCaption.query.filter_by(file_id=f.id).first()
                 target_caption[f.concordance_lineNumber - 1] = cp_val.target_caption
             else:
                 target_caption[f.concordance_lineNumber - 1] = cp.target_caption
-        data.insert(col_num, annotator.username, data_headers)
-        col_num = col_num + 1
         data.insert(col_num, "Target Caption of " + annotator.username, target_caption)
         col_num = col_num + 1
 
@@ -1188,8 +1190,11 @@ def _exportResultsCSV(experimentId):
     column_headers.append('File Name')
     annotators_assoc = experiment.annotators
     annotators = [assoc.annotator for assoc in annotators_assoc]
+    annotation_levels = AnnotationLevel.query.filter_by(experiment_id=experimentId).all()
+
     for annotator in annotators:
-        column_headers.append(annotator.username)
+        for level in annotation_levels:
+            column_headers.append(annotator.username + " ( Level " + str(level.level_number) + " )" )
         column_headers.append('Target Caption of ' + annotator.username)
     column_headers.append('Caption')
     
@@ -1202,15 +1207,14 @@ def _exportResultsCSV(experimentId):
         csv_row = []
         csv_row.append(f.name)
         for annotator in annotators:
-            annotation_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=annotator.id).order_by(AnnotationInfo.annotationLevel_id)
-            if annotation_info.count() == 0:
-                csv_row.append(RESERVED_LABEL)
-            else:
-                label_string = []
-                for info in annotation_info:
-                    label = Label.query.filter_by(id=info.label_id).first()
-                    label_string.append(label.name)
-                csv_row.append(str(label_string))
+            for level in annotation_levels:
+                annotation_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=annotator.id, annotationLevel_id=level.id).order_by(AnnotationInfo.annotationLevel_id)
+                if annotation_info.count() == 0:
+                    csv_row.append(RESERVED_LABEL)
+                else:
+                    for info in annotation_info:
+                        label = Label.query.filter_by(id=info.label_id).first()
+                        csv_row.append(str(label.name))
             cp = AnnotationCaptionInfo.query.filter_by(file_id=f.id, user_id=annotator.id).first()
             if cp == None:
                 cp_val = FileCaption.query.filter_by(file_id=f.id).first()
