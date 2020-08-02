@@ -343,6 +343,13 @@ class AnnotationLevel(db.Model):
     '''
     level_number = db.Column(db.Integer, nullable=False)
 
+
+    skip = db.Column(
+        db.Boolean(name='skip'),
+        nullable=False,
+        server_default='0',
+    )
+
     """ One to Many relation
     ..  For AnnotationLevel:
     ..  list of the labels associated with this annotation level.
@@ -401,6 +408,12 @@ class Label(db.Model):
     ..  when User will press that key :
     '''
     key_binding = db.Column(db.String(1), nullable=False, server_default='')
+
+    skip = db.Column(
+        db.Boolean(name='skip'),
+        nullable=False,
+        server_default='0',
+    )
 
     """ One to Many relation
     ..  For Label:

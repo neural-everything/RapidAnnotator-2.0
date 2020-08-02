@@ -90,7 +90,7 @@ def index(experimentId):
 
 def makeKeyBindingDict(experimentId):
     levels = AnnotationLevel.query.filter_by(experiment_id=\
-                experimentId).order_by(AnnotationLevel.level_number)
+                experimentId).order_by(AnnotationLevel.id)
     index, keyBindingDict = 1, {}
 
     for level in levels:
@@ -209,7 +209,7 @@ def _getFile(experimentId, fileIndex, start):
     else:
         target_caption = caption_info.target_caption
     
-    if experiment.uploadType == 'fromConcordance':
+    if experiment.uploadType == 'fromConcordance' and experiment.category == "video" and experiment.category == "audio":
         from rapidannotator import app
         experimentDIR = os.path.join(app.config['UPLOAD_FOLDER'], str(experimentId))
         inputConcordance = os.path.join(experimentDIR, 'concordance.csv')

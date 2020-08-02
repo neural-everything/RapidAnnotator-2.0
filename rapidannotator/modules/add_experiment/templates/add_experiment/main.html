@@ -32,10 +32,10 @@
         {%- set addLablesUrl = url_for('add_experiment.editLabels', experimentId = experiment.id) %}
 
         <a id="addLableButtonId" href="{{ addLablesUrl }}" value="{{ addLablesUrl }}"
-            class="btn btn-primary btn-group btn-group-inline btn-space">{{ ('Add Labels') }}</a>
+            class="btn btn-primary btn-group btn-group-inline btn-space">{{ ('Labels') }}</a>
 
 
-        <div class="dropdown btn-group btn-group-inline btn-space">
+        <!-- <div class="dropdown btn-group btn-group-inline btn-space">
             <button class="btn btn-primary dropdown-toggle" type="button" id="addOwners" data-toggle="dropdown">
                 Add Owner
             <span class="caret"></span></button>
@@ -55,7 +55,13 @@
                     <li role="presentation"><a role="menuitem" tabindex="-1" href="#"><span>{{user.username}}</span></a></li>
                     {% endfor %}
                 </ul>
-            </div>
+            </div> -->
+            {%- set viewSettings = url_for('add_experiment.viewSettings', experimentId = experiment.id) %}
+            {%- set viewResults = url_for('add_experiment.viewResults', experimentId = experiment.id) %}
+
+            <a id="addLableButtonId" href="{{ viewResults }}" value="{{ viewSettings }}"
+                class="btn btn-primary btn-group btn-group-inline btn-space">{{ ('View Results') }}
+            </a>
 
             <a id="done" onclick="check_is_left_saving();" 
              type="button" class="btn btn-success btn-group btn-group-inline btn-space">{{ ('Done') }}</a>
@@ -95,6 +101,34 @@
         <div id="filelist">Your browser doesn't have Flash, Silverlight or HTML5 support.</div>
 
     </div>
+{%- elif experiment.uploadType == 'fromConcordance' -%}
+    <div class="container">
+        <div>
+            <div style="display: inline-block">
+                <h4 style="display: inline"><b>{{ ('Upload Files via Concordance') }}</b></h4>
+            </div>
+
+            <div id="fileContainer" class="pull-right" style="display: inline-block">
+                <button type="button" class="deleteAllFilesButton btn btn-danger btn-group btn-group-inline btn-space" 
+                    value="{{ experiment.id }}" data-toggle="modal" data-target="#deleteAllFilesModal" onclick="setExperimentId({{experiment.id}});">
+                    <span class="glyphicon glyphicon-trash btn-space"></span>
+                </button>
+                
+                <button type="button" id="chooseFiles" class="btn btn-primary btn-group btn-group-inline btn-space">
+                    <span class="glyphicon glyphicon glyphicon-file"></span>
+                    {{( 'Choose Concordance' )}}
+                </button>
+
+                <button type="button" id="uploadfiles" class="btn btn-primary btn-group btn-group-inline btn-space">
+                    <span class="glyphicon glyphicon-upload"></span>
+                    {{( 'Start Upload' )}}
+                </button>
+            </div>
+
+        </div>
+        <div id="filelist">Your browser doesn't have Flash, Silverlight or HTML5 support.</div>
+    </div>
+
 {%- else -%}
     <div class="container">
         <div>
@@ -110,7 +144,7 @@
                 
                 <button type="button" id="chooseFiles" class="btn btn-primary btn-group btn-group-inline btn-space">
                     <span class="glyphicon glyphicon glyphicon-file"></span>
-                    {{( 'Choose Spreadsheet/Concordance' )}}
+                    {{( 'Choose Spreadsheet' )}}
                 </button>
 
                 <button type="button" id="uploadfiles" class="btn btn-primary btn-group btn-group-inline btn-space">

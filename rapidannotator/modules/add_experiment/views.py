@@ -158,12 +158,19 @@ def editLabels(experimentId):
         annotationCount = annotationInfo.current
     else:
         annotationCount = 0
+    label = Label.query.filter_by(skip=1)
+    if label.count() > 0:
+        skipLevel = 1
+    else:
+        skipLevel = 0
+
     return render_template('add_experiment/labels.html',
         experiment = experiment,
         annotation_levels = annotation_levels,
         annotationLevelForm = annotationLevelForm,
         annotationCount = annotationCount,
         is_global = (experiment.is_global)*1,
+        skipLevel = skipLevel,
     )
 
 @blueprint.route('/_addAnnotationLevel', methods=['POST'])
@@ -215,6 +222,7 @@ def _addLabels():
     annotationId = request.args.get('annotationId', None)
     labelName = request.args.get('labelName', None)
     labelKey = request.args.get('labelKey', None)
+    skipValue = request.args.get('skipValue', None)
 
     if labelKey == ' ':
         response = {
@@ -240,6 +248,7 @@ def _addLabels():
     label = Label(
         name = labelName,
         key_binding = labelKey,
+        skip = int(skipValue),
     )
     annotationLevel.labels.append(label)
 
@@ -298,13 +307,24 @@ def _editAnnotationLevel():
 def _editLabel():
 
     labelId = request.args.get('labelId', None)
+    skipValue = request.args.get('skipValue', None)
+
     label = Label.query.filter_by(id=labelId).first()
 
     label.name = request.args.get('labelName', None)
     label.key_binding = request.args.get('labelKey', None)
+    label.skip = int(skipValue)
 
     db.session.commit()
+
     response = {}
+
+    label = Label.query.filter_by(skip=1)
+    if label.count() > 0:
+        response['skipLevel'] = 1
+    else:
+        response['skipLevel'] = 0
+
     response['success'] = True
 
     return jsonify(response)
@@ -400,6 +420,26 @@ def _addImportedLevels():
     response = {}
     response['success'] = True
     response['msg_already_imported'] = msg_already_imported
+
+    return jsonify(response)
+
+@blueprint.route('/skipLevels', methods=['POST', 'GET'])
+def skipLevels():
+    
+    annotationId = request.args.get('annotationId', None)
+    experimentId = request.args.get('experimentId', None)
+    levels = AnnotationLevel.query.filter_by(experiment_id=\
+                experimentId).order_by(AnnotationLevel.id)
+    for level in levels:
+        print(int(level.id))
+        if int(level.id) > int(annotationId):
+            level.skip = 1
+        else:
+            level.skip  = 0
+        db.session.commit()
+
+    response = {}
+    response['success'] = True
 
     return jsonify(response)
 
