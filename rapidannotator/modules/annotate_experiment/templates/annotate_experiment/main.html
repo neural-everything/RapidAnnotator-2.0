@@ -124,7 +124,7 @@
             </div>
         {% endfor %}
         <div class="annotationLevelArea">
-	        {% for level in experiment.annotation_levels | sort(attribute='level_number')%}
+	        {% for level in experiment.annotation_levels | sort(attribute='id')%}
 	            <div class="col-xs-7 annotationLevel hidden-element" data-index="{{loop.index}}" data-levelid="{{level.id}}">
 	                {%- set levelIndex = loop.index %}
 	                {%- if level.instruction != "" -%}
@@ -255,7 +255,6 @@
 
         function openFullscreen() {
           var elem = document.getElementById("clip");
-          console.log(elem)
           if (elem.requestFullscreen) {
             elem.requestFullscreen();
           } else if (elem.mozRequestFullScreen) { /* Firefox */
@@ -363,6 +362,7 @@
         var progress_num = 0;
         var totalAnnotationLevels = {{ totalAnnotationLevels }};
         var keyBindingDict = {{keyBindingDict | safe}};
+        var skipLevelDict = {{skipLevelDict | safe}}
         currentFileIndex = {{ currentFileIndex }};
 
 
@@ -441,7 +441,6 @@
                         annotationProcess(y);
                         $(".clip").each(function(){
                         	$(this).get(0).pause();
-                        	console.log($(this).get(0));
                         });
 
                     }
@@ -497,6 +496,17 @@
             already_submitted[levelId] = 1;
             currentLevelBody.addClass('hidden-element');
             if (currentLevel == totalAnnotationLevels) {
+                fileAnnotationCompleted();
+            }
+            else if(skipLevelDict[levelId][label] == 1){
+                // var i;
+                // for(i=currentLevel+1;i<=totalAnnotationLevels;i++){
+                //     currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+                //     levelId = currentLevelBody.data("levelid");
+                //     annotations[levelId] = label;
+                //     already_submitted[levelId] = 1;
+                // }
+                currentLevel = totalAnnotationLevels;
                 fileAnnotationCompleted();
             }
             currentLevel = (currentLevel % totalAnnotationLevels) + 1;

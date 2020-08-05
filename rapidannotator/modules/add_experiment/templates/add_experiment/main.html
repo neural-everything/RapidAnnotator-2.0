@@ -57,7 +57,7 @@
                 </ul>
             </div> -->
             {%- set viewSettings = url_for('add_experiment.viewSettings', experimentId = experiment.id) %}
-            {%- set viewResults = url_for('add_experiment.viewResults', experimentId = experiment.id) %}
+            {%- set viewResults = url_for('add_experiment.viewResults', experimentId = experiment.id, userId=firstID) %}
 
             <a id="addLableButtonId" href="{{ viewResults }}" value="{{ viewSettings }}"
                 class="btn btn-primary btn-group btn-group-inline btn-space">{{ ('View Results') }}

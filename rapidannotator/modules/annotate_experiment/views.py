@@ -27,7 +27,7 @@ def index(experimentId):
     experiment = Experiment.query.filter_by(id=experimentId).first()
     annotatorInfo = AnnotatorAssociation.query.filter_by(user_id=current_user.id).\
                     filter_by(experiment_id=experimentId).first()
-    keyBindingDict = makeKeyBindingDict(experimentId)
+    keyBindingDict, skipLevelDict = makeKeyBindingDict(experimentId)
     currentFileIndex = annotatorInfo.current
     firstFile = annotatorInfo.start
     lastFile = annotatorInfo.end
@@ -85,17 +85,18 @@ def index(experimentId):
         labelCount = labelCount,
         labelWarning = labelWarning,
         progress_width = progress_width,
+        skipLevelDict = skipLevelDict,
         isExpowner = isExpowner
     ) 
 
 def makeKeyBindingDict(experimentId):
     levels = AnnotationLevel.query.filter_by(experiment_id=\
                 experimentId).order_by(AnnotationLevel.id)
-    index, keyBindingDict = 1, {}
+    index, keyBindingDict, skipLevelDict = 1, {}, {}
 
     for level in levels:
         labels = Label.query.filter_by(annotation_id=level.id).all()
-        keySet, labelDict = [], {}
+        keySet, labelDict, skipDict = [], {}, {}
 
         for label in labels:
             if label.key_binding:
@@ -108,11 +109,13 @@ def makeKeyBindingDict(experimentId):
 
             key = label.key_binding if label.key_binding else defaultKey
             labelDict[label.id] = key
+            skipDict[label.id] = int(label.skip)
 
         keyBindingDict[index] = labelDict
+        skipLevelDict[level.id] = skipDict
         index += 1
 
-    return keyBindingDict
+    return keyBindingDict, skipLevelDict
 
 def getDefaultKey(keySet):
     for i in range(26):

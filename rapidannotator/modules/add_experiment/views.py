@@ -12,7 +12,7 @@ from rapidannotator import bcrypt
 
 from flask_login import current_user, login_required
 from flask_login import login_user, logout_user, current_user
-from .api import isPerimitted, isPerimitted1
+from .api import isPerimitted, isPerimitted1, isPerimitted2
 from flask_paginate import Pagination, get_page_args
 from sqlalchemy import and_
 import os, csv, re
@@ -58,6 +58,11 @@ def index(experimentId):
     notOwners = [x for x in users if x not in owners]
     notAnnotators = [x for x in users if x not in annotators]
 
+    if len(annotators) == 0:
+        firstID = 3000
+    else:
+        firstID = annotators[0].id
+
     return render_template('add_experiment/main.html',
         users = users,
         experiment = experiment,
@@ -65,6 +70,7 @@ def index(experimentId):
         notAnnotators = notAnnotators,
         exp_files=pagination_files, page=page,
         per_page=per_page, pagination=pagination,
+        firstID=firstID,
     )
 
 @blueprint.route('/_addDisplayTimeDetails', methods=['GET','POST'])
@@ -158,11 +164,13 @@ def editLabels(experimentId):
         annotationCount = annotationInfo.current
     else:
         annotationCount = 0
-    label = Label.query.filter_by(skip=1)
-    if label.count() > 0:
-        skipLevel = 1
-    else:
-        skipLevel = 0
+    skipLevel = {}
+    for level in annotation_levels:
+        label = Label.query.filter_by(annotation_id=level.id, skip=1)
+        if label.count() > 0:
+            skipLevel[level.id] = 1
+        else:
+            skipLevel[level.id] = 0
 
     return render_template('add_experiment/labels.html',
         experiment = experiment,
@@ -208,11 +216,28 @@ def _addAnnotationLevel():
             return redirect(url_for('add_experiment.editLabels', experimentId = experimentId))
 
     errors = "annotationLevelErrors"
+    annotationInfo = AnnotatorAssociation.query.filter_by(experiment_id=experimentId, user_id=current_user.id)
+    if annotationInfo.count() > 0:
+        annotationInfo = AnnotatorAssociation.query.filter_by(experiment_id=experimentId, user_id=current_user.id).first()
+        annotationCount = annotationInfo.current
+    else:
+        annotationCount = 0
+
+    skipLevel = {}
+    for level in annotation_levels:
+        label = Label.query.filter_by(annotation_id=level.id, skip=1)
+        if label.count() > 0:
+            skipLevel[level.id] = 1
+        else:
+            skipLevel[level.id] = 0
 
     return render_template('add_experiment/labels.html',
         experiment = experiment,
         annotation_levels = annotation_levels,
         annotationLevelForm = annotationLevelForm,
+        annotationCount = annotationCount,
+        is_global = (experiment.is_global)*1,
+        skipLevel = skipLevel,
         errors = errors,
     )
 
@@ -308,6 +333,7 @@ def _editLabel():
 
     labelId = request.args.get('labelId', None)
     skipValue = request.args.get('skipValue', None)
+    experimentId = request.args.get('experimentId', None)
 
     label = Label.query.filter_by(id=labelId).first()
 
@@ -319,12 +345,17 @@ def _editLabel():
 
     response = {}
 
-    label = Label.query.filter_by(skip=1)
-    if label.count() > 0:
-        response['skipLevel'] = 1
-    else:
-        response['skipLevel'] = 0
+    skipLevel = {}
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    annotation_levels = experiment.annotation_levels
+    for level in annotation_levels:
+        label = Label.query.filter_by(annotation_id=level.id, skip=1)
+        if label.count() > 0:
+            skipLevel[level.id] = 1
+        else:
+            skipLevel[level.id] = 0
 
+    response['skipLevel'] = skipLevel
     response['success'] = True
 
     return jsonify(response)
@@ -907,13 +938,21 @@ def _deleteExperiment():
     return jsonify(response)
 
 
-@blueprint.route('/viewResults/<int:experimentId>')
-@isPerimitted1
-def viewResults(experimentId):
+@blueprint.route('/viewResults/<int:experimentId>/<int:userId>')
+@isPerimitted2
+def viewResults(experimentId, userId):
 
     page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
     experiment = Experiment.query.filter_by(id=experimentId).first()
+    
     expFiles = File.query.filter_by(experiment_id=experiment.id).all()
+    
+    annotation_levels = experiment.annotation_levels
+    
+    annotators_assoc = experiment.annotators
+    annotators = [assoc.annotator for assoc in annotators_assoc]
+
+    
     exp_files = []
     for fl in expFiles:
         exp_files.append(fl)
@@ -923,21 +962,36 @@ def viewResults(experimentId):
     
     annotations = {}
 
+    if userId == 3000:
+        return render_template('add_experiment/noResults.html', exp_files=pagination_files, page=page, \
+        per_page=per_page, pagination=pagination, experiment = experiment, annotations = annotations, annotators=annotators)
+
+    user = User.query.filter_by(id=userId).first()
+
     for f in experiment.files:
         annotation = {}
-        fileAnnotations = AnnotationInfo.query.filter_by(file_id=f.id).all()
-        for fileAnnotation in fileAnnotations:
-            levelId = fileAnnotation.annotationLevel_id
-            labelId = fileAnnotation.label_id
-            if levelId in annotation:
-                annotation[levelId][labelId] = annotation[levelId].get(labelId, 0) + 1
-            else:
-                annotation[levelId] = {}
-                annotation[levelId][labelId] = 1
-        annotations[f.id] = annotation
+        labelDict = {}
+        fileAnnotations = AnnotationInfo.query.filter_by(file_id=f.id, user_id=userId)
+        if fileAnnotations.count() == 0:
+            annotations[f.id] = annotation
+        else:
+            for level in annotation_levels:
+                annotation[level.id] = {}
+                anno_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=userId, annotationLevel_id=level.id).first()
+                if anno_info is not None:
+                    for label in level.labels:
+                        info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=userId, annotationLevel_id=level.id, label_id=label.id).first()
+                        if info is None:
+                            annotation[level.id][label.id] = 0
+                        else:
+                            annotation[level.id][label.id] = 1
+                else:
+                    for label in level.labels:
+                        annotation[level.id][label.id] = "SKIP"                    
+        annotations[f.id] = annotation       
     
     return render_template('add_experiment/results.html', exp_files=pagination_files, page=page, \
-        per_page=per_page, pagination=pagination, experiment = experiment, annotations = annotations,)
+        per_page=per_page, pagination=pagination, experiment = experiment, annotations = annotations, annotators=annotators, user=user)
 
 
 @blueprint.route('/_discardAnnotations', methods=['POST','GET'])

@@ -403,7 +403,7 @@
         var privateGlobalButton1 = $('.togglePrivate1');
         var privateGlobalButton2 = $('.togglePrivate2');
 
-        var skipLevel = parseInt("{{skipLevel}}");
+        var skipLevel = {{skipLevel}};
 
         if({{is_global}}){
             $('.togglePrivate1').removeClass('hidden-element');
@@ -476,6 +476,8 @@
         $("body").on("click", editLabelButton, function() {
             $('.labelWarning').removeClass('hidden-element');
             selectedLabel = $(this).closest('.labels');
+            selectedAnnotationId = $(this).closest('.annotation_level').attr('value');
+            console.log(selectedAnnotationId, skipLevel[selectedAnnotationId]);
 
             selectedLabelId = selectedLabel.attr('value');
 
@@ -486,7 +488,7 @@
 
             editLabelForm.find('input[name="labelName"]').val(labelName);
             editLabelForm.find('input[name="labelKey"]').val(labelKey);
-            if(skipLevel == 1){
+            if(skipLevel[selectedAnnotationId] == 1){
                 if(labelSkipValue == 'False'){
                     editLabelForm.find('input[name="skipValue"]').attr("disabled", true);
                     editLabelForm.find('input[name="skipValue"]').prop('checked', false);
@@ -508,7 +510,7 @@
 
         addLabelButton.on('click', function() {
             selectedAnnotationId = $(this).closest('.annotation_level').attr('value');
-            if(skipLevel == 1){
+            if(skipLevel[selectedAnnotationId] == 1){
                 addLabelForm.find('input[name="skipValue"]').attr("disabled", true);
             }
             else{
@@ -622,6 +624,7 @@
                 labelName: name,
                 labelKey: key,
                 skipValue: skip,
+                experimentId: {{experiment.id}}
             };
 
             $.getJSON(url , data, function(response) {
@@ -845,11 +848,7 @@
             console.log("SKIPPED");
             if(this.checked) {
                 var returnVal = confirm("Are you sure you want to skip levels?");
-                console.log(returnVal);
                 $(this).prop("checked", returnVal);
-                if(returnVal){
-                    skipLevel = 1;
-                }
             }
         });
 
@@ -860,11 +859,7 @@
             console.log("SKIPPED");
             if(this.checked) {
                 var returnVal = confirm("Are you sure you want to skip levels?");
-                console.log(returnVal);
                 $(this).prop("checked", returnVal);
-                if(returnVal){
-                    skipLevel = 1;
-                }
             }
         });
 
