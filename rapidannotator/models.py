@@ -249,6 +249,13 @@ class Experiment(db.Model):
     """
     countLabel = db.Column(db.Integer, nullable=False, server_default='-1')
 
+    displayType = db.Column(
+        db.Enum('fcfs', 'random',
+        name='displayType'),
+        nullable=False,
+        server_default='fcfs',
+    )
+
     """ One to One relation
     ..  For Audio / Video Experiments:
     ..  details of duration of the display time of the audio / video.
@@ -336,6 +343,13 @@ class AnnotationLevel(db.Model):
     '''
     level_number = db.Column(db.Integer, nullable=False)
 
+
+    skip = db.Column(
+        db.Boolean(name='skip'),
+        nullable=False,
+        server_default='0',
+    )
+
     """ One to Many relation
     ..  For AnnotationLevel:
     ..  list of the labels associated with this annotation level.
@@ -394,6 +408,12 @@ class Label(db.Model):
     ..  when User will press that key :
     '''
     key_binding = db.Column(db.String(1), nullable=False, server_default='')
+
+    skip = db.Column(
+        db.Boolean(name='skip'),
+        nullable=False,
+        server_default='0',
+    )
 
     """ One to Many relation
     ..  For Label:
@@ -488,10 +508,11 @@ class File(db.Model):
     '''
     content = db.Column(db.String(11000), nullable=False, server_default='')
 
-    ''' isSelected 
-    ..  Flag for if the file is selected in the random order or not 
-    '''
+    edge_link = db.Column(db.String(200), nullable=False, server_default='NA')
+
     concordance_lineNumber = db.Column(db.Integer, nullable=False, server_default='1')
+
+    display_order = db.Column(db.Integer, nullable=False, server_default='0')
 
     """ One to Many relation
     ..  For File:

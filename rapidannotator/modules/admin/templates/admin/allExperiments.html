@@ -32,6 +32,7 @@
                     <th>{{('Status')}}</th>
                     <th>{{('Delete Project')}}</th>
                     <th>{{('Owners')}}</th>
+                    <th>{{('Display Order')}}</th>
                 </tr>
             </thead>
             <tbody>
@@ -65,6 +66,13 @@
                                     {% endfor %}
                                 </ul>
                             </div>
+                        </td>
+                        <td>
+                            {%- if (experiment.displayType == 'fcfs') -%}
+                                Normal
+                            {%- else -%}
+                                Random
+                            {%- endif-%}
                         </td>
                     </tr>
                 {% endfor %}

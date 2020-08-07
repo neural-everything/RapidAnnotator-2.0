@@ -54,6 +54,7 @@ def addExperiment():
             description=addExperimentForm.description.data,
             category=addExperimentForm.category.data,
             uploadType=addExperimentForm.uploadType.data,
+            displayType=addExperimentForm.displayType.data,
         )
         experiment.owners.append(current_user)
         db.session.add(experiment)

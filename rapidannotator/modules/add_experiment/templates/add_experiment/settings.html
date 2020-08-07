@@ -1,7 +1,7 @@
 {% extends "add_experiment/base.html" %}
 {% from "macros.html" import render_field %}
 
-{% block title %} Add Experiment Page {% endblock title %}
+{% block title %} Experiment Settings {% endblock title %}
 {% block head %}
   {{ super() }}
     <style type="text/css">
@@ -37,7 +37,6 @@
 
     <div class="pull-right" style="display: inline-block">
         {%- set viewSettings = url_for('add_experiment.viewSettings', experimentId = experiment.id) %}
-        {%- set viewResults = url_for('add_experiment.viewResults', experimentId = experiment.id) %}
         
         <div class="dropdown btn-group btn-group-inline btn-space">
             <button class="btn btn-primary dropdown-toggle" type="button" id="addTargetCaption" data-toggle="dropdown">
@@ -58,9 +57,9 @@
                 class="changeDisplayTime btn btn-primary btn-group btn-group-inline btn-space">{{ ('Display Time') }}
             </a>
         {%- endif -%}
-        <a id="addLableButtonId" href="{{ viewResults }}" value="{{ viewSettings }}"
+        <!-- <a id="addLableButtonId" href="{{ viewResults }}" value="{{ viewSettings }}"
             class="btn btn-primary btn-group btn-group-inline btn-space">{{ ('View Results') }}
-        </a>
+        </a> -->
 
         <div class="dropdown btn-group btn-group-inline btn-space">
             <button class="btn btn-primary dropdown-toggle" type="button" id="addOwners" data-toggle="dropdown">

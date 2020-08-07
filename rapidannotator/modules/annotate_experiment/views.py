@@ -11,7 +11,7 @@ from rapidannotator.modules.annotate_experiment import blueprint
 from .api import isAnnotator
 
 from sqlalchemy import and_
-import json, csv, os
+import json, csv, os, random
 
 @blueprint.before_request
 def before_request():
@@ -27,7 +27,7 @@ def index(experimentId):
     experiment = Experiment.query.filter_by(id=experimentId).first()
     annotatorInfo = AnnotatorAssociation.query.filter_by(user_id=current_user.id).\
                     filter_by(experiment_id=experimentId).first()
-    keyBindingDict = makeKeyBindingDict(experimentId)
+    keyBindingDict, skipLevelDict = makeKeyBindingDict(experimentId)
     currentFileIndex = annotatorInfo.current
     firstFile = annotatorInfo.start
     lastFile = annotatorInfo.end
@@ -85,17 +85,18 @@ def index(experimentId):
         labelCount = labelCount,
         labelWarning = labelWarning,
         progress_width = progress_width,
+        skipLevelDict = skipLevelDict,
         isExpowner = isExpowner
     ) 
 
 def makeKeyBindingDict(experimentId):
     levels = AnnotationLevel.query.filter_by(experiment_id=\
-                experimentId).order_by(AnnotationLevel.level_number)
-    index, keyBindingDict = 1, {}
+                experimentId).order_by(AnnotationLevel.id)
+    index, keyBindingDict, skipLevelDict = 1, {}, {}
 
     for level in levels:
         labels = Label.query.filter_by(annotation_id=level.id).all()
-        keySet, labelDict = [], {}
+        keySet, labelDict, skipDict = [], {}, {}
 
         for label in labels:
             if label.key_binding:
@@ -108,11 +109,13 @@ def makeKeyBindingDict(experimentId):
 
             key = label.key_binding if label.key_binding else defaultKey
             labelDict[label.id] = key
+            skipDict[label.id] = int(label.skip)
 
         keyBindingDict[index] = labelDict
+        skipLevelDict[level.id] = skipDict
         index += 1
 
-    return keyBindingDict
+    return keyBindingDict, skipLevelDict
 
 def getDefaultKey(keySet):
     for i in range(26):
@@ -195,8 +198,13 @@ def get_tagged_context(inputPath, concordance_line_number, before_time, after_ti
         fileIndex: index of the file to fetch
 '''
 def _getFile(experimentId, fileIndex, start):
+    
     experiment = Experiment.query.filter_by(id=experimentId).first()
-    currentFile = experiment.files.order_by(File.id)[fileIndex + start]
+    if experiment.displayType == 'fcfs':
+        currentFile = experiment.files.order_by(File.id)[fileIndex + start]
+    else:
+        currentFile = experiment.files.order_by(File.display_order)[fileIndex + start]
+    
     cp = FileCaption.query.filter_by(file_id = currentFile.id).first()
     caption_info = AnnotationCaptionInfo.query.filter_by(user_id=current_user.id, file_id=currentFile.id).first()
     if caption_info == None:
@@ -204,7 +212,7 @@ def _getFile(experimentId, fileIndex, start):
     else:
         target_caption = caption_info.target_caption
     
-    if experiment.uploadType == 'fromConcordance':
+    if experiment.uploadType == 'fromConcordance' and experiment.category == "video" and experiment.category == "audio":
         from rapidannotator import app
         experimentDIR = os.path.join(app.config['UPLOAD_FOLDER'], str(experimentId))
         inputConcordance = os.path.join(experimentDIR, 'concordance.csv')
@@ -219,11 +227,11 @@ def _getFile(experimentId, fileIndex, start):
         'content' : currentFile.content,
         'caption' : tagged_caption,
         'target_caption': target_caption,
+        'edge_link': currentFile.edge_link,
     }
     return currentFile
 
 '''
-    TODO? NOT USED YET
     .. updates the value of current to the value given in params
 '''
 def _updateCurrentFileIndex(experimentId, currentFileIndex):

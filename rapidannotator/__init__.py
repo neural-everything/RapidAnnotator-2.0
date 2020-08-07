@@ -1,4 +1,5 @@
 from flask import Flask
+from flask import render_template
 
 app = Flask(__name__)
 app.config.from_object('rapidannotator.config.DevelopmentConfig')
@@ -49,3 +50,8 @@ app.register_blueprint(admin, url_prefix='/admin')
 
 from rapidannotator.modules.notification import blueprint as notification
 app.register_blueprint(notification, url_prefix='/notification')
+
+@app.errorhandler(404)
+def page_not_found(e):
+    # note that we set the 404 status explicitly
+    return render_template('404.html'), 404

@@ -37,6 +37,7 @@
                         <th>{{('Creation Date')}}</th>
                         <th>{{('Status')}}</th>
                         <th>{{('Delete Project')}}</th>
+                        <th>{{('Display Order')}}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -60,6 +61,13 @@
                                         data-toggle="modal" data-target="#deleteProjectModal" style="margin-right:80%"></span>
                                 </a>
                             </td>
+                            <td>
+                                {%- if (experiment.displayType == 'fcfs') -%}
+                                    Normal
+                                {%- else -%}
+                                    Random
+                                {%- endif-%}
+                            </td>
                         </tr>
                     {% endfor %}
 
@@ -78,6 +86,7 @@
                       <th>{{('Type')}}</th>
                       <th>{{('Creation Date')}}</th>
                       <th>{{('Status')}}</th>
+                      <th>{{('Display Order')}}</th>
                   </tr>
               </thead>
               <tbody>
@@ -96,6 +105,13 @@
                           {%- if (experiment.status == 'In Progress') -%}
                             <td style="color: blue;"> {{experiment.status}} </td>
                           {%- endif -%}
+                          <td>
+                            {%- if (experiment.displayType == 'fcfs') -%}
+                                Normal
+                            {%- else -%}
+                                Random
+                            {%- endif-%}
+                          </td>
                       </tr>
                   {% endfor %}
 

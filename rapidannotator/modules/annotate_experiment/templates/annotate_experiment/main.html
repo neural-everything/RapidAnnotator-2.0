@@ -11,6 +11,10 @@
     }
     
     span.hl { background: yellow; }
+    * {
+ 	 	box-sizing: border-box;
+	}
+
   </style>  
 {% endblock head %}
 
@@ -27,7 +31,7 @@
         <h3 style="display: inline"><b>{{ experiment.name }}</b></h3>
     </div>
 
-    <div style="display: inline; margin-left: 35%; margin-right: 25%">
+    <div style="display: inline; margin-left: 27%; margin-right: 15%">
         <b id="prg" style="font-size: 18px;"> Progress: {{currentFileIndex}} / {{lastFile + 1}}</b>
     </div>
 
@@ -53,9 +57,15 @@
             {%- if (experiment.uploadType == 'manual') -%}
             {%- endif -%}
         {%- endif -%}
+        {%- if (experiment.category == 'video') -%}
+            <button class="fsMode btn btn-primary btn-group btn-group-inline btn-space"
+                type="button" id="fsMode"> Fullscreen Mode</button>
+        {%- endif -%}
     </div>
 
-    <div class="progress" style="width:50%; margin-left: 20%; margin-right: 80%">
+
+
+    <div class="progress" style="width:40%; margin-left: 20%; margin-right: 80%">
         <div class="progress-bar progress-bar-info progress-bar-striped  active" id = "progress-bar" role="progressbar" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100" style="width: {{progress_width}}%">
                 <div id="preview" style="color:black"> {{progress_width}}%</div>
         </div>
@@ -73,12 +83,18 @@
                     {%- if experiment.uploadType == 'NOTviaSpreadsheet' -%}
                         <a href="" target="_blank">Click here</a>
                     {%- else -%}
-                    <video class="clip" width="400" controls>
-                        <source src="" type="video/mp4">
-                        Your browser does not support HTML5 video.
-                    </video>
-                    <br>
-                    <a href="##" id="sourceLink" target="_blank" style="margin-left:30%">Source Link</a>
+                    	<div class="glass">
+	                        <video class="clip" id= "clip" width="400" controls>
+	                            <source src="" type="video/mp4">
+	                            Your browser does not support HTML5 video.
+	                        </video>
+	                    </div>
+                        <br>
+                        {%- if experiment.uploadType == 'fromConcordance' -%}
+                            <a href="" id="edgeLink" target="_blank" style="margin-left:30%">See more context in Edge</a>
+                        {%- else -%}
+                            <a href="##" id="sourceLink" target="_blank" style="margin-left:30%">Source Link</a>
+                        {%- endif -%}
                     {%- endif -%}
                 {%- elif experiment.category == 'audio' -%}
                     {%- if experiment.uploadType == 'NOTviaSpreadsheet' -%}
@@ -88,7 +104,7 @@
                         <source src="" type="audio/wav">
                         Your browser does not support HTML5 audio.
                     </audio>
-                    <a href="##" id="sourceLink" target="_blank" style="margin-left:30%">Source Link</a>
+                    <a href="" id="sourceLink" target="_blank" style="margin-left:30%">Source Link</a>
                     {%- endif -%}
                 {%- elif experiment.category == 'image' -%}
                     <img class="annotationWindow" src="" alt="">
@@ -107,47 +123,48 @@
 
             </div>
         {% endfor %}
+        <div class="annotationLevelArea">
+	        {% for level in experiment.annotation_levels | sort(attribute='id')%}
+	            <div class="col-xs-7 annotationLevel hidden-element" data-index="{{loop.index}}" data-levelid="{{level.id}}">
+	                {%- set levelIndex = loop.index %}
+	                {%- if level.instruction != "" -%}
+	                    <div class="alert alert-info alert-dismissible">
+	                        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+	                        <span class='glyphicon glyphicon-info-sign my-tooltip' title="Instruction"></span>
+	                        &nbsp;{{level.instruction}}
+	                    </div>
+	                {%- endif -%}
+	                
+	                <h3 class="labelName">
+	                    <b>{{level.name}}</b>
+	                </h3>
+	                        
+	                <p>
+	                    {{level.description}}
+	                </p>
 
-        {% for level in experiment.annotation_levels | sort(attribute='level_number')%}
-            <div class="col-xs-7 annotationLevel hidden-element" data-index="{{loop.index}}" data-levelid="{{level.id}}">
-                {%- set levelIndex = loop.index %}
-                {%- if level.instruction != "" -%}
-                    <div class="alert alert-info alert-dismissible">
-                        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-                        <span class='glyphicon glyphicon-info-sign my-tooltip' title="Instruction"></span>
-                        &nbsp;{{level.instruction}}
-                    </div>
-                {%- endif -%}
-                
-                <h3 class="labelName">
-                    <b>{{level.name}}</b>
-                </h3>
-                        
-                <p>
-                    {{level.description}}
-                </p>
+	                <h4><b>
+	                    {{ ('Key Bindings') }}
+	                </b></h4>
 
-                <h4><b>
-                    {{ ('Key Bindings') }}
-                </b></h4>
+	                <ul class="labelKeyBindings">
+	                    {% for label in level.labels %}
+	                    <li data-key="{{label.key_binding}}" data-labelid="{{label.id}}">
+	                        <p> {{keyBindingDict[levelIndex][label.id]}} : {{label.name}}</p>
+	                    </li>
+	                    {% endfor %}
+	                </ul>
 
-                <ul class="labelKeyBindings">
-                    {% for label in level.labels %}
-                    <li data-key="{{label.key_binding}}" data-labelid="{{label.id}}">
-                        <p> {{keyBindingDict[levelIndex][label.id]}} : {{label.name}}</p>
-                    </li>
-                    {% endfor %}
-                </ul>
+	                {% for label in level.labels %}
+	                <button type="button" class="labelButton btn btn-primary btn-group btn-group-inline
+	                    btn-space btn-space-top" data-labelid="{{label.id}}">
+	                    {{ label.name }}
+	                </button>
+	                {% endfor %}
 
-                {% for label in level.labels %}
-                <button type="button" class="labelButton btn btn-primary btn-group btn-group-inline
-                    btn-space btn-space-top" data-labelid="{{label.id}}">
-                    {{ label.name }}
-                </button>
-                {% endfor %}
-
-            </div>
-        {% endfor %}
+	            </div>
+	        {% endfor %}
+    	</div>
     </div>
 
     <div class="fileCaption">
@@ -162,7 +179,10 @@
             </form>
         {%- endif -%}
     </div><br>
+</div>
 
+<div class="content hidden-element" style="position: fixed; bottom: 0; background: rgba(0, 0, 0, 0.5); color: #f1f1f1; width: 100%; padding: 10px;">
+    <button id="exitFsMode" style="width: 120px; font-size: 12px; padding: 10px; border: none;background: #000; color: #fff; cursor: pointer;"> Exit FullScreen </button>
 </div>
 
 <div class="container hidden-element thanksNote">
@@ -225,11 +245,108 @@
 
         });
 
-        /* [TODO] stop clips using before_time */
+        $("#exitFsMode").hover(function(){
+            $(this).css("background-color", "#ddd");
+            $(this).css("color", "black");
+            }, function(){
+            $(this).css("background-color", "#000");
+            $(this).css("color", "#fff");
+        });
 
-        /* TODO Done change type="video/mp4" */
-        /* TODO! add="video/avi" */
-        /* TODO! take care of same names */
+        function openFullscreen() {
+          var elem = document.getElementById("clip");
+          if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+          } else if (elem.mozRequestFullScreen) { /* Firefox */
+            elem.mozRequestFullScreen();
+          } else if (elem.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+            elem.webkitRequestFullscreen();
+          } else if (elem.msRequestFullscreen) { /* IE/Edge */
+            elem.msRequestFullscreen();
+          }
+        }
+
+        function closeFullscreen() {
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          } else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+          } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+          } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+          }
+        }
+
+        var fsModeButton = $('.fsMode');
+        var fsModeVal = 0;
+
+        fsModeButton.on('click', function() {
+
+        	var annotationArea = $('.glass');
+        	annotationArea.css('min-width', '100%');
+
+        	var file = $('.file');
+        	var myVideo = file.find('.clip');
+            openFullscreen();
+
+            myVideo.css('position', 'fixed');
+            myVideo.css('left', 0);
+            myVideo.css('right', 0);
+            myVideo.css('bottom', 0);
+            myVideo.css('object-fit', 'cover');
+            myVideo.css('width', '100%');
+            myVideo.css('height', '100%');
+            myVideo.css('display', "block");
+
+            var annotationLevelArea = $('.annotationLevelArea');
+            annotationLevelArea.addClass('hidden-element');
+
+            var fileCaptionArea = $('.fileCaption');
+            fileCaptionArea.addClass('hidden-element');
+
+            var fileTargetCaptionArea = $('.fileTargetCaption');
+            fileTargetCaptionArea.addClass('hidden-element');
+
+            var exitFsModeButton = $('.content');
+            exitFsModeButton.removeClass('hidden-element');
+
+            fsModeVal = 1;
+            toggleFullScreen();
+
+        });
+
+        var exitFsModeButton = $('#exitFsMode');
+        exitFsModeButton.on('click', function() {
+        	var file = $('.file'); 
+            var myVideo = file.find('.clip');
+            myVideo.removeAttr("style");
+            myVideo.css('position', '');
+            myVideo.css('right', '');
+            myVideo.css('bottom', '');
+            myVideo.css('top', '');
+            myVideo.css('min-width', '');
+            myVideo.css('min-height', '');
+            myVideo.css('display', "");
+            myVideo.css('object-fit', '');
+
+            var annotationLevelArea = $('.annotationLevelArea');
+            annotationLevelArea.removeClass('hidden-element');
+
+            var fileCaptionArea = $('.fileCaption');
+            fileCaptionArea.removeClass('hidden-element');
+
+            var fileTargetCaptionArea = $('.fileTargetCaption');
+            fileTargetCaptionArea.removeClass('hidden-element');
+
+            var exitFsModeButton = $('.content');
+            exitFsModeButton.addClass('hidden-element');
+
+            fsModeVal = 0;
+            closeFullscreen();
+        });
+
+        
 
         /*level indexing is 1 based*/
         var last_previous = 0   // Used for Undoing the Last annotation 
@@ -245,6 +362,7 @@
         var progress_num = 0;
         var totalAnnotationLevels = {{ totalAnnotationLevels }};
         var keyBindingDict = {{keyBindingDict | safe}};
+        var skipLevelDict = {{skipLevelDict | safe}}
         currentFileIndex = {{ currentFileIndex }};
 
 
@@ -306,6 +424,7 @@
         
 
         $(document).keyup(function(event) {
+            
             if(event.target.nodeName == "TEXTAREA"){
                 return;
             }
@@ -320,12 +439,19 @@
                 if(tp.readyState == 3 || tp.readyState == 4 || tp.readyState == 2){
                     if(!already_submitted[levelId]){
                         annotationProcess(y);
+                        $(".clip").each(function(){
+                        	$(this).get(0).pause();
+                        });
+
                     }
                 }
             }
             else{
                 if(!already_submitted[levelId]){
                     annotationProcess(y);
+                    $(".clip").each(function(){
+                        $(this).get(0).pause();
+                    });
                 }
             }
             /* undo feature */
@@ -370,6 +496,17 @@
             already_submitted[levelId] = 1;
             currentLevelBody.addClass('hidden-element');
             if (currentLevel == totalAnnotationLevels) {
+                fileAnnotationCompleted();
+            }
+            else if(skipLevelDict[levelId][label] == 1){
+                // var i;
+                // for(i=currentLevel+1;i<=totalAnnotationLevels;i++){
+                //     currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+                //     levelId = currentLevelBody.data("levelid");
+                //     annotations[levelId] = label;
+                //     already_submitted[levelId] = 1;
+                // }
+                currentLevel = totalAnnotationLevels;
                 fileAnnotationCompleted();
             }
             currentLevel = (currentLevel % totalAnnotationLevels) + 1;
@@ -652,7 +789,7 @@
 
             if( "{{ experiment.uploadType }}" === "viaSpreadsheet" ){
                 var url = fileToLoad.content;
-                $("#sourceLink").attr('href', url);
+                loadedDiv.find('a').attr('href', url);
             }
             else if( "{{ experiment.uploadType }}" === "fromConcordance" ){
                 if ("{{ experiment.category }}" == "image")
@@ -683,6 +820,10 @@
 					}
 					var endtime = parseFloat(temp_endtime[1]) + after_time;
 					var url = temp_list[0] + "&start=" + starttime.toString() + "&end=" + endtime.toString();
+                    if( "{{ experiment.category }}" === "video"){
+                        var url_tp = fileToLoad.edge_link;
+                        loadedDiv.find('a').attr('href', url_tp);
+                    }
                 }
             }
             else{

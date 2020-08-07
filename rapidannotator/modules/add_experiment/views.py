@@ -12,12 +12,12 @@ from rapidannotator import bcrypt
 
 from flask_login import current_user, login_required
 from flask_login import login_user, logout_user, current_user
-from .api import isPerimitted, isPerimitted1
+from .api import isPerimitted, isPerimitted1, isPerimitted2
 from flask_paginate import Pagination, get_page_args
 from sqlalchemy import and_
 import os, csv, re
 
-import xlwt, xlrd, pandas
+import xlwt, xlrd, pandas, datetime, random
 
 @blueprint.before_request
 def before_request():
@@ -58,6 +58,11 @@ def index(experimentId):
     notOwners = [x for x in users if x not in owners]
     notAnnotators = [x for x in users if x not in annotators]
 
+    if len(annotators) == 0:
+        firstID = 3000
+    else:
+        firstID = annotators[0].id
+
     return render_template('add_experiment/main.html',
         users = users,
         experiment = experiment,
@@ -65,6 +70,7 @@ def index(experimentId):
         notAnnotators = notAnnotators,
         exp_files=pagination_files, page=page,
         per_page=per_page, pagination=pagination,
+        firstID=firstID,
     )
 
 @blueprint.route('/_addDisplayTimeDetails', methods=['GET','POST'])
@@ -158,12 +164,21 @@ def editLabels(experimentId):
         annotationCount = annotationInfo.current
     else:
         annotationCount = 0
+    skipLevel = {}
+    for level in annotation_levels:
+        label = Label.query.filter_by(annotation_id=level.id, skip=1)
+        if label.count() > 0:
+            skipLevel[level.id] = 1
+        else:
+            skipLevel[level.id] = 0
+
     return render_template('add_experiment/labels.html',
         experiment = experiment,
         annotation_levels = annotation_levels,
         annotationLevelForm = annotationLevelForm,
         annotationCount = annotationCount,
         is_global = (experiment.is_global)*1,
+        skipLevel = skipLevel,
     )
 
 @blueprint.route('/_addAnnotationLevel', methods=['POST'])
@@ -201,11 +216,28 @@ def _addAnnotationLevel():
             return redirect(url_for('add_experiment.editLabels', experimentId = experimentId))
 
     errors = "annotationLevelErrors"
+    annotationInfo = AnnotatorAssociation.query.filter_by(experiment_id=experimentId, user_id=current_user.id)
+    if annotationInfo.count() > 0:
+        annotationInfo = AnnotatorAssociation.query.filter_by(experiment_id=experimentId, user_id=current_user.id).first()
+        annotationCount = annotationInfo.current
+    else:
+        annotationCount = 0
+
+    skipLevel = {}
+    for level in annotation_levels:
+        label = Label.query.filter_by(annotation_id=level.id, skip=1)
+        if label.count() > 0:
+            skipLevel[level.id] = 1
+        else:
+            skipLevel[level.id] = 0
 
     return render_template('add_experiment/labels.html',
         experiment = experiment,
         annotation_levels = annotation_levels,
         annotationLevelForm = annotationLevelForm,
+        annotationCount = annotationCount,
+        is_global = (experiment.is_global)*1,
+        skipLevel = skipLevel,
         errors = errors,
     )
 
@@ -215,6 +247,7 @@ def _addLabels():
     annotationId = request.args.get('annotationId', None)
     labelName = request.args.get('labelName', None)
     labelKey = request.args.get('labelKey', None)
+    skipValue = request.args.get('skipValue', None)
 
     if labelKey == ' ':
         response = {
@@ -240,6 +273,7 @@ def _addLabels():
     label = Label(
         name = labelName,
         key_binding = labelKey,
+        skip = int(skipValue),
     )
     annotationLevel.labels.append(label)
 
@@ -298,13 +332,30 @@ def _editAnnotationLevel():
 def _editLabel():
 
     labelId = request.args.get('labelId', None)
+    skipValue = request.args.get('skipValue', None)
+    experimentId = request.args.get('experimentId', None)
+
     label = Label.query.filter_by(id=labelId).first()
 
     label.name = request.args.get('labelName', None)
     label.key_binding = request.args.get('labelKey', None)
+    label.skip = int(skipValue)
 
     db.session.commit()
+
     response = {}
+
+    skipLevel = {}
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    annotation_levels = experiment.annotation_levels
+    for level in annotation_levels:
+        label = Label.query.filter_by(annotation_id=level.id, skip=1)
+        if label.count() > 0:
+            skipLevel[level.id] = 1
+        else:
+            skipLevel[level.id] = 0
+
+    response['skipLevel'] = skipLevel
     response['success'] = True
 
     return jsonify(response)
@@ -400,6 +451,26 @@ def _addImportedLevels():
     response = {}
     response['success'] = True
     response['msg_already_imported'] = msg_already_imported
+
+    return jsonify(response)
+
+@blueprint.route('/skipLevels', methods=['POST', 'GET'])
+def skipLevels():
+    
+    annotationId = request.args.get('annotationId', None)
+    experimentId = request.args.get('experimentId', None)
+    levels = AnnotationLevel.query.filter_by(experiment_id=\
+                experimentId).order_by(AnnotationLevel.id)
+    for level in levels:
+        print(int(level.id))
+        if int(level.id) > int(annotationId):
+            level.skip = 1
+        else:
+            level.skip  = 0
+        db.session.commit()
+
+    response = {}
+    response['success'] = True
 
     return jsonify(response)
 
@@ -580,6 +651,7 @@ def addFilesFromConcordance(experimentId, concordance):
                 content = row["Screenshot"]
             else:
                 content = caption
+            edge_link = row["Video URL"]
             if readnamefromattributetext_file:
                 name_temp = (row["Structure ``text_file''"]).replace(".txt", "")
                 name_match = re.search("([0-9]{4}-[0-9]{2}-[0-9]{2}_.*)$", name_temp)
@@ -594,11 +666,15 @@ def addFilesFromConcordance(experimentId, concordance):
                 timeresults = re.search("start=(.*)&end=(.*)$", row["Video Snippet"])
                 name = name + "__" + timeresults.group(1) + "-" + timeresults.group(2)
             
+            random.seed(datetime.datetime.now())
+            display_order = random.randint(1, 506070800)
             
             newFile = File(name=name[:1024],
                     content=content[:32000],
                     experiment_id=experimentId,
                     concordance_lineNumber=concordance_lineNum,
+                    display_order = display_order,
+                    edge_link = edge_link,
             )
             db.session.add(newFile)
             db.session.commit()
@@ -862,13 +938,21 @@ def _deleteExperiment():
     return jsonify(response)
 
 
-@blueprint.route('/viewResults/<int:experimentId>')
-@isPerimitted1
-def viewResults(experimentId):
+@blueprint.route('/viewResults/<int:experimentId>/<int:userId>')
+@isPerimitted2
+def viewResults(experimentId, userId):
 
     page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
     experiment = Experiment.query.filter_by(id=experimentId).first()
+    
     expFiles = File.query.filter_by(experiment_id=experiment.id).all()
+    
+    annotation_levels = experiment.annotation_levels
+    
+    annotators_assoc = experiment.annotators
+    annotators = [assoc.annotator for assoc in annotators_assoc]
+
+    
     exp_files = []
     for fl in expFiles:
         exp_files.append(fl)
@@ -878,21 +962,36 @@ def viewResults(experimentId):
     
     annotations = {}
 
+    if userId == 3000:
+        return render_template('add_experiment/noResults.html', exp_files=pagination_files, page=page, \
+        per_page=per_page, pagination=pagination, experiment = experiment, annotations = annotations, annotators=annotators)
+
+    user = User.query.filter_by(id=userId).first()
+
     for f in experiment.files:
         annotation = {}
-        fileAnnotations = AnnotationInfo.query.filter_by(file_id=f.id).all()
-        for fileAnnotation in fileAnnotations:
-            levelId = fileAnnotation.annotationLevel_id
-            labelId = fileAnnotation.label_id
-            if levelId in annotation:
-                annotation[levelId][labelId] = annotation[levelId].get(labelId, 0) + 1
-            else:
-                annotation[levelId] = {}
-                annotation[levelId][labelId] = 1
-        annotations[f.id] = annotation
+        labelDict = {}
+        fileAnnotations = AnnotationInfo.query.filter_by(file_id=f.id, user_id=userId)
+        if fileAnnotations.count() == 0:
+            annotations[f.id] = annotation
+        else:
+            for level in annotation_levels:
+                annotation[level.id] = {}
+                anno_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=userId, annotationLevel_id=level.id).first()
+                if anno_info is not None:
+                    for label in level.labels:
+                        info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=userId, annotationLevel_id=level.id, label_id=label.id).first()
+                        if info is None:
+                            annotation[level.id][label.id] = 0
+                        else:
+                            annotation[level.id][label.id] = 1
+                else:
+                    for label in level.labels:
+                        annotation[level.id][label.id] = "SKIP"                    
+        annotations[f.id] = annotation       
     
     return render_template('add_experiment/results.html', exp_files=pagination_files, page=page, \
-        per_page=per_page, pagination=pagination, experiment = experiment, annotations = annotations,)
+        per_page=per_page, pagination=pagination, experiment = experiment, annotations = annotations, annotators=annotators, user=user)
 
 
 @blueprint.route('/_discardAnnotations', methods=['POST','GET'])
@@ -1050,7 +1149,7 @@ def _exportResultsXLS(experimentId):
     
     excel_file = xlwt.Workbook()
     sheet = excel_file.add_sheet('results')
-    style0 = xlwt.easyxf('font: name Times New Roman, color-index black, bold on')
+    style0 = xlwt.easyxf('font: name Arial, color-index black, bold on')
     sheet.col(0).width = 256 * 40
     row, col = 0, 0
     sheet.write(row, col, 'File Name', style0)
@@ -1058,10 +1157,12 @@ def _exportResultsXLS(experimentId):
     
     annotators_assoc = experiment.annotators
     annotators = [assoc.annotator for assoc in annotators_assoc]
+    annotation_levels = AnnotationLevel.query.filter_by(experiment_id=experimentId).all()
     for annotator in annotators:
         col += 1
-        sheet.write(row, col, annotator.username, style0)
-        col += 1
+        for level in annotation_levels:
+            sheet.write(row, col, annotator.username + " ( Level " + str(level.level_number) + " )", style0)
+            col += 1
         sheet.write(row, col, "Target Caption of " + annotator.username, style0)
 
     col += 1
@@ -1078,16 +1179,15 @@ def _exportResultsXLS(experimentId):
         col = 0
         for annotator in annotators:
             col += 1
-            annotation_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=annotator.id).order_by(AnnotationInfo.annotationLevel_id)
-            if annotation_info.count() == 0:
-                sheet.write(row, col, RESERVED_LABEL)
-            else:
-                label_string = []
-                for info in annotation_info:
-                    label = Label.query.filter_by(id=info.label_id).first()
-                    label_string.append(label.name)
-                sheet.write(row, col, str(label_string))
-            col += 1
+            for level in annotation_levels:
+                annotation_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=annotator.id, annotationLevel_id=level.id).order_by(AnnotationInfo.annotationLevel_id)
+                if annotation_info.count() == 0:
+                    sheet.write(row, col, RESERVED_LABEL)
+                else:
+                    for info in annotation_info:
+                        label = Label.query.filter_by(id=info.label_id).first()
+                        sheet.write(row, col, str(label.name))
+                col += 1
             cp = AnnotationCaptionInfo.query.filter_by(file_id=f.id, user_id=annotator.id).first()
             if cp == None:
                 cp_val = FileCaption.query.filter_by(file_id=f.id).first()
@@ -1131,30 +1231,31 @@ def _exportResultsConcordance(experiment):
     RESERVED_LABEL = '99999'
     annotators_assoc = experiment.annotators
     annotators = [assoc.annotator for assoc in annotators_assoc]
+    annotation_levels = AnnotationLevel.query.filter_by(experiment_id=experiment.id).all()
     col_num = len(data.axes[1])
 
     for annotator in annotators:
-        data_headers = ["File Deleted" for itr in range(len(data))]
+        for level in annotation_levels:
+            data_headers = ["File Deleted" for itr in range(len(data))]
+            for f in experiment.files:           
+                annotation_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=annotator.id, annotationLevel_id=level.id).order_by(AnnotationInfo.annotationLevel_id)
+                if annotation_info.count() == 0:
+                    data_headers[f.concordance_lineNumber - 1] = RESERVED_LABEL
+                else:
+                    for info in annotation_info:
+                        label = Label.query.filter_by(id=info.label_id).first()
+                        data_headers[f.concordance_lineNumber - 1] = str(label.name)
+            data.insert(col_num, annotator.username + " ( Level " + str(level.level_number) + " )" , data_headers)
+            col_num += 1
+
         target_caption = ["No Caption Provided" for itr in range(len(data))]
-        for f in experiment.files:
-            annotation_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=annotator.id).order_by(AnnotationInfo.annotationLevel_id)
-            if annotation_info.count() == 0:
-                data_headers[f.concordance_lineNumber - 1] = RESERVED_LABEL
-            else:
-                label_string = []
-                for info in annotation_info:
-                    label = Label.query.filter_by(id=info.label_id).first()
-                    label_string.append(label.name)
-                label_string = str(label_string)
-                data_headers[f.concordance_lineNumber - 1] = label_string
+        for f in experiment.files: 
             cp = AnnotationCaptionInfo.query.filter_by(file_id=f.id, user_id=annotator.id).first()
             if cp == None:
                 cp_val = FileCaption.query.filter_by(file_id=f.id).first()
                 target_caption[f.concordance_lineNumber - 1] = cp_val.target_caption
             else:
                 target_caption[f.concordance_lineNumber - 1] = cp.target_caption
-        data.insert(col_num, annotator.username, data_headers)
-        col_num = col_num + 1
         data.insert(col_num, "Target Caption of " + annotator.username, target_caption)
         col_num = col_num + 1
 
@@ -1183,8 +1284,11 @@ def _exportResultsCSV(experimentId):
     column_headers.append('File Name')
     annotators_assoc = experiment.annotators
     annotators = [assoc.annotator for assoc in annotators_assoc]
+    annotation_levels = AnnotationLevel.query.filter_by(experiment_id=experimentId).all()
+
     for annotator in annotators:
-        column_headers.append(annotator.username)
+        for level in annotation_levels:
+            column_headers.append(annotator.username + " ( Level " + str(level.level_number) + " )" )
         column_headers.append('Target Caption of ' + annotator.username)
     column_headers.append('Caption')
     
@@ -1197,15 +1301,14 @@ def _exportResultsCSV(experimentId):
         csv_row = []
         csv_row.append(f.name)
         for annotator in annotators:
-            annotation_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=annotator.id).order_by(AnnotationInfo.annotationLevel_id)
-            if annotation_info.count() == 0:
-                csv_row.append(RESERVED_LABEL)
-            else:
-                label_string = []
-                for info in annotation_info:
-                    label = Label.query.filter_by(id=info.label_id).first()
-                    label_string.append(label.name)
-                csv_row.append(str(label_string))
+            for level in annotation_levels:
+                annotation_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=annotator.id, annotationLevel_id=level.id).order_by(AnnotationInfo.annotationLevel_id)
+                if annotation_info.count() == 0:
+                    csv_row.append(RESERVED_LABEL)
+                else:
+                    for info in annotation_info:
+                        label = Label.query.filter_by(id=info.label_id).first()
+                        csv_row.append(str(label.name))
             cp = AnnotationCaptionInfo.query.filter_by(file_id=f.id, user_id=annotator.id).first()
             if cp == None:
                 cp_val = FileCaption.query.filter_by(file_id=f.id).first()

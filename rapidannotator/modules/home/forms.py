@@ -57,6 +57,13 @@ class AddExperimentForm(FlaskForm):
                     ('viaSpreadsheet', 'viaSpreadsheet')],
     )
 
+    displayType = SelectField(
+        label=_('File displaying procedure'),
+        description=_("Select the way in which you wish to display files for the annotation."),
+        choices=[   ('fcfs', 'Normal'),
+                    ('random', 'random')],
+    )
+
     def validate_name(self, name):
         experiment = Experiment.query.filter_by(name=name.data).first()
         if experiment is not None:

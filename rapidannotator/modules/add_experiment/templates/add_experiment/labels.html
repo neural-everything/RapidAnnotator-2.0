@@ -1,7 +1,7 @@
 {% extends "add_experiment/base.html" %}
 {% from "macros.html" import render_field %}
 
-{% block title %} Add Experiment Page {% endblock title %}
+{% block title %}  Experiment Labels {% endblock title %}
 {% block head %}
   {{ super() }}
   <style type="text/css">
@@ -74,15 +74,17 @@
                 </div><br>
 
                 <div class="col-xs-12 container-fluid labelCollection">
-                    <span class="col-xs-5 h5 labelName"><b>Label Name</b></span>
-                    <span class="col-xs-3 h5 pull-left labelKey"><b>Key binding</b></span>
+                    <span class="col-xs-3 h5 labelName"><b>Label Name</b></span>
+                    <span class="col-xs-3 h5 skipVal"><b> Skip Label</b></span>
+                    <span class="col-xs-2 h5  labelKey"><b>Key binding</b></span>
                     <span class="col-xs-2"><b>Delete Label</b></span>
                     <span class="col-xs-2"><b>Edit Label</b></span>
-                    <hr style="width:98%"> 
+                    <hr style="width:100%"> 
                     {% for label in annotation_level.labels %}
-                    <span class="labels" value={{label.id}}>
-                        <span class="col-xs-5 h5 labelName">{{ label.name }}</span>
-                        <span class="col-xs-3 h5 pull-left labelKey">{%- if label.key_binding -%} {{ label.key_binding }} {%- else -%} {{('default')}} {%- endif -%}</span>
+                    <span class="col-xs-12 labels" value={{label.id}}>
+                        <span class="col-xs-3 h5 labelName">{{ label.name }}</span>
+                        <span class="col-xs-3 h5 skipVal">{{ label.skip }}</span>
+                        <span class="col-xs-2 h5 labelKey">{%- if label.key_binding -%} {{ label.key_binding }} {%- else -%} {{('default')}} {%- endif -%}</span>
                         <span class="col-xs-2 glyphicon glyphicon-trash edit-button-margin"
                             data-toggle="modal" data-target="#deleteLabelModal" title="Delete label"></span>
                         <span class="col-xs-2 glyphicon glyphicon-pencil edit-button-margin"
@@ -158,6 +160,10 @@
                 <input type="text" name="labelKey"
                     class="form-control validate" placeholder="Key Binding(Optional)" maxlength="1">
                 <span class="help-block"><small>Key Binding Example : a.</small></span>
+
+                <b>Skip Levels: &nbsp;</b>
+                <input type="checkbox" name="skipValue" id="hasSkipValue" style="width:15px;height:15px;" class="validate">
+                <span class="help-block"><small>Tick if you want to skip the following levels </small></span>
 
                 <div class="form-actions">
                     <button type="submit" name="submit" value="" class="btn btn-primary"> {{ ('Save') }}</button>
@@ -289,6 +295,10 @@
                     class="form-control validate" placeholder="Key Binding(Optional)" maxlength="1">
                 <span class="help-block"><small>Key Binding Example : a.</small></span>
 
+                <b>Skip Levels: &nbsp;</b>
+                <input type="checkbox" name="skipValue" id="hasSkipValue1" style="width:15px;height:15px;" class="validate">
+                <span class="help-block"><small>Tick if you want to skip the following levels </small></span>
+
                 <div class="form-actions">
                     <button type="submit" name="submit" value="" class="btn btn-primary"> {{ ('Submit') }}</button>
                     <button type="submit" class="nextLabelButton btn btn-primary"> {{ ('Add Another') }}</button>
@@ -366,6 +376,7 @@
 </div>
 
 <script charset="utf-8" type="text/javascript">
+
     $(function() {
 
         var errors = "{{errors}}";
@@ -391,6 +402,8 @@
 
         var privateGlobalButton1 = $('.togglePrivate1');
         var privateGlobalButton2 = $('.togglePrivate2');
+
+        var skipLevel = {{skipLevel}};
 
         if({{is_global}}){
             $('.togglePrivate1').removeClass('hidden-element');
@@ -463,18 +476,46 @@
         $("body").on("click", editLabelButton, function() {
             $('.labelWarning').removeClass('hidden-element');
             selectedLabel = $(this).closest('.labels');
+            selectedAnnotationId = $(this).closest('.annotation_level').attr('value');
+            console.log(selectedAnnotationId, skipLevel[selectedAnnotationId]);
+
             selectedLabelId = selectedLabel.attr('value');
 
             labelName = selectedLabel.find('.labelName').text();
             labelKey = selectedLabel.find('.labelKey').text();
             labelKey = (labelKey != 'default') ? labelKey : "";
+            labelSkipValue = selectedLabel.find('.skipVal').text();
 
             editLabelForm.find('input[name="labelName"]').val(labelName);
             editLabelForm.find('input[name="labelKey"]').val(labelKey);
+            if(skipLevel[selectedAnnotationId] == 1){
+                if(labelSkipValue == 'False'){
+                    editLabelForm.find('input[name="skipValue"]').attr("disabled", true);
+                    editLabelForm.find('input[name="skipValue"]').prop('checked', false);
+                }
+                else{
+                    editLabelForm.find('input[name="skipValue"]').prop('checked', true); 
+                    editLabelForm.find('input[name="skipValue"]').removeAttr("disabled");
+                }
+            }
+            else{
+                if(labelSkipValue == 'False'){
+                    editLabelForm.find('input[name="skipValue"]').prop('checked', false);
+                }
+                else{
+                    editLabelForm.find('input[name="skipValue"]').prop('checked', true); 
+                }
+            }
         });
 
         addLabelButton.on('click', function() {
             selectedAnnotationId = $(this).closest('.annotation_level').attr('value');
+            if(skipLevel[selectedAnnotationId] == 1){
+                addLabelForm.find('input[name="skipValue"]').attr("disabled", true);
+            }
+            else{
+                addLabelForm.find('input[name="skipValue"]').removeAttr("disabled");
+            }
         });
 
         $('.nextLabelButton').on('click', function() {
@@ -486,10 +527,17 @@
             e.preventDefault();
             var labelName = addLabelForm.find('input[name="labelName"]').val();
             var labelKey = addLabelForm.find('input[name="labelKey"]').val();
+            var labelSkipValue = addLabelForm.find('input[name="skipValue"]').is(":checked");
+            var skip = 0;
+            if(labelSkipValue){
+                skip = 1;
+            }
+
             var labelTuple = {
                 "labelName" : labelName,
                 "labelKey" : labelKey,
                 "annotationId" : selectedAnnotationId,
+                "skipValue": skip,
             };
 
             var url = "{{ url_for('add_experiment._addLabels')}}";
@@ -502,6 +550,7 @@
                     }
                     $('input[name="labelName"]').val("");
                     $('input[name="labelKey"]').val("");
+                    $('input[name="skipValue"]').prop('checked', false);
                     addLabelForm.find("input:first").focus();
 
                     addAnotherLevel = false;
@@ -563,17 +612,25 @@
             e.preventDefault();
             name = editLabelForm.find('input[name="labelName"]').val();
             key = editLabelForm.find('input[name="labelKey"]').val();
+            var labelSkipValue = editLabelForm.find('input[name="skipValue"]').is(":checked");
+            var skip = 0;
+            if(labelSkipValue){
+                skip = 1;
+            }
 
             var url = "{{ url_for('add_experiment._editLabel')}}";
             var data = {
                 labelId:   selectedLabelId,
                 labelName: name,
                 labelKey: key,
+                skipValue: skip,
+                experimentId: {{experiment.id}}
             };
 
             $.getJSON(url , data, function(response) {
                 if(response.success) {
-                    updateLabel(selectedLabelId, name, key);
+                    skipLevel = response.skipLevel
+                    updateLabel(selectedLabelId, name, key, skip);
                     $('#editLabelModal').modal('hide');
                 } else { }
             });
@@ -626,6 +683,8 @@
 
         });
 
+        
+
         deleteAnnotationLevelForm.on('submit', function(e) {
 
             e.stopImmediatePropagation();
@@ -646,10 +705,18 @@
 
         });
 
-        function updateLabel(selectedLabelId, name, key) {
+        function updateLabel(selectedLabelId, name, key, skipValue) {
             selectedLabel = $(".labels[value=" + selectedLabelId + "]");
             selectedLabel.find('.labelName').text(name);
             selectedLabel.find('.labelKey').text(key ? key : "default");
+            var skipText = "False";
+            if(skipValue == 0){
+                skipText = "False";
+            }
+            else{
+                skipText = "True";
+            }
+            selectedLabel.find('.skipVal').text(skipText);
         }
 
         function updateAnnotationLevel(selectedAnnotationId, name, description, levelNumber, instruction) {
@@ -688,19 +755,33 @@
         function displayAsync(labelTuple, newLabelId) {
 
             var parentSpan = $("<span/>", {
-                "class":    "labels",
+                "class":    "col-xs-12 labels",
                 "value":    newLabelId,
             });
 
             var nameSpan = $("<span/>", {
                 "text":     labelTuple['labelName'],
-                "class":    "col-xs-5 h5 labelName",
+                "class":    "col-xs-3 h5 labelName",
+            });
+
+            var skipText = "False";
+            if(labelTuple['skipValue'] == 0){
+                skipText = "False";
+            }
+            else{
+                skipText = "True";
+            }
+            var skipSpan = $("<span/>", {
+                "text":     skipText,
+                "class":    "col-xs-3 h5 skipVal",
             });
 
             var keySpan = $("<span/>", {
                 "text":     labelTuple['labelKey'] ? labelTuple['labelKey'] : "default",
-                "class":   "col-xs-3 h5 pull-left labelKey",
+                "class":   "col-xs-2 h5 labelKey",
             });
+
+            
 
             var trashIconSpan = $("<span/>", {
                 "class":        "col-xs-2 glyphicon glyphicon-trash edit-button-margin",
@@ -716,7 +797,7 @@
                 "title" : "Edit Label",
             });
 
-            parentSpan.append(nameSpan, keySpan, trashIconSpan, editIconSpan);
+            parentSpan.append(nameSpan, skipSpan, keySpan, trashIconSpan, editIconSpan);
 
             /* NOTE (TODO) use value based selection Instead*/
             var annotation_levelClass = "annotation_level_" + labelTuple['annotationId']
@@ -760,6 +841,27 @@
                 } else { }
             });
         }
+
+        $('#hasSkipValue').change(function(e) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            console.log("SKIPPED");
+            if(this.checked) {
+                var returnVal = confirm("Are you sure you want to skip levels?");
+                $(this).prop("checked", returnVal);
+            }
+        });
+
+
+        $('#hasSkipValue1').change(function(e) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            console.log("SKIPPED");
+            if(this.checked) {
+                var returnVal = confirm("Are you sure you want to skip levels?");
+                $(this).prop("checked", returnVal);
+            }
+        });
 
 
     });

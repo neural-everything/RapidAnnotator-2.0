@@ -25,7 +25,7 @@
 
          <div class="dropdown btn-group btn-group-inline btn-space">
             <button class="btn btn-primary dropdown-toggle" type="button" id="annotatorResult" data-toggle="dropdown">
-                {{user.username}}
+                No Annotator
             <span class="caret"></span></button>
             <ul class="dropdown-menu scrollable-dropdown" id="annotatorResultMenu" role="menu" aria-labelledby="annotatorResult">
                 {% for user in annotators %}
@@ -62,90 +62,9 @@
 </div>
 
 <div class="container">
-    {% set levelCount = experiment.annotation_levels | count %}
-
-
-    {%- if levelCount != 0 -%}
     <div>
-        <table class="table table-hover table-striped">
-            <thead>
-                <tr>
-                    <th style="width: 10%"> {{( 'File' )}} </th>
-
-                    {% set width = 70 / levelCount %}
-                    {% set padLeft = 5 / levelCount %}
-                    {% for level in experiment.annotation_levels %}
-                        <th style="width: {{ width }}%; padding-left: {{padLeft}}%">{{ level.name }}</th>
-                    {% endfor %}
-                </tr>
-            </thead>
-
-            <tbody>
-                {% for file in exp_files %}
-                    <tr>
-                        <td>
-                            {%- if experiment.uploadType == 'manual' or experiment.uploadType == 'viaSpreadsheet' -%}
-                                {%- if experiment.category == 'image' -%}
-                                    <img class="{{file.id}}" id="{{file.id}}" src=""  alt="Red Hen Logo" width="100px"><br>
-                                    {{ file.name }}
-                                {%- else -%}
-                                    {%- if experiment.category == 'video' -%}
-                                        <video class="clip" id="{{file.id}}" width="170" height="90" controls>
-                                            <source src="" type="video/mp4">
-                                            Your browser does not support HTML5 video.
-                                        </video>
-                                        &nbsp;&nbsp;&nbsp;&nbsp;{{ file.name }}
-                                    {%- else -%}
-                                        {%- if experiment.category == 'audio' -%}
-                                            <audio class="clip" id="{{file.id}}" width="10px" controls>
-                                                <source src="" type="audio/mp3">
-                                                Your browser does not support HTML5 audio.
-                                            </audio>
-                                            &nbsp;&nbsp;&nbsp;&nbsp;{{ file.name }}
-                                        {%- else -%}
-                                            <span class="glyphicon glyphicon-file" style="font-size:30px;"></span><br>{{file.name}}
-                                        {%- endif -%}
-                                    {%- endif -%}    
-                                {%- endif -%}
-                            {%- else -%}
-                                &nbsp;&nbsp;&nbsp;&nbsp;{{ file.name }}
-                            {%- endif -%}
-                         </td>
-                         {% for level in experiment.annotation_levels %}
-                             <td style="padding-left: {{padLeft}}%">
-                                 {% for label in level.labels %}
-                                     {{ label.name }} : &nbsp;
-                                     {%- if annotations[file.id][level.id] -%}
-                                        {{ annotations[file.id][level.id][label.id] }}
-                                         <!-- {% if annotations[file.id][level.id][label.id] %}
-                                            {{ annotations[file.id][level.id][label.id] }}
-                                         {%- else -%}
-                                            {{'SKIPPED'}}
-                                         {%- endif -%} -->
-                                     {%- else -%}
-                                        {{('0')}}
-                                     {%- endif -%}
-                                    <br>
-                                 {% endfor %}
-                             </td>
-                         {% endfor %}
-                        <!-- <td>
-                            <button class="deleteAnnotationButton pull-right close" type="button"
-                            data-toggle="modal" data-target="#deleteAnnotationModal" onclick="passFile('{{file.id}}')">&times;</button>
-                        </td> -->
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <ul class="pager">
-            {{ pagination.links }}
-        </ul>
+        <h3> You haven't added any annotator to the experiment yet. </h3>
     </div>
-    {%- else -%}
-    <div>
-        <h3> You haven't added any annotation levels to the experiment yet. </h3>
-    </div>
-    {%- endif -%}
 </div>
 
 <!--Delete Single Annotation Model -->
@@ -282,6 +201,10 @@
         $("body").on("click", selectedAnnotator, function() {
             var currentSelected = $(this);
             var userName = currentSelected.find('span').text();
+            console.log(userName);
+
+            $('#annotatorResult').text(userName);
+            // addOwnerFeedback(userName);
         });
 
     });
