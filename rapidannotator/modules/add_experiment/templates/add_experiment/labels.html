@@ -225,6 +225,7 @@
                     <button type="submit" name="submit" value="" class="btn btn-primary"> {{ ('Save') }}</button>
                     <button type="button" class="btn btn-danger pull-right" data-toggle="modal"
                         data-target="#deleteAnnotationLevel" data-dismiss="modal">{{ ('Delete') }}</button>
+                    <button type="button" id="submitLater1" class="btn btn-default pull-right" data-dismiss="modal" style="margin-right: 0.7em;">{{ ('Cancel') }}</button>
                 </div>
             </form>
         </div>
@@ -334,7 +335,7 @@
                 {% endfor %}
                 <div class="form-actions">
                     <button type="submit" name="submit" value="" class="btn btn-primary"> {{ ('Submit') }}</button>
-                    <button type="button" id="submitLater" class="btn btn-default pull-right" data-dismiss="modal">{{ ('Submit later') }}</button>
+                    <button type="button" id="submitLater" class="btn btn-default pull-right" data-dismiss="modal">{{ ('Cancel') }}</button>
                 </div>
             </form>
         </div>
@@ -477,7 +478,6 @@
             $('.labelWarning').removeClass('hidden-element');
             selectedLabel = $(this).closest('.labels');
             selectedAnnotationId = $(this).closest('.annotation_level').attr('value');
-            console.log(selectedAnnotationId, skipLevel[selectedAnnotationId]);
 
             selectedLabelId = selectedLabel.attr('value');
 
@@ -488,34 +488,44 @@
 
             editLabelForm.find('input[name="labelName"]').val(labelName);
             editLabelForm.find('input[name="labelKey"]').val(labelKey);
-            if(skipLevel[selectedAnnotationId] == 1){
-                if(labelSkipValue == 'False'){
-                    editLabelForm.find('input[name="skipValue"]').attr("disabled", true);
-                    editLabelForm.find('input[name="skipValue"]').prop('checked', false);
-                }
-                else{
-                    editLabelForm.find('input[name="skipValue"]').prop('checked', true); 
-                    editLabelForm.find('input[name="skipValue"]').removeAttr("disabled");
-                }
+            
+            if(labelSkipValue == 'False'){
+                editLabelForm.find('input[name="skipValue"]').prop('checked', false);
             }
             else{
-                if(labelSkipValue == 'False'){
-                    editLabelForm.find('input[name="skipValue"]').prop('checked', false);
-                }
-                else{
-                    editLabelForm.find('input[name="skipValue"]').prop('checked', true); 
-                }
+                editLabelForm.find('input[name="skipValue"]').prop('checked', true); 
             }
+
+            // if(skipLevel[selectedAnnotationId] == 1){
+            //     if(labelSkipValue == 'False'){
+            //         // editLabelForm.find('input[name="skipValue"]').attr("disabled", true);
+            //         editLabelForm.find('input[name="skipValue"]').prop('checked', false);
+            //     }
+            //     else{
+            //         editLabelForm.find('input[name="skipValue"]').prop('checked', true); 
+            //         // editLabelForm.find('input[name="skipValue"]').removeAttr("disabled");
+            //     }
+            // }
+            // else{
+            //     if(labelSkipValue == 'False'){
+            //         editLabelForm.find('input[name="skipValue"]').prop('checked', false);
+            //     }
+            //     else{
+            //         editLabelForm.find('input[name="skipValue"]').prop('checked', true); 
+            //     }
+            // }
+
         });
 
         addLabelButton.on('click', function() {
             selectedAnnotationId = $(this).closest('.annotation_level').attr('value');
-            if(skipLevel[selectedAnnotationId] == 1){
-                addLabelForm.find('input[name="skipValue"]').attr("disabled", true);
-            }
-            else{
-                addLabelForm.find('input[name="skipValue"]').removeAttr("disabled");
-            }
+            
+            // if(skipLevel[selectedAnnotationId] == 1){
+            //     addLabelForm.find('input[name="skipValue"]').attr("disabled", true);
+            // }
+            // else{
+            //     addLabelForm.find('input[name="skipValue"]').removeAttr("disabled");
+            // }
         });
 
         $('.nextLabelButton').on('click', function() {

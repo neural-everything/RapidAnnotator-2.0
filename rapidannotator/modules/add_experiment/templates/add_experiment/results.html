@@ -51,7 +51,7 @@
             <span class="caret"></span></button>
             <ul class="dropdown-menu scrollable-dropdown" id="addOwnersMenu" role="menu" aria-labelledby="addOwners">
                 <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportResultsUrl1}}"><span>Export as .xls</span></a></li>
-                <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportResultsUrl2}}"><span>Export as .csv</span></a></li>
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportResultsUrl2}}"><span>Export as .xlsx</span></a></li>
             </ul>
         </div>
 
@@ -113,20 +113,12 @@
                          </td>
                          {% for level in experiment.annotation_levels %}
                              <td style="padding-left: {{padLeft}}%">
-                                 {% for label in level.labels %}
-                                     {{ label.name }} : &nbsp;
-                                     {%- if annotations[file.id][level.id] -%}
-                                        {{ annotations[file.id][level.id][label.id] }}
-                                         <!-- {% if annotations[file.id][level.id][label.id] %}
-                                            {{ annotations[file.id][level.id][label.id] }}
-                                         {%- else -%}
-                                            {{'SKIPPED'}}
-                                         {%- endif -%} -->
-                                     {%- else -%}
-                                        {{('0')}}
+                                    {%- if annotations[file.id][level.id] -%}
+                                        {{annotations[file.id][level.id]}}
+                                    {%- else -%}
+                                        {{('Not Annotated')}}
                                      {%- endif -%}
                                     <br>
-                                 {% endfor %}
                              </td>
                          {% endfor %}
                         <!-- <td>

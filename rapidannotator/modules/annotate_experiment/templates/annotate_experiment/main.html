@@ -439,9 +439,6 @@
                 if(tp.readyState == 3 || tp.readyState == 4 || tp.readyState == 2){
                     if(!already_submitted[levelId]){
                         annotationProcess(y);
-                        $(".clip").each(function(){
-                        	$(this).get(0).pause();
-                        });
 
                     }
                 }
@@ -449,9 +446,6 @@
             else{
                 if(!already_submitted[levelId]){
                     annotationProcess(y);
-                    $(".clip").each(function(){
-                        $(this).get(0).pause();
-                    });
                 }
             }
             /* undo feature */
@@ -499,13 +493,6 @@
                 fileAnnotationCompleted();
             }
             else if(skipLevelDict[levelId][label] == 1){
-                // var i;
-                // for(i=currentLevel+1;i<=totalAnnotationLevels;i++){
-                //     currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
-                //     levelId = currentLevelBody.data("levelid");
-                //     annotations[levelId] = label;
-                //     already_submitted[levelId] = 1;
-                // }
                 currentLevel = totalAnnotationLevels;
                 fileAnnotationCompleted();
             }
