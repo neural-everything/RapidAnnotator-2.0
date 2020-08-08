@@ -212,6 +212,16 @@
     <strong>Warning!</strong> Labels have been changed! <b>Please refresh the screen.</b>
 </div>
 
+<div class="container">
+    <div class="row">
+        <div class="alert alert-danger alert-dismissible completeExp hidden-element col-md-6" style="width: 40%; z-index: 1; margin-left: 1%; margin-top: 2%">
+            <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+            <strong>Voila!</strong> Annotation Process is completed! <b>You can now view the results.</b>
+        </div>
+    </div>
+</div>
+
+
 
 <script type="text/javascript">
     $(window).on('load', function() {
@@ -583,7 +593,7 @@
 
         function displayEnd() {
             var data = {
-                'experimentId' :  {{experiment.id}},
+                'experimentId' :  "{{experiment.id}}",
             };
             $.ajax({
                 url: "{{ url_for('annotate_experiment.checkStatus')}}",
@@ -594,6 +604,9 @@
             $('.thanksNote').removeClass('hidden-element');
             undoButton.addClass('hidden-element');
             doneButton.addClass('hidden-element');
+            $('.toggleLooping').addClass('hidden-element');
+            fsModeButton.addClass('hidden-element');
+            $('.completeExp').removeClass('hidden-element');
         }
 
         function loadPreviousFile(load_previous) {

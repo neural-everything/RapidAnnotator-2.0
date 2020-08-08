@@ -43,7 +43,10 @@ def index(experimentId):
     else:
         currentFile = []
 
-    is_done = int(experiment.is_done)
+    if (annotatorInfo.end - annotatorInfo.start == annotatorInfo.current):
+        is_done = int(1)
+    else:
+        is_done = int(0)
     ''' TODO! move current back to original value if any file was deleted '''
 
     ''' For displaying a warning if the labels got changed at any time'''
@@ -182,7 +185,7 @@ def get_tagged_context(inputPath, concordance_line_number, before_time, after_ti
     query_context, query_bt, query_at, unaligned = getContextBTAT(tagged_quey_item)
     import operator as op
     if not unaligned:
-        left_caption = getRequiredCaption(query_bt - float(before_time) - 0.5, tagged_context_before, op.lt)
+        left_caption = getRequiredCaption(query_bt - float(before_time) - 0.8, tagged_context_before, op.lt)
         right_caption = getRequiredCaption(query_bt + float(after_time) + 0.5, tagged_context_after, op.gt)
     else:
         left_caption = getRequiredCaptionUnaligned(float(before_time), tagged_context_before)
@@ -373,10 +376,17 @@ def checkStatus():
     associationsCount = AnnotatorAssociation.query.filter_by(experiment_id=experimentId).count()
     experiment = Experiment.query.filter_by(id=experimentId).first()
     fileCount = experiment.files.count()
+    req = 0
+    for association in associations:
+        if association.end == -1:
+            req += fileCount
+        else:
+            req += association.end - association.start
     tot = 0
     for association in associations:
         tot += association.current
-    if (fileCount*associationsCount) == tot:
+
+    if req == tot:
         experiment.status = 'Completed'
         experiment.is_done = 1
         db.session.commit()

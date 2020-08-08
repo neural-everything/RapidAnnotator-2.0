@@ -861,6 +861,7 @@ def _editAnnotator():
 
     annotatorDetails.start = request.args.get('start', annotatorDetails.start)
     annotatorDetails.end = request.args.get('end', annotatorDetails.end)
+    annotatorDetails.current = 0
 
     db.session.commit()
     response = {}
