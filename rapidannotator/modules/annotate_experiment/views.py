@@ -178,11 +178,12 @@ def get_tagged_context(inputPath, concordance_line_number, before_time, after_ti
             tagged_context_before = tagged_context_before.split(' ')
             tagged_context_before.reverse()
             tagged_context_after = tagged_context_after.split(' ')
+    tsvfile.close()
     query_context, query_bt, query_at, unaligned = getContextBTAT(tagged_quey_item)
     import operator as op
     if not unaligned:
-        left_caption = getRequiredCaption(query_bt - float(before_time), tagged_context_before, op.lt)
-        right_caption = getRequiredCaption(query_bt + float(after_time), tagged_context_after, op.gt)
+        left_caption = getRequiredCaption(query_bt - float(before_time) - 0.5, tagged_context_before, op.lt)
+        right_caption = getRequiredCaption(query_bt + float(after_time) + 0.5, tagged_context_after, op.gt)
     else:
         left_caption = getRequiredCaptionUnaligned(float(before_time), tagged_context_before)
         right_caption = getRequiredCaptionUnaligned(float(after_time), tagged_context_after)
@@ -212,7 +213,7 @@ def _getFile(experimentId, fileIndex, start):
     else:
         target_caption = caption_info.target_caption
     
-    if experiment.uploadType == 'fromConcordance' and experiment.category == "video" and experiment.category == "audio":
+    if (experiment.uploadType == 'fromConcordance') and (experiment.category == "video" or experiment.category == "audio"):
         from rapidannotator import app
         experimentDIR = os.path.join(app.config['UPLOAD_FOLDER'], str(experimentId))
         inputConcordance = os.path.join(experimentDIR, 'concordance.csv')

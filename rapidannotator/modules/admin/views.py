@@ -23,14 +23,14 @@ def before_request():
 @blueprint.route('/')
 def index():
     requests = RightsRequest.query.all()
+    users = User.query.all()
+    addUserForm = RegistrationForm()
 
     from rapidannotator import app
     for r in requests:
         app.logger.info(r.id)
 
-    return render_template('admin/main.html',
-        requests = requests,
-        )
+    return render_template('admin/main.html', requests = requests, users=users, addUserForm = addUserForm)
 
 
 @blueprint.route('/toggleRequest')
@@ -85,11 +85,15 @@ def addUser():
         db.session.commit()
 
         userId = user.id
-        return redirect(url_for('admin.settings'))
+        return redirect(url_for('admin.index'))
 
     errors = "addUserErrors"
-    return render_template('admin/settings.html',
+    users = User.query.all()
+    requests = RightsRequest.query.all()
+    return render_template('admin/main.html',
         addUserForm = addUserForm,
+        users=users,
+        requests = requests,
         errors = errors,)
 
 
