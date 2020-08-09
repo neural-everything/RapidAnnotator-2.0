@@ -83,7 +83,8 @@
             <tbody>
                 {% for file in exp_files %}
                     <tr>
-                        <td>
+                        {% set annotationUrl = url_for('annotate_experiment.specificAnnotation', experimentId = experiment.id, fileId = file.id) %}
+                        <td onClick="document.location.href='{{annotationUrl}}';">
                             {%- if experiment.uploadType == 'manual' or experiment.uploadType == 'viaSpreadsheet' -%}
                                 {%- if experiment.category == 'image' -%}
                                     <img class="{{file.id}}" id="{{file.id}}" src=""  alt="Red Hen Logo" width="100px"><br>
@@ -108,7 +109,7 @@
                                     {%- endif -%}    
                                 {%- endif -%}
                             {%- else -%}
-                                &nbsp;&nbsp;&nbsp;&nbsp;{{ file.name }}
+                                <a>{{ file.name }}</a>
                             {%- endif -%}
                          </td>
                          {% for level in experiment.annotation_levels %}

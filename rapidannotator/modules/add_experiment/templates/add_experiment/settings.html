@@ -110,7 +110,7 @@
                 <div class="list-group col-8" id="annotators">
                     {% for obj in annotatorDetails %}
                         <a value="{{ obj.annotator.id }}" class="list-group-item annotator"
-                            data-start={{ obj.start }} data-end={{ obj.end }}>
+                            data-start="{{ obj.start }}" data-end="{{ obj.end }}">
                             <span>{{ obj.annotator.username }}</span>
                             <span class="deleteAnnotatorButton pull-right glyphicon glyphicon-trash btn-space"
                                 data-toggle="modal" data-target="#deleteAnnotatorModal"></span>
@@ -308,13 +308,13 @@
                 <b>Starting file number for annotation</b>
                 <input type="number" name="startNumber" class="form-control validate"
                     placeholder="Starting file number for annotation Example : 56"
-                    id="startNumber" min="0" max="{{totalFiles}}">
+                    id="startNumber" min="1" max="{{totalFiles}}">
                 <span class="help-block"><div style="line-height:110%"><small>The file with which the annotator will start annotation.</small></div></span>
 
                 <b>Ending file number for annotation</b>
                 <input type="number" name="endNumber" class="form-control validate"
                     placeholder="Ending file number for annotation Example : 65"
-                     id="endNumber" min="0" max="{{totalFiles}}">
+                     id="endNumber" min="1" max="{{totalFiles}}">
                 <span class="help-block"><small>The file at which the annotator stop annotation.</small></span>
 
                 <div class="form-actions">
@@ -506,8 +506,9 @@
         /* (TODO) verify if there is need to bifurcate delete and edit */
         $("body").on("click", selectedAnnotatorButton, function() {
             currentAnnotator = $(this).parent().attr('value');
-            var startFileNumber = $(this).parent().data('start');
+            var startFileNumber = parseInt($(this).parent().data('start'));
             var endFileNumber = $(this).parent().data('end');
+            startFileNumber = startFileNumber == 0 ? startFileNumber + 1: startFileNumber;
             endFileNumber = endFileNumber == -1 ? "{{totalFiles}}" : endFileNumber;
             editAnnotatorForm.find('input[name="startNumber"]').val(startFileNumber);
             editAnnotatorForm.find('input[name="endNumber"]').val(endFileNumber);
@@ -522,7 +523,7 @@
         });
 
         $('#assignAll').on('click', function() {
-            changeAssignedFiles(0, -1);
+            changeAssignedFiles(1, -1);
         })
 
         function changeAssignedFiles(start, end) {
@@ -530,7 +531,7 @@
             var data = {
                 annotatorId :   currentAnnotator,
                 experimentId :  "{{ experiment.id }}",
-                start :         start,
+                start :         start - 1,
                 end :           end,
             };
 
@@ -730,7 +731,7 @@
             var aAttributeDict = {
                 "class" :          "list-group-item annotator",
                 "value" :           id,
-                "data-start" :      0,
+                "data-start" :      1,
                 "data-end" :      "{{ totalFiles }}",
             };
 
