@@ -26,6 +26,12 @@
 
 {%- set totalAnnotationLevels = experiment.annotation_levels | count %}
 
+<div class="pull-left" style="margin-left: 10px;">
+        <button type="button" class="viewResultPageBack btn btn-danger btn-group btn-group-inline btn-space"> 
+            <span class="glyphicon glyphicon-arrow-left"></span> Back to Results </button>
+</div>
+<br><br><br><br>
+
 <div class="container">
     <div style="display: inline-block">
         <h3 style="display: inline"><b>{{ experiment.name }}</b></h3>
@@ -35,11 +41,11 @@
     <div class="pull-right" style="display: inline-block">
         <button type="button" class="undoButton btn btn-warning btn-group btn-group-inline btn-space">Undo</button>
     </div>
-    <div class="pull-right" style="display:inline-block">
+    <!-- <div class="pull-right" style="display:inline-block">
         <button type="button" class="doneButton btn btn-success btn-group btn-group-inline btn-space" title="if clicked cannot undo!"> 
             Done 
         </button>
-    </div>
+    </div> -->
 
     <div class="pull-right" style="display: inline-block">
         {%- if (experiment.category == 'video') or (experiment.category == 'audio') -%}
@@ -100,6 +106,13 @@
                 <pre>
                 </pre>
             {%- endif -%}
+
+            <div class="container">
+                <div class="row">
+                    <div class="alreadyAnnotated alert alert-danger alert-dismissible col-md-6" style="width: 37%; z-index: 1; margin-left: 0%; margin-top: 2%">
+                    </div>
+                </div>
+            </div>
 
             <div class="caption hidden-element">
                 <h4></h4>
@@ -173,19 +186,7 @@
 </div>
 
 <div class="container hidden-element thanksNote">
-    {%- if isExpowner == 1 -%}
-        <h3> No files to annotate. Thanks </h3>
-    {%- else -%}
-        <div class="alert alert-success hidden-element notify" id="notify" style="width:35%">
-            <strong>Success!</strong> Notification has been sent !
-        </div>
-        <h3>No more files to annotate. Thanks</h3>
-        <br>
-        <button type="button" class="btn btn-warning btn-group btn-group-inline btn-space send_notification" title="click here"> 
-            <span class="glyphicon glyphicon-envelope"></span>
-            <b id="msg2"> Send Notification to Experimenter</b>
-        </button>
-    {%- endif -%}
+    <h3> No files to annotate. Thanks </h3>
 </div>
 
 
@@ -334,7 +335,9 @@
             closeFullscreen();
         });
 
-        
+        $('.viewResultPageBack').on('click', function(){
+            window.location=document.referrer;
+        });
 
         /*level indexing is 1 based*/
         var currentLevel = 1;
@@ -347,8 +350,8 @@
         var already_submitted = {};
         var progress_num = 0;
         var totalAnnotationLevels = "{{ totalAnnotationLevels }}";
-        var keyBindingDict = "{{keyBindingDict | safe}}";
-        var skipLevelDict = "{{skipLevelDict | safe}}";
+        var keyBindingDict = {{keyBindingDict | safe}};
+        var skipLevelDict = {{skipLevelDict | safe}};
         var currentFileIndex = "{{fileId}}";
 
 
@@ -422,6 +425,7 @@
 
         function annotationProcess(y){
             /*for the dict in current index check if the key is there*/
+            
             $.each( keyBindingDict[currentLevel], function( key, value ) {
                 if( y == value ) {
                     if("{{experiment.displayTargetCaption}}" == "True"){
@@ -448,8 +452,25 @@
                 fileAnnotationCompleted();
             }
             currentLevel = (currentLevel % totalAnnotationLevels) + 1;
+            
+            var currentLevelBody1 = $(".annotationLevel[data-index='" + currentLevel +"']");
+            var levelId1 = currentLevelBody1.data("levelid");
+            var alreadyAnnotatedText = {{annotationAlreadyDone | safe}};
+            var textAlreadyAnnotated = "";
+            if(!alreadyAnnotatedDict[levelId1]){
+                textAlreadyAnnotated = "The Level is SKIPPED in the current annotation."    
+            }
+            else{
+                textAlreadyAnnotated = "Currently selected label is: " + "<b>" + alreadyAnnotatedDict[levelId1][1] + "</b>";
+                var tp = $(".labelButton[data-labelid='" + alreadyAnnotatedDict[levelId1][0] +"']");
+                tp.removeClass('btn-primary');
+                tp.addClass('btn-danger');
+            }
+            $('.alreadyAnnotated').html(textAlreadyAnnotated);
+
             currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
             currentLevelBody.removeClass('hidden-element');
+
         }
 
         function previousLevel() {
@@ -458,6 +479,23 @@
             currentLevel = currentLevel - 1;
             currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
             currentLevelBody.removeClass('hidden-element');
+
+            var currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+            var levelId = currentLevelBody.data("levelid");
+            already_submitted[levelId] = 0;
+
+            var alreadyAnnotatedText = {{annotationAlreadyDone | safe}};
+            var textAlreadyAnnotated = "";
+            if(!alreadyAnnotatedDict[levelId1]){
+                textAlreadyAnnotated = "The Level is SKIPPED in the current annotation."    
+            }
+            else{
+                textAlreadyAnnotated = "Currently selected label is: " + "<b>" + alreadyAnnotatedDict[levelId1][1] + "</b>";
+                var tp = $(".labelButton[data-labelid='" + alreadyAnnotatedDict[levelId1][0] +"']");
+                tp.removeClass('btn-primary');
+                tp.addClass('btn-danger');
+            }
+            $('.alreadyAnnotated').html(textAlreadyAnnotated);
         }
 
         function undoProcess(){
@@ -533,10 +571,9 @@
                 'fileId' :          currentFileId,
                 'annotations' :     annotations, 
                 'labelCount' :     "{{labelCount}}",
+                'userId'    : "{{userId}}",
                 'hasToIncreaseCurrent': 0,
             };
-
-            console.log(currentFileId, annotations);
 
             data = JSON.stringify(data);
             $.getJSON(url , data, function(response) {
@@ -544,11 +581,7 @@
                     displayEnd();
                     annotations = {};
                     already_submitted = {};
-                    doneButton.removeClass('hidden-element');
-                    $('.toggleLooping').addClass('hidden-element');
-                    $('.annotationArea').addClass('hidden-element');
-                    $('.thanksNote').removeClass('hidden-element');
-
+                    // doneButton.removeClass('hidden-element');
                     if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
                         if( "{{ experiment.uploadType }}" === "manual" ) {
                         }
@@ -557,7 +590,6 @@
                     }
                 }
                 else{
-                    console.log("Response Failed");
                     $('.labelWarning').removeClass('hidden-element');
                     
                 }
@@ -684,6 +716,18 @@
             loadedDiv.find('.targetCaption h4').text(target_caption);
             loadedDiv.data("fileid", fileToLoad.id);
         }
+
+        var currentLevelBody1 = $(".annotationLevel[data-index='" + currentLevel +"']");
+        var levelId1 = currentLevelBody1.data("levelid");
+        var alreadyAnnotatedDict = {{annotationAlreadyDone | safe}};
+        var textAlreadyAnnotated = "Currently selected label is: " + "<b>" + alreadyAnnotatedDict[levelId1][1] + "</b>";
+        $('.alreadyAnnotated').html(textAlreadyAnnotated);
+
+        var tp = $(".labelButton[data-labelid='" + alreadyAnnotatedDict[levelId1][0] +"']");
+        tp.removeClass('btn-primary');
+        tp.addClass('btn-danger');
+
+        console.log(keyBindingDict, alreadyAnnotatedDict);
 
     });
 

@@ -83,7 +83,7 @@
             <tbody>
                 {% for file in exp_files %}
                     <tr>
-                        {% set annotationUrl = url_for('annotate_experiment.specificAnnotation', experimentId = experiment.id, fileId = file.id) %}
+                        {% set annotationUrl = url_for('annotate_experiment.specificAnnotation', userId = user.id, experimentId = experiment.id, fileId = file.id) %}
                         <td onClick="document.location.href='{{annotationUrl}}';">
                             {%- if experiment.uploadType == 'manual' or experiment.uploadType == 'viaSpreadsheet' -%}
                                 {%- if experiment.category == 'image' -%}

@@ -89,7 +89,8 @@ def index(experimentId):
         labelWarning = labelWarning,
         progress_width = progress_width,
         skipLevelDict = skipLevelDict,
-        isExpowner = isExpowner
+        isExpowner = isExpowner,
+        userId = current_user.id,
     ) 
 
 def makeKeyBindingDict(experimentId):
@@ -315,6 +316,7 @@ def _addAnnotationInfo():
     fileId = arguments.get('fileId', None)
     annotations = arguments.get('annotations')
     prevLabelCount = int(arguments.get('labelCount', None))
+    userId = int(arguments.get('userId', None))
     hasToIncreaseCurrent = int(arguments.get('hasToIncreaseCurrent', None))
     # targetCaptionData = arguments.get('targetCaptionData', None)
 
@@ -338,7 +340,7 @@ def _addAnnotationInfo():
 
     annotationInfo = AnnotationInfo.query.filter_by(user_id=current_user.id, file_id=fileId).all()
     if annotationInfo is not None:
-        AnnotationInfo.query.filter(and_(AnnotationInfo.user_id==current_user.id, AnnotationInfo.file_id==fileId)).delete()
+        AnnotationInfo.query.filter(and_(AnnotationInfo.user_id==userId, AnnotationInfo.file_id==fileId)).delete()
         db.session.commit()
 
     for annotationLevelId in annotations:
@@ -347,7 +349,7 @@ def _addAnnotationInfo():
             file_id = fileId,
             annotationLevel_id = annotationLevelId,
             label_id = labelId,
-            user_id = current_user.id
+            user_id = userId
         )
         db.session.add(annotationInfo)
 
@@ -459,13 +461,13 @@ def _getSpecificFile(experimentId, fileId):
     }
     return currentFile
 
-@blueprint.route('/specificAnnotation/<int:experimentId>/<int:fileId>', methods=['GET', 'POST'])
-def specificAnnotation(experimentId, fileId):
+@blueprint.route('/specificAnnotation/<int:userId>/<int:experimentId>/<int:fileId>', methods=['GET', 'POST'])
+def specificAnnotation(userId, experimentId, fileId):
     experiment = Experiment.query.filter_by(id=experimentId).first()
     annotatorInfo = AnnotatorAssociation.query.filter_by(user_id=current_user.id).\
                     filter_by(experiment_id=experimentId).first()
     keyBindingDict, skipLevelDict = makeKeyBindingDict(experimentId)
-    
+
     currentFile = _getSpecificFile(experimentId, fileId)
         
     labelCount = 0
@@ -482,8 +484,11 @@ def specificAnnotation(experimentId, fileId):
         experiment.countLabel = labelCount
         db.session.commit()
 
-    print(labelCount)
-
+    annotationAlreadyDone = {}
+    anno_info = AnnotationInfo.query.filter_by(user_id= userId, file_id= fileId).all()
+    for info in anno_info:
+        label = Label.query.filter_by(id=info.label_id).first()
+        annotationAlreadyDone[info.annotationLevel_id] = [info.label_id, label.name]
 
     isExpowner =  int((current_user in  experiment.owners))
 
@@ -495,5 +500,7 @@ def specificAnnotation(experimentId, fileId):
         skipLevelDict = skipLevelDict,
         isExpowner = isExpowner,
         fileId = fileId,
+        userId = userId,
+        annotationAlreadyDone = annotationAlreadyDone,
     )
 

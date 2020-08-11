@@ -526,6 +526,10 @@
                 currentLevel = currentLevel - 1;
                 currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
                 currentLevelBody.removeClass('hidden-element');
+
+                var currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+                var levelId = currentLevelBody.data("levelid");
+                already_submitted[levelId] = 0;
             }
             if(last_previous == 1){
                 last_previous = 0;
@@ -661,6 +665,7 @@
                 'fileId' :          currentFileId,
                 'annotations' :     annotations, 
                 'labelCount' :     {{labelCount}},
+                'userId'    : "{{userId}}",
                 'hasToIncreaseCurrent': 1,
             };
 
