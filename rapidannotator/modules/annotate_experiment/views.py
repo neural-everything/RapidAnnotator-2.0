@@ -43,7 +43,10 @@ def index(experimentId):
     else:
         currentFile = []
 
-    is_done = int(experiment.is_done)
+    if (annotatorInfo.end - annotatorInfo.start == annotatorInfo.current):
+        is_done = int(1)
+    else:
+        is_done = int(0)
     ''' TODO! move current back to original value if any file was deleted '''
 
     ''' For displaying a warning if the labels got changed at any time'''
@@ -86,7 +89,8 @@ def index(experimentId):
         labelWarning = labelWarning,
         progress_width = progress_width,
         skipLevelDict = skipLevelDict,
-        isExpowner = isExpowner
+        isExpowner = isExpowner,
+        userId = current_user.id,
     ) 
 
 def makeKeyBindingDict(experimentId):
@@ -178,11 +182,12 @@ def get_tagged_context(inputPath, concordance_line_number, before_time, after_ti
             tagged_context_before = tagged_context_before.split(' ')
             tagged_context_before.reverse()
             tagged_context_after = tagged_context_after.split(' ')
+    tsvfile.close()
     query_context, query_bt, query_at, unaligned = getContextBTAT(tagged_quey_item)
     import operator as op
     if not unaligned:
-        left_caption = getRequiredCaption(query_bt - float(before_time), tagged_context_before, op.lt)
-        right_caption = getRequiredCaption(query_bt + float(after_time), tagged_context_after, op.gt)
+        left_caption = getRequiredCaption(query_bt - float(before_time) - 0.8, tagged_context_before, op.lt)
+        right_caption = getRequiredCaption(query_bt + float(after_time) + 0.5, tagged_context_after, op.gt)
     else:
         left_caption = getRequiredCaptionUnaligned(float(before_time), tagged_context_before)
         right_caption = getRequiredCaptionUnaligned(float(after_time), tagged_context_after)
@@ -212,7 +217,7 @@ def _getFile(experimentId, fileIndex, start):
     else:
         target_caption = caption_info.target_caption
     
-    if experiment.uploadType == 'fromConcordance' and experiment.category == "video" and experiment.category == "audio":
+    if (experiment.uploadType == 'fromConcordance') and (experiment.category == "video" or experiment.category == "audio"):
         from rapidannotator import app
         experimentDIR = os.path.join(app.config['UPLOAD_FOLDER'], str(experimentId))
         inputConcordance = os.path.join(experimentDIR, 'concordance.csv')
@@ -310,7 +315,9 @@ def _addAnnotationInfo():
 
     fileId = arguments.get('fileId', None)
     annotations = arguments.get('annotations')
-    prevLabelCount = arguments.get('labelCount', None)
+    prevLabelCount = int(arguments.get('labelCount', None))
+    userId = int(arguments.get('userId', None))
+    hasToIncreaseCurrent = int(arguments.get('hasToIncreaseCurrent', None))
     # targetCaptionData = arguments.get('targetCaptionData', None)
 
     ''' For displaying a warning if the labels got changed at any time'''
@@ -331,19 +338,25 @@ def _addAnnotationInfo():
         response['success'] = False
         return jsonify(response)
 
+    annotationInfo = AnnotationInfo.query.filter_by(user_id=current_user.id, file_id=fileId).all()
+    if annotationInfo is not None:
+        AnnotationInfo.query.filter(and_(AnnotationInfo.user_id==userId, AnnotationInfo.file_id==fileId)).delete()
+        db.session.commit()
+
     for annotationLevelId in annotations:
         labelId = annotations[annotationLevelId]
         annotationInfo = AnnotationInfo(
             file_id = fileId,
             annotationLevel_id = annotationLevelId,
             label_id = labelId,
-            user_id = current_user.id
+            user_id = userId
         )
         db.session.add(annotationInfo)
 
-    annotatorInfo = AnnotatorAssociation.query.filter_by(user_id=current_user.id).\
-                    filter_by(experiment_id=experimentId).first()
-    annotatorInfo.current = annotatorInfo.current + 1
+    if hasToIncreaseCurrent == 1:
+        annotatorInfo = AnnotatorAssociation.query.filter_by(user_id=current_user.id).\
+            filter_by(experiment_id=experimentId).first()
+        annotatorInfo.current = annotatorInfo.current + 1
 
     db.session.commit()
 
@@ -372,10 +385,17 @@ def checkStatus():
     associationsCount = AnnotatorAssociation.query.filter_by(experiment_id=experimentId).count()
     experiment = Experiment.query.filter_by(id=experimentId).first()
     fileCount = experiment.files.count()
+    req = 0
+    for association in associations:
+        if association.end == -1:
+            req += fileCount
+        else:
+            req += association.end - association.start
     tot = 0
     for association in associations:
         tot += association.current
-    if (fileCount*associationsCount) == tot:
+
+    if req == tot:
         experiment.status = 'Completed'
         experiment.is_done = 1
         db.session.commit()
@@ -400,3 +420,92 @@ def saveTargetCaption():
     response = {}
     response['success'] = True
     return jsonify(response)
+
+
+@blueprint.route('/_getSpecificFileDetails', methods=['POST','GET'])
+def _getSpecificFileDetails():
+    experimentId = request.args.get('experimentId', None)
+    fileId = request.args.get('fileId', None)
+    currentFile = _getSpecificFile(experimentId, int(fileId))
+    return jsonify(currentFile)
+
+
+def _getSpecificFile(experimentId, fileId):
+    
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    currentFile = File.query.filter_by(id=fileId).first()
+    
+    cp = FileCaption.query.filter_by(file_id = fileId).first()
+    caption_info = AnnotationCaptionInfo.query.filter_by(user_id=current_user.id, file_id=currentFile.id).first()
+    if caption_info == None:
+        target_caption = cp.target_caption
+    else:
+        target_caption = caption_info.target_caption
+    
+    if (experiment.uploadType == 'fromConcordance') and (experiment.category == "video" or experiment.category == "audio"):
+        from rapidannotator import app
+        experimentDIR = os.path.join(app.config['UPLOAD_FOLDER'], str(experimentId))
+        inputConcordance = os.path.join(experimentDIR, 'concordance.csv')
+        tagged_caption = get_tagged_context(inputConcordance, currentFile.concordance_lineNumber, \
+            experiment.display_time.before_time, experiment.display_time.after_time)
+    else:
+        tagged_caption = cp.caption
+
+    currentFile = {
+        'id' : currentFile.id,
+        'name' : currentFile.name,
+        'content' : currentFile.content,
+        'caption' : tagged_caption,
+        'target_caption': target_caption,
+        'edge_link': currentFile.edge_link,
+    }
+    return currentFile
+
+@blueprint.route('/specificAnnotation/<int:userId>/<int:experimentId>/<int:fileId>', methods=['GET', 'POST'])
+def specificAnnotation(userId, experimentId, fileId):
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    annotatorInfo = AnnotatorAssociation.query.filter_by(user_id=current_user.id).\
+                    filter_by(experiment_id=experimentId).first()
+    keyBindingDict, skipLevelDict = makeKeyBindingDict(experimentId)
+
+    currentFile = _getSpecificFile(experimentId, fileId)
+        
+    labelCount = 0
+
+    annotationLevels = AnnotationLevel.query.filter_by(experiment_id=experimentId).all()
+    for level in annotationLevels:
+        labels = Label.query.filter_by(annotation_id=level.id)
+        labelCount += labels.count()
+    
+    if labelCount == 0:
+        experiment.countLabel = -1
+        db.session.commit()
+    else:
+        experiment.countLabel = labelCount
+        db.session.commit()
+
+    annotationAlreadyDone = {}
+    anno_info = AnnotationInfo.query.filter_by(user_id= userId, file_id= fileId).all()
+    if len(anno_info) == 0:
+        displayAlreadyAnnotated = 0
+    else:
+        displayAlreadyAnnotated = 1
+    for info in anno_info:
+        label = Label.query.filter_by(id=info.label_id).first()
+        annotationAlreadyDone[info.annotationLevel_id] = [info.label_id, label.name]
+
+    isExpowner =  int((current_user in  experiment.owners))
+
+    return render_template('annotate_experiment/specific.html',
+        experiment = experiment,
+        currentFile = currentFile,
+        keyBindingDict = keyBindingDict,
+        labelCount = labelCount,
+        skipLevelDict = skipLevelDict,
+        isExpowner = isExpowner,
+        fileId = fileId,
+        userId = userId,
+        annotationAlreadyDone = annotationAlreadyDone,
+        displayAlreadyAnnotated = displayAlreadyAnnotated,
+    )
+

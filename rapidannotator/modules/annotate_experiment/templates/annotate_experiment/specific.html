@@ -1,7 +1,7 @@
 {% extends "annotate_experiment/base.html" %}
 {% from "macros.html" import render_field %}
 
-{% block title %} annotate_experiment Page {% endblock title %}
+{% block title %} Specific Annotation Page {% endblock title %}
 {% block head %}
   {{ super() }}
   <style type="text/css">
@@ -26,23 +26,26 @@
 
 {%- set totalAnnotationLevels = experiment.annotation_levels | count %}
 
+<div class="pull-left" style="margin-left: 10px;">
+        <button type="button" class="viewResultPageBack btn btn-danger btn-group btn-group-inline btn-space"> 
+            <span class="glyphicon glyphicon-arrow-left"></span> Back to Results </button>
+</div>
+<br><br><br><br>
+
 <div class="container">
     <div style="display: inline-block">
         <h3 style="display: inline"><b>{{ experiment.name }}</b></h3>
     </div>
 
-    <div style="display: inline; margin-left: 27%; margin-right: 15%">
-        <b id="prg" style="font-size: 18px;"> Progress: {{currentFileIndex}} / {{lastFile + 1}}</b>
-    </div>
-
+    
     <div class="pull-right" style="display: inline-block">
         <button type="button" class="undoButton btn btn-warning btn-group btn-group-inline btn-space">Undo</button>
     </div>
-    <div class="pull-right" style="display:inline-block">
+    <!-- <div class="pull-right" style="display:inline-block">
         <button type="button" class="doneButton btn btn-success btn-group btn-group-inline btn-space" title="if clicked cannot undo!"> 
             Done 
         </button>
-    </div>
+    </div> -->
 
     <div class="pull-right" style="display: inline-block">
         {%- if (experiment.category == 'video') or (experiment.category == 'audio') -%}
@@ -64,65 +67,65 @@
     </div>
 
 
-
-    <div class="progress" style="width:40%; margin-left: 20%; margin-right: 80%">
-        <div class="progress-bar progress-bar-info progress-bar-striped  active" id = "progress-bar" role="progressbar" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100" style="width: {{progress_width}}%">
-                <div id="preview" style="color:black"> {{progress_width}}%</div>
-        </div>
-    </div>
-
     <hr class="horizontal-line">
 </div>
 
 <div class="container annotationArea">
     <div class="row">
-
-        {% for i in range(5) %}
-            <div class="file col-xs-5 hidden-element" data-index={{loop.index0}} data-fileid=1>
-                {%- if experiment.category == 'video' -%}
-                    {%- if experiment.uploadType == 'NOTviaSpreadsheet' -%}
-                        <a href="" target="_blank">Click here</a>
+        <div class="file col-xs-5 hidden-element" data-index="0" data-fileid=1>
+            {%- if experiment.category == 'video' -%}
+                {%- if experiment.uploadType == 'NOTviaSpreadsheet' -%}
+                    <a href="" target="_blank">Click here</a>
+                {%- else -%}
+                	<div class="glass">
+                        <video class="clip" id= "clip" width="400" controls>
+                            <source src="" type="video/mp4">
+                            Your browser does not support HTML5 video.
+                        </video>
+                    </div>
+                    <br>
+                    {%- if experiment.uploadType == 'fromConcordance' -%}
+                        <a href="" id="edgeLink" target="_blank" style="margin-left:30%">See more context in Edge</a>
                     {%- else -%}
-                    	<div class="glass">
-	                        <video class="clip" id= "clip" width="400" controls>
-	                            <source src="" type="video/mp4">
-	                            Your browser does not support HTML5 video.
-	                        </video>
-	                    </div>
-                        <br>
-                        {%- if experiment.uploadType == 'fromConcordance' -%}
-                            <a href="" id="edgeLink" target="_blank" style="margin-left:30%">See more context in Edge</a>
-                        {%- else -%}
-                            <a href="##" id="sourceLink" target="_blank" style="margin-left:30%">Source Link</a>
-                        {%- endif -%}
+                        <a href="##" id="sourceLink" target="_blank" style="margin-left:30%">Source Link</a>
                     {%- endif -%}
-                {%- elif experiment.category == 'audio' -%}
-                    {%- if experiment.uploadType == 'NOTviaSpreadsheet' -%}
-                        <a href="" target="_blank">Click here</a>
-                    {%- else -%}
-                    <audio class="clip" width="400" controls>
-                        <source src="" type="audio/wav">
-                        Your browser does not support HTML5 audio.
-                    </audio>
-                    <a href="" id="sourceLink" target="_blank" style="margin-left:30%">Source Link</a>
-                    {%- endif -%}
-                {%- elif experiment.category == 'image' -%}
-                    <img class="annotationWindow" src="" alt="">
-                {%- elif experiment.category == 'text' -%}
-                    <pre>
-                    </pre>
                 {%- endif -%}
+            {%- elif experiment.category == 'audio' -%}
+                {%- if experiment.uploadType == 'NOTviaSpreadsheet' -%}
+                    <a href="" target="_blank">Click here</a>
+                {%- else -%}
+                <audio class="clip" width="400" controls>
+                    <source src="" type="audio/wav">
+                    Your browser does not support HTML5 audio.
+                </audio>
+                <a href="" id="sourceLink" target="_blank" style="margin-left:30%">Source Link</a>
+                {%- endif -%}
+            {%- elif experiment.category == 'image' -%}
+                <img class="annotationWindow" src="" alt="">
+            {%- elif experiment.category == 'text' -%}
+                <pre>
+                </pre>
+            {%- endif -%}
 
-                <div class="caption hidden-element">
-                    <h4></h4>
+            {%- if displayAlreadyAnnotated == 1 -%}
+
+                <div class="container">
+                    <div class="row">
+                        <div class="alreadyAnnotated alert alert-danger alert-dismissible col-md-6" style="width: 37%; z-index: 1; margin-left: 0%; margin-top: 2%">
+                        </div>
+                    </div>
                 </div>
+            {%- endif -%}
 
-                <div class="targetCaption hidden-element">
-                    <h4></h4>
-                </div>
-
+            <div class="caption hidden-element">
+                <h4></h4>
             </div>
-        {% endfor %}
+
+            <div class="targetCaption hidden-element">
+                <h4></h4>
+            </div>
+
+        </div>
         <div class="annotationLevelArea">
 	        {% for level in experiment.annotation_levels | sort(attribute='id')%}
 	            <div class="col-xs-7 annotationLevel hidden-element" data-index="{{loop.index}}" data-levelid="{{level.id}}">
@@ -186,31 +189,10 @@
 </div>
 
 <div class="container hidden-element thanksNote">
-    {%- if (lastFile + 1 == 0) or (isExpowner == 1) -%}
-        <h3> No files to annotate. Thanks </h3>
-    {%- else -%}
-        <div class="alert alert-success hidden-element notify" id="notify" style="width:35%">
-            <strong>Success!</strong> Notification has been sent !
-        </div>
-        <h3>No more files to annotate. Thanks</h3>
-        <br>
-        <button type="button" class="btn btn-warning btn-group btn-group-inline btn-space send_notification" title="click here"> 
-            <span class="glyphicon glyphicon-envelope"></span>
-            <b id="msg2"> Send Notification to Experimenter</b>
-        </button>
-    {%- endif -%}
+    <h3> No files to annotate. Thanks </h3>
 </div>
 
-{%- if labelWarning == 1 -%}
-    <div class="alert alert-danger alert-dismissible labelWarning" style="width: 38%; position: fixed; z-index: 1; margin-left: 60%; margin-top: 2%">
-        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-        <strong>Warning!</strong> Labels have been changed! <b> Either Continue or Start Again!</b>
-    </div>
-{%- endif -%}
-<div class="alert alert-danger alert-dismissible labelWarning hidden-element" style="width: 35%; position: fixed; z-index: 1; margin-left: 60%; margin-top: 2%">
-    <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-    <strong>Warning!</strong> Labels have been changed! <b>Please refresh the screen.</b>
-</div>
+
 
 <div class="container">
     <div class="row">
@@ -356,63 +338,28 @@
             closeFullscreen();
         });
 
-        
+        $('.viewResultPageBack').on('click', function(){
+            window.location=document.referrer;
+        });
 
         /*level indexing is 1 based*/
-        var last_previous = 0   // Used for Undoing the Last annotation 
         var currentLevel = 1;
         var labelButton = $('.labelButton');
         var selectedLabel = -1;
-        var preLoadLimit = 5;
         var currentLoadedFile = 0; // index of the div currently displayed
         var preLoadedTill = 0;
         var space_pressed = 0;
         var annotations = {};
         var already_submitted = {};
         var progress_num = 0;
-        var totalAnnotationLevels = {{ totalAnnotationLevels }};
+        var totalAnnotationLevels = "{{ totalAnnotationLevels }}";
         var keyBindingDict = {{keyBindingDict | safe}};
-        var skipLevelDict = {{skipLevelDict | safe}}
-        currentFileIndex = {{ currentFileIndex }};
+        var skipLevelDict = {{skipLevelDict | safe}};
+        var currentFileIndex = "{{fileId}}";
 
 
-        if(currentFileIndex <= {{lastFile}}) {
-            doneButton.addClass('hidden-element');
-        }
-
-        if(currentFileIndex > {{lastFile}}){
-            if({{is_done}} == 1){
-                displayEnd();
-                return;
-            }
-            if({{is_done}} == 0){
-                currentFileIndex= currentFileIndex - 1;
-                last_previous = 1;
-                $('.annotationArea').addClass('hidden-element');
-                $('.thanksNote').removeClass('hidden-element');
-            }
-        }
-
-
-
-        function preLoadFiles() {
-            var excessFiles = (preLoadedTill - currentLoadedFile + preLoadLimit) % preLoadLimit;
-            while((excessFiles < (preLoadLimit - 1))) {
-                // index where this file should be loaded
-                var divIndex = (currentLoadedFile + excessFiles + 1) % preLoadLimit;
-                var newFileIndex = excessFiles + currentFileIndex + 1;
-                preLoadedTill = (preLoadedTill + 1) % preLoadLimit;
-                excessFiles = (preLoadedTill - currentLoadedFile + preLoadLimit) % preLoadLimit;
-                /*
-                    first check if the file number is valid
-                    then make the api call
-                */
-                if( newFileIndex <= {{ lastFile }} ) newFile(divIndex, newFileIndex, false);
-            }
-        }
 
         newFile(0, currentFileIndex, true);
-        preLoadFiles();
 
         /*show only first level*/
         $(".annotationLevel[data-index=1]").removeClass('hidden-element');
@@ -481,6 +428,7 @@
 
         function annotationProcess(y){
             /*for the dict in current index check if the key is there*/
+            
             $.each( keyBindingDict[currentLevel], function( key, value ) {
                 if( y == value ) {
                     if("{{experiment.displayTargetCaption}}" == "True"){
@@ -507,57 +455,55 @@
                 fileAnnotationCompleted();
             }
             currentLevel = (currentLevel % totalAnnotationLevels) + 1;
+            
+            var currentLevelBody1 = $(".annotationLevel[data-index='" + currentLevel +"']");
+            var levelId1 = currentLevelBody1.data("levelid");
+            var alreadyAnnotatedText = {{annotationAlreadyDone | safe}};
+            var textAlreadyAnnotated = "";
+            if(!alreadyAnnotatedDict[levelId1]){
+                textAlreadyAnnotated = "The Level is SKIPPED in the current annotation."    
+            }
+            else{
+                textAlreadyAnnotated = "Currently selected label is: " + "<b>" + alreadyAnnotatedDict[levelId1][1] + "</b>";
+                var tp = $(".labelButton[data-labelid='" + alreadyAnnotatedDict[levelId1][0] +"']");
+                tp.removeClass('btn-primary');
+                tp.addClass('btn-danger');
+            }
+            $('.alreadyAnnotated').html(textAlreadyAnnotated);
+
             currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
             currentLevelBody.removeClass('hidden-element');
+
         }
 
         function previousLevel() {
-            if(last_previous == 1){
-                currentFileIndex = currentFileIndex + 1;
-                $('.annotationArea').removeClass('hidden-element');
-                $('.thanksNote').addClass('hidden-element');
-                doneButton.addClass('hidden-element');
-            }
-            if (currentLevel == 1) {
-                loadPreviousFile(last_previous);
-            } else {
-                currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
-                currentLevelBody.addClass('hidden-element');
-                currentLevel = currentLevel - 1;
-                currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
-                currentLevelBody.removeClass('hidden-element');
+            currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+            currentLevelBody.addClass('hidden-element');
+            currentLevel = currentLevel - 1;
+            currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+            currentLevelBody.removeClass('hidden-element');
 
-                var currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
-                var levelId = currentLevelBody.data("levelid");
-                already_submitted[levelId] = 0;
+            var currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+            var levelId = currentLevelBody.data("levelid");
+            already_submitted[levelId] = 0;
+
+            var alreadyAnnotatedText = {{annotationAlreadyDone | safe}};
+            var textAlreadyAnnotated = "";
+            if(!alreadyAnnotatedDict[levelId1]){
+                textAlreadyAnnotated = "The Level is SKIPPED in the current annotation."    
             }
-            if(last_previous == 1){
-                last_previous = 0;
+            else{
+                textAlreadyAnnotated = "Currently selected label is: " + "<b>" + alreadyAnnotatedDict[levelId1][1] + "</b>";
+                var tp = $(".labelButton[data-labelid='" + alreadyAnnotatedDict[levelId1][0] +"']");
+                tp.removeClass('btn-primary');
+                tp.addClass('btn-danger');
             }
+            $('.alreadyAnnotated').html(textAlreadyAnnotated);
         }
 
         function undoProcess(){
             undoButton.attr("disabled", "disabled");
             $('.toggleLooping').removeClass('hidden-element');
-            if(last_previous == 1){
-                progress_num = currentFileIndex;
-            }
-            else{
-                if(currentFileIndex - 1 >= 0){
-                    if(currentLevel == 1){
-                        progress_num = currentFileIndex - 1;
-                    }
-                    else{
-                        progress_num = currentFileIndex;
-                    }
-                }
-            }
-            progress_value = 'Progress: ' + progress_num.toString() + ' / ' + ({{lastFile}} + 1).toString()
-            $("#prg").text(progress_value);                                                
-            var prog_width = (progress_num/({{lastFile}} + 1))*100
-            prog_width = prog_width.toFixed(2)
-            $("#progress-bar").width(prog_width.toString() + '%');
-            $('#preview').text(prog_width.toString() + '%');
             
             undoAnnotation();
             window.setTimeout(function() {
@@ -618,48 +564,6 @@
             $('.completeExp').removeClass('hidden-element');
         }
 
-        function loadPreviousFile(load_previous) {
-            annotations = {};
-            var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
-            // console.log(load_previous, currentFileId);
-            var data = {
-                'lp': load_previous,
-                'fileId' :          currentFileId,
-                'experimentId' :    "{{experiment.id}}",
-            };
-            $.ajax({
-                url: "{{ url_for('annotate_experiment.deleteAnnotation')}}",
-                type: "DELETE",
-                data : data,
-            });
-
-            if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
-                stopThisClip(currentLoadedFile);
-            }
-            if(currentFileIndex == 0) {
-                /* do something if required */
-            } else {
-
-                currentFileIndex -= 1;
-                var data = {
-                    'currentFileIndex' :    currentFileIndex,
-                    'experimentId' :        "{{experiment.id}}",
-                };
-
-                $.ajax({
-                    url: "{{ url_for('annotate_experiment.updateCurrentFileIndex')}}",
-                    type: "PUT",
-                    data : data,
-                    success: function(response) {
-                        $(".file[data-index='" + currentLoadedFile + "']").addClass('hidden-element');
-                        currentLoadedFile = 0;
-                        preLoadedTill = 0;
-                        newFile(0, currentFileIndex, true);
-                        preLoadFiles();
-                    }
-                });
-            }
-        }
 
         function fileAnnotationCompleted() {
 
@@ -669,56 +573,23 @@
             var data = {
                 'fileId' :          currentFileId,
                 'annotations' :     annotations, 
-                'labelCount' :     {{labelCount}},
+                'labelCount' :     "{{labelCount}}",
                 'userId'    : "{{userId}}",
-                'hasToIncreaseCurrent': 1,
+                'hasToIncreaseCurrent': 0,
             };
 
             data = JSON.stringify(data);
             $.getJSON(url , data, function(response) {
                 if(response.success) {
+                    displayEnd();
                     annotations = {};
                     already_submitted = {};
-                    if(currentFileIndex == {{lastFile}}) {
-
-                        //  Code for Progress bar
-                        progress_value = 'Progress: ' + (currentFileIndex + 1).toString() + ' / ' + ({{lastFile}}  + 1).toString()
-                        $("#prg").text(progress_value);                        
-                        var prog_width = ((currentFileIndex + 1)/({{lastFile}} + 1))*100
-                        prog_width = prog_width.toFixed(2)
-                        $("#progress-bar").width(prog_width.toString() + '%');
-                        $('#preview').text(prog_width.toString() + '%');
-                        // Code for Progress bar Ends
-
-                        last_previous = 1
-                        doneButton.removeClass('hidden-element');
-                        $('.toggleLooping').addClass('hidden-element');
-                        $('.annotationArea').addClass('hidden-element');
-                        $('.thanksNote').removeClass('hidden-element');
-
-                        if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
-                            if( "{{ experiment.uploadType }}" === "manual" ) {
-                            }
-                                var f = $(".file[data-index='" + currentLoadedFile + "']");
-                                f.find(".clip")[0].pause();
+                    // doneButton.removeClass('hidden-element');
+                    if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
+                        if( "{{ experiment.uploadType }}" === "manual" ) {
                         }
-                    } 
-                    else {
-                        if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
-                            stopThisClip(currentLoadedFile);
-                        }
-                        currentFileIndex += 1;
-                        $(".file[data-index='" + currentLoadedFile + "']").addClass('hidden-element');
-                        currentLoadedFile = (currentLoadedFile + 1) % preLoadLimit;
-                        preLoadFiles();
-                        showCurrentFile(currentLoadedFile);
-
-                        progress_value = 'Progress: ' + (currentFileIndex).toString() + ' / ' + ({{lastFile}} + 1).toString()
-                        $("#prg").text(progress_value);                                                
-                        var prog_width = (currentFileIndex/({{lastFile}} + 1))*100
-                        prog_width = prog_width.toFixed(2)
-                        $("#progress-bar").width(prog_width.toString() + '%');
-                        $('#preview').text(prog_width.toString() + '%');
+                            var f = $(".file[data-index='" + currentLoadedFile + "']");
+                            f.find(".clip")[0].pause();
                     }
                 }
                 else{
@@ -729,11 +600,10 @@
         }
 
         function newFile(divIndex, fileIndex, showCurrent) {
-            var url = "{{ url_for('annotate_experiment._getFileDetails')}}";
+            var url = "{{ url_for('annotate_experiment._getSpecificFileDetails')}}";
             var data = {
-                'currentFileIndex' :    fileIndex,
-                'experimentId' :        "{{experiment.id}}",
-                'firstFile' : "{{firstFile}}",
+                'fileId' :    fileIndex,
+                'experimentId' : "{{experiment.id}}",
             };
 
             $.getJSON(url , data, function(newFile) {
@@ -770,14 +640,6 @@
                         clip.attr('loop','loop');
                     }
                     clip[0].play();
-            /*
-                    clip[0].addEventListener("timeupdate", function(){
-                        if (clip[0].currentTime == 0) {
-                            clip[0].currentTime = clip[0].currentTime + "{{experiment.display_time.before_time}}";
-                        }
-                    });
-
-            */
             }
 
             var fileCaption = loadedFile.find('.caption h4').text();
@@ -803,30 +665,27 @@
                 loadedDiv.find('a').attr('href', url);
             }
             else if( "{{ experiment.uploadType }}" === "fromConcordance" ){
-                if ("{{ experiment.category }}" == "image")
-				{
+                if ("{{ experiment.category }}" == "image"){
 					var url = fileToLoad.content;
 				}
                 else{
                     var temp_list = (fileToLoad.content).split("&");
 					var temp_starttime = (temp_list[1]).split("=");
-					if ("{{ experiment.display_time.before_time }}")
-					{
+					if ("{{ experiment.display_time.before_time }}"){
 						var before_time = parseFloat("{{ experiment.display_time.before_time }}");
 					}
-					else
-					{
+					else{
 						var before_time = 0;
 					}
 					var starttime = parseFloat(temp_starttime[1]) - before_time;
-					if (starttime < 0) {starttime = 0;}
+					if (starttime < 0) {
+                        starttime = 0;
+                    }
 					var temp_endtime = (temp_list[2]).split("=");
-					if ("{{ experiment.display_time.after_time }}")
-					{
+					if ("{{ experiment.display_time.after_time }}"){
 						var after_time = parseFloat("{{ experiment.display_time.after_time }}");
 					}
-					else
-					{
+					else{
 						var after_time = 0;
 					}
 					var endtime = parseFloat(temp_endtime[1]) + after_time;
@@ -838,30 +697,18 @@
                 }
             }
             else{
-                var url = "/annotate_experiment/uploads/" + {{experiment.id}} + "/" + fileToLoad.content;
+                var url = "/annotate_experiment/uploads/" + "{{experiment.id}}" + "/" + fileToLoad.content;
             }
 
             if( "{{ experiment.category }}" === "image") {
                 loadedDiv.find('img').attr('src', url);
                 loadedDiv.find('img').attr('alt', caption);
             } else if( "{{ experiment.category }}" === "video") {
-                // if( "{{ experiment.uploadType }}" === "manual") {
-                    var video = loadedDiv.find('.clip');
-                    video.attr('src', url);
-                // } else {
-                //     var link = loadedDiv.find('a');
-                //     link.attr('href', url);
-                //     link.text(fileToLoad.name)
-                // }
+                var video = loadedDiv.find('.clip');
+                video.attr('src', url);
             } else if( "{{ experiment.category }}" === "audio") {
-                // if( "{{ experiment.uploadType }}" === "manual") {
-                    var audio = loadedDiv.find('.clip');
-                    audio.attr('src', url);
-                // } else {
-                //     var link = loadedDiv.find('a');
-                //     link.attr('href', url);
-                //     link.text(fileToLoad.name)
-                // }
+                var audio = loadedDiv.find('.clip');
+                audio.attr('src', url);
             } else if( "{{ experiment.category }}" === "text") {
                 loadedDiv.find('pre').text(fileToLoad.content);
             }
@@ -872,6 +719,18 @@
             loadedDiv.find('.targetCaption h4').text(target_caption);
             loadedDiv.data("fileid", fileToLoad.id);
         }
+
+        var currentLevelBody1 = $(".annotationLevel[data-index='" + currentLevel +"']");
+        var levelId1 = currentLevelBody1.data("levelid");
+        var alreadyAnnotatedDict = {{annotationAlreadyDone | safe}};
+        var textAlreadyAnnotated = "Currently selected label is: " + "<b>" + alreadyAnnotatedDict[levelId1][1] + "</b>";
+        $('.alreadyAnnotated').html(textAlreadyAnnotated);
+
+        var tp = $(".labelButton[data-labelid='" + alreadyAnnotatedDict[levelId1][0] +"']");
+        tp.removeClass('btn-primary');
+        tp.addClass('btn-danger');
+
+        console.log(keyBindingDict, alreadyAnnotatedDict);
 
     });
 

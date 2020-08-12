@@ -861,6 +861,7 @@ def _editAnnotator():
 
     annotatorDetails.start = request.args.get('start', annotatorDetails.start)
     annotatorDetails.end = request.args.get('end', annotatorDetails.end)
+    annotatorDetails.current = 0
 
     db.session.commit()
     response = {}
@@ -981,13 +982,12 @@ def viewResults(experimentId, userId):
                 if anno_info is not None:
                     for label in level.labels:
                         info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=userId, annotationLevel_id=level.id, label_id=label.id).first()
-                        if info is None:
-                            annotation[level.id][label.id] = 0
-                        else:
-                            annotation[level.id][label.id] = 1
+                        if info is not None:
+                            annotation[level.id] = label.name
                 else:
-                    for label in level.labels:
-                        annotation[level.id][label.id] = "SKIP"                    
+                    annotation[level.id] = "SKIPPED"
+                    # for label in level.labels:
+                        # annotation[level.id][label.id] = "SKIP"                    
         annotations[f.id] = annotation       
     
     return render_template('add_experiment/results.html', exp_files=pagination_files, page=page, \
@@ -1161,7 +1161,7 @@ def _exportResultsXLS(experimentId):
     for annotator in annotators:
         col += 1
         for level in annotation_levels:
-            sheet.write(row, col, annotator.username + " ( Level " + str(level.level_number) + " )", style0)
+            sheet.write(row, col, annotator.username + " ( Level: " + str(level.name) + " )", style0)
             col += 1
         sheet.write(row, col, "Target Caption of " + annotator.username, style0)
 
@@ -1245,7 +1245,7 @@ def _exportResultsConcordance(experiment):
                     for info in annotation_info:
                         label = Label.query.filter_by(id=info.label_id).first()
                         data_headers[f.concordance_lineNumber - 1] = str(label.name)
-            data.insert(col_num, annotator.username + " ( Level " + str(level.level_number) + " )" , data_headers)
+            data.insert(col_num, annotator.username + " ( Level: " + str(level.name) + " )" , data_headers)
             col_num += 1
 
         target_caption = ["No Caption Provided" for itr in range(len(data))]
@@ -1259,11 +1259,13 @@ def _exportResultsConcordance(experiment):
         data.insert(col_num, "Target Caption of " + annotator.username, target_caption)
         col_num = col_num + 1
 
-    filename = str(experiment.id) + '.csv'
+    filename = str(experiment.id) + '.xlsx'
 
     from rapidannotator import app
     filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    data.to_csv(filePath, index=False)
+    with pandas.ExcelWriter(filePath, date_format='YYYY-MM-DD', datetime_format='YYYY-MM-DD HH:MM:SS') as writer:
+        data.to_excel(writer, sheet_name='Sheet1', index=False)
+    # data.to_csv(filePath, index=False)
 
     response = {}
     response['success'] = True
@@ -1288,7 +1290,7 @@ def _exportResultsCSV(experimentId):
 
     for annotator in annotators:
         for level in annotation_levels:
-            column_headers.append(annotator.username + " ( Level " + str(level.level_number) + " )" )
+            column_headers.append(annotator.username + " ( Level: " + str(level.name) + " )" )
         column_headers.append('Target Caption of ' + annotator.username)
     column_headers.append('Caption')
     
@@ -1328,11 +1330,15 @@ def _exportResultsCSV(experimentId):
     
     fd = pandas.DataFrame(csv_data, columns=column_headers)
 
-    filename = str(experimentId) + '.csv'
+    filename = str(experimentId) + '.xlsx'
+
+    
 
     from rapidannotator import app
     filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    fd.to_csv(filePath, index=False)
+    with pandas.ExcelWriter(filePath, date_format='YYYY-MM-DD', datetime_format='YYYY-MM-DD HH:MM:SS') as writer:
+        fd.to_excel(writer, sheet_name='Sheet1', index=False)
+    # fd.to_csv(filePath, index=False)
 
     response = {}
     response['success'] = True
