@@ -486,6 +486,10 @@ def specificAnnotation(userId, experimentId, fileId):
 
     annotationAlreadyDone = {}
     anno_info = AnnotationInfo.query.filter_by(user_id= userId, file_id= fileId).all()
+    if len(anno_info) == 0:
+        displayAlreadyAnnotated = 0
+    else:
+        displayAlreadyAnnotated = 1
     for info in anno_info:
         label = Label.query.filter_by(id=info.label_id).first()
         annotationAlreadyDone[info.annotationLevel_id] = [info.label_id, label.name]
@@ -502,5 +506,6 @@ def specificAnnotation(userId, experimentId, fileId):
         fileId = fileId,
         userId = userId,
         annotationAlreadyDone = annotationAlreadyDone,
+        displayAlreadyAnnotated = displayAlreadyAnnotated,
     )
 

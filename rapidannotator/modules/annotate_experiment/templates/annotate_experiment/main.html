@@ -544,7 +544,12 @@
             }
             else{
                 if(currentFileIndex - 1 >= 0){
-                    progress_num = currentFileIndex - 1;
+                    if(currentLevel == 1){
+                        progress_num = currentFileIndex - 1;
+                    }
+                    else{
+                        progress_num = currentFileIndex;
+                    }
                 }
             }
             progress_value = 'Progress: ' + progress_num.toString() + ' / ' + ({{lastFile}} + 1).toString()
