@@ -6,6 +6,14 @@
   {{ super() }}
     <style type="text/css">
         .important { color: #336699; }
+        .center {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+        }
     </style>
     <style type="text/css">
         select {
@@ -156,6 +164,24 @@
         Display Words/Second
     </button>
 </div>
+<br><br><br><br><br>
+
+<div class="container-fluid">
+    <h4 style="text-align:center"> Experiment Progress </h4>
+    <hr>
+    {%- if displayImg == 0 -%}
+        <div class="info1" style="margin-left: auto; margin-right: auto; display: block; ">
+                <br>
+                <div class="alert alert-info col-md-6" role="alert">
+                    Experiment doesn't have any annotator yet!
+                </div>
+        </div>
+    {%- else -%}
+        <img src="{{url_for('static', filename = 'img/plot1.png')}}" alt="Chart" width="600" height="400" class="center">
+    {%- endif -%}
+</div>
+<br><br>
+
 <div id="snackbar3"><strong> Message </strong></div>
 
 <div class="container">

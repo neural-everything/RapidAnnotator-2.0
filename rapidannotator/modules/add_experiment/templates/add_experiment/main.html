@@ -296,7 +296,15 @@
         Experiment_Id = id;
     };
 
+    // Function for saving names and description in database on a click outside the box without using any save button
     $(function(){
+        'use-strict';
+        
+        // Gettig instances of td tag
+        var td1 = $('.fileName');
+        var td2 = $('.fileCaption');
+
+
         $('#deleteAllFilesForm').on('submit', function(e) {
             e.stopImmediatePropagation();
             e.preventDefault();
@@ -312,15 +320,6 @@
                 }
             });
         })
-    });
-
-    // Function for saving names and description in database on a click outside the box without using any save button
-    $(function(){
-        'use-strict';
-        
-        // Gettig instances of td tag
-        var td1 = $('.fileName');
-        var td2 = $('.fileCaption');
 
         // Add event listeners to all td tags of fileName
         for(var i=0;i<td1.length;i++) {

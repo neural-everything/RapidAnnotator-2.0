@@ -147,7 +147,7 @@
                         </a>
                     </li>
                     <li>
-                        <a class="dropdown-item" href="{{url_for('home.checkProgress')}}" >
+                        <a class="dropdown-item" href="{{url_for('home.checkProgress', userId = current_user.id)}}" >
                             <span class="glyphicon glyphicon-check"></span> Check Progress 
                         </a>
                     </li>

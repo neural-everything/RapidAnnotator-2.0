@@ -57,7 +57,7 @@
         </p>
         <hr class="my-4">
         <p class="lead">
-            {%- set userProgress_url = url_for('admin.userProgress', userId = user.id) %}
+            {%- set userProgress_url = url_for('home.checkProgress', userId = user.id) %}
             <a class="btn btn-primary btn-lg" role="button" onClick="document.location.href='{{userProgress_url}}';">Check Progress</a>
             {%- set userExperiments_url = url_for('admin.userExperiments', userId = user.id) %}
             <a class="btn btn-primary btn-lg" role="button" onClick="document.location.href='{{userExperiments_url}}';">View Experiments </a>
