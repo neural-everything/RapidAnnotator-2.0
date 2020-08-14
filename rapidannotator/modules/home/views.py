@@ -5,10 +5,13 @@ from flask_login import current_user, login_required, login_user, logout_user
 
 from rapidannotator import db
 from rapidannotator import bcrypt
-import flask_bcrypt
+import flask_bcrypt, os
 from rapidannotator.models import User, Experiment, RightsRequest, AnnotatorAssociation
 from rapidannotator.modules.home import blueprint
 from rapidannotator.modules.home.forms import AddExperimentForm, UpdateInfoForm
+import matplotlib
+matplotlib.use('Agg')
+from matplotlib import pyplot as plt
 
 @blueprint.before_request
 def before_request():
@@ -146,11 +149,46 @@ def updateInfo():
             user = current_user,
             errors = errors,)
 
-@blueprint.route('/checkProgress', methods=['GET'])
-def checkProgress():
+@blueprint.route('/checkProgress/<int:userId>', methods=['GET'])
+def checkProgress(userId):
     experiments = current_user.my_experiments.all()
-    return render_template('home/progress.html',
-        experiments = experiments,)
+    
+    barWidth = 0.35
+    bars = []
+    xpos = []
+    names, labels = [], []
+    plt.clf()
+    associations = AnnotatorAssociation.query.filter_by(user_id=userId).all()
+
+    for i, association in enumerate(associations):
+        experiment = Experiment.query.filter_by(id=association.experiment_id).first()
+        filesLength = experiment.files.count()
+        if filesLength != 0:
+            bars.append(((association.current*100)/filesLength))
+            xpos.append(i+1)
+            names.append(experiment.name)
+            labels.append(str(association.current) + "/" + str(filesLength))
+
+    if len(bars) == 0:
+        return render_template('home/progress.html', experiments = experiments, displayImg=0)
+
+
+    if os.path.exists('./rapidannotator/static/img/plot.png'):
+        os.remove('./rapidannotator/static/img/plot.png')
+    plt.bar(xpos, bars, width=barWidth, label='Experiment Progress')
+    plt.legend()
+
+    plt.xticks(xpos, names, rotation=90)
+    for i in range(len(labels)):
+        plt.text(x = xpos[i] - 0.05, y = bars[i] + 0.1, s = labels[i], size = 10)
+    plt.subplots_adjust(bottom= 0.2, top = 0.98)
+    plt.xlabel('Experiment Name')
+    plt.ylabel('Progress in Percentage')
+    plt.ylim(0, 100)
+    plt.savefig('./rapidannotator/static/img/plot.png')
+    plt.close()
+
+    return render_template('home/progress.html', experiments = experiments, displayImg=1)
 
 @blueprint.route('/getExperimentProgressData', methods=['GET', 'POST'])
 def getExperimentProgressData():
@@ -177,7 +215,7 @@ def getExperimentProgressData():
 
 @blueprint.route('/getUserProgressData', methods=['GET', 'POST'])
 def getUserProgressData():
-    
+
     associations = AnnotatorAssociation.query.filter_by(user_id=current_user.id).all()
     chartInfo = []
     chartInfo.append(['Experiment Name', 'Progress'])

@@ -6,6 +6,14 @@
   {{ super() }}
   <style type="text/css">
     .important { color: #336699; }
+    .center {
+  		display: block;
+  		margin-left: auto;
+  		margin-right: auto;
+  		width: 100%;
+  		max-width: 600px;
+  		height: auto;
+ 	}
   </style>
 {% endblock head %}
 
@@ -14,17 +22,21 @@
 	<div class="container-fluid">
 		<h4 style="text-align:center"> Your Progress </h4>
 		<hr>
-		<div class="info1 hidden-element">
-				<br>
-				<div class="alert alert-info col-md-6" role="alert">
-					You are not Annotator for any experiment !
-				</div>
-		</div>
-		<div id = "yourProgress" class="col-md-6" style="width:50%; margin-bottom: 10%; margin-left: 30%">
-		</div>
-		<div> </div>
+		{%- if displayImg == 0 -%}
+			<div class="info1" style="margin-left: auto; margin-right: auto; display: block; ">
+					<br>
+					<div class="alert alert-info col-md-6" role="alert">
+						You are not Annotator for any experiment !
+					</div>
+			</div>
+		{%- else -%}
+			<img src="{{url_for('static', filename = 'img/plot.png')}}" alt="Chart" width="600" height="400" class="center">
+		{%- endif -%}
+		<!-- <div id = "yourProgress" class="col-md-6" style="width:50%; margin-bottom: 10%; margin-left: 30%"> -->
 	</div>
-	<div class="container-fluid">
+	<div> </div>
+	</div>
+	<!-- <div class="container-fluid">
 		<h4 style="text-align:center">Check Progress for each Experiment</h4>
 		<hr>
 		<div class="row">
@@ -51,16 +63,16 @@
 			<div id = "experimentProgress" class="col-md-6" style = "width: 550px; height: 380px; margin: 0 auto;">
 			</div>
 		</div>
-	</div>
+	</div> -->
 </body>
 
 <script type="text/javascript">
 	
-	$(window).on('load',function(){
-		drawUserProgressChart();
+	$(window).on('load',function(){		
+		// drawUserProgressChart();
 		$("select.experiment").change(function(){
         	var selectedExperiment = $(this).children("option:selected").val();
-			drawExperimentProgressChart(selectedExperiment);
+			// drawExperimentProgressChart(selectedExperiment);
     	});
 	});
 

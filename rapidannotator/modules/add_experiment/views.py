@@ -18,6 +18,9 @@ from sqlalchemy import and_
 import os, csv, re
 
 import xlwt, xlrd, pandas, datetime, random
+import matplotlib
+matplotlib.use('Agg')
+from matplotlib import pyplot as plt
 
 @blueprint.before_request
 def before_request():
@@ -819,6 +822,41 @@ def viewSettings(experimentId):
 
     totalFiles = experiment.files.count()
 
+    filesLength = experiment.files.count()
+    bars = []
+    xpos = []
+    names, labels = [], []
+    plt.clf()
+    if filesLength > 0:
+        for i, association in enumerate(annotatorDetails):
+            user = User.query.filter_by(id=association.user_id).first()
+            bars.append(((association.current*100)/filesLength))
+            xpos.append(i+1)
+            names.append(user.username)
+            labels.append(str(association.current) + "/" + str(filesLength))
+
+        if len(bars) > 0:
+            displayImg = 1
+            if os.path.exists('./rapidannotator/static/img/plot1.png'):
+                os.remove('./rapidannotator/static/img/plot1.png')
+            
+            barWidth = 0.35
+            plt.bar(xpos, bars, width=barWidth, label='Annotator Progress')
+            plt.legend()
+
+            plt.xticks(xpos, names, rotation=90)
+            for i in range(len(labels)):
+                plt.text(x = xpos[i] - 0.1, y = bars[i] + 0.1, s = labels[i], size = 10)
+            plt.subplots_adjust(bottom= 0.5, top = 0.98)
+            plt.xlabel("Annotator's Name")
+            plt.ylabel('Progress in Percentage')
+            plt.ylim(0, 100)
+            plt.savefig('./rapidannotator/static/img/plot1.png')
+            plt.close()
+        else:
+            displayImg = 0
+
+
     return render_template('add_experiment/settings.html',
         users = users,
         experiment = experiment,
@@ -827,6 +865,7 @@ def viewSettings(experimentId):
         notAnnotators = notAnnotators,
         annotatorDetails = annotatorDetails,
         totalFiles = totalFiles,
+        displayImg = displayImg,
     )
 
 @blueprint.route('/_deleteAnnotator', methods=['POST','GET'])
@@ -1221,7 +1260,7 @@ def _exportResultsXLS(experimentId):
     return send_file(filePath, as_attachment=True)
 
 
-def _exportResultsConcordance(experiment):
+def _exportResultsConcordance(experiment, format1):
 
     from rapidannotator import app
     experimentDIR = os.path.join(app.config['UPLOAD_FOLDER'], str(experiment.id))
@@ -1259,13 +1298,18 @@ def _exportResultsConcordance(experiment):
         data.insert(col_num, "Target Caption of " + annotator.username, target_caption)
         col_num = col_num + 1
 
-    filename = str(experiment.id) + '.xlsx'
-
-    from rapidannotator import app
-    filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    with pandas.ExcelWriter(filePath, date_format='YYYY-MM-DD', datetime_format='YYYY-MM-DD HH:MM:SS') as writer:
-        data.to_excel(writer, sheet_name='Sheet1', index=False)
-    # data.to_csv(filePath, index=False)
+    
+    if format1 == '.xlsx':
+        print(format1)
+        filename = str(experiment.id) + '.xlsx'
+        from rapidannotator import app
+        filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        with pandas.ExcelWriter(filePath, date_format='YYYY-MM-DD', datetime_format='YYYY-MM-DD HH:MM:SS') as writer:
+            data.to_excel(writer, sheet_name='Sheet1', index=False)
+    else:
+        filename = str(experiment.id) + '.csv'
+        filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        data.to_csv(filePath, index=False)
 
     response = {}
     response['success'] = True
@@ -1273,12 +1317,12 @@ def _exportResultsConcordance(experiment):
     return send_file(filePath, as_attachment=True)
 
 
-@blueprint.route('/_exportResultsCSV/<int:experimentId>', methods=['POST','GET'])
-def _exportResultsCSV(experimentId):
+@blueprint.route('/_exportResultsCSV/<int:experimentId>/<string:format1>', methods=['POST','GET'])
+def _exportResultsCSV(experimentId, format1):
 
     experiment = Experiment.query.filter_by(id=experimentId).first()
     if experiment.uploadType == 'fromConcordance':
-        return _exportResultsConcordance(experiment)
+        return _exportResultsConcordance(experiment, format1)
     
     RESERVED_LABEL = '99999'
     
@@ -1330,15 +1374,16 @@ def _exportResultsCSV(experimentId):
     
     fd = pandas.DataFrame(csv_data, columns=column_headers)
 
-    filename = str(experimentId) + '.xlsx'
-
-    
-
-    from rapidannotator import app
-    filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    with pandas.ExcelWriter(filePath, date_format='YYYY-MM-DD', datetime_format='YYYY-MM-DD HH:MM:SS') as writer:
-        fd.to_excel(writer, sheet_name='Sheet1', index=False)
-    # fd.to_csv(filePath, index=False)
+    if format1 == '.xlsx':
+        filename = str(experimentId) + '.xlsx'
+        from rapidannotator import app
+        filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        with pandas.ExcelWriter(filePath, date_format='YYYY-MM-DD', datetime_format='YYYY-MM-DD HH:MM:SS') as writer:
+            fd.to_excel(writer, sheet_name='Sheet1', index=False)
+    else:
+        filename = str(experimentId) + '.csv'
+        filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        fd.to_csv(filePath, index=False)
 
     response = {}
     response['success'] = True

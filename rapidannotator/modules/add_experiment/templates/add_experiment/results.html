@@ -43,7 +43,8 @@
             <span class="glyphicon glyphicon-trash"></span>
         </a>
         {%- set exportResultsUrl1 = url_for('add_experiment._exportResultsXLS', experimentId = experiment.id) %}
-        {%- set exportResultsUrl2 = url_for('add_experiment._exportResultsCSV', experimentId = experiment.id) %}
+        {%- set exportResultsUrl2 = url_for('add_experiment._exportResultsCSV', experimentId = experiment.id, format1 = ".xlsx") %}
+        {%- set exportResultsUrl3 = url_for('add_experiment._exportResultsCSV', experimentId = experiment.id, format1 = ".csv") %}
         <div class="dropdown btn-group btn-group-inline btn-space">
             <button class="btn btn-primary dropdown-toggle" type="button" id="addOwners" data-toggle="dropdown">
                 {{ ('Export Results to Sheet') }}
@@ -52,6 +53,7 @@
             <ul class="dropdown-menu scrollable-dropdown" id="addOwnersMenu" role="menu" aria-labelledby="addOwners">
                 <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportResultsUrl1}}"><span>Export as .xls</span></a></li>
                 <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportResultsUrl2}}"><span>Export as .xlsx</span></a></li>
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportResultsUrl3}}"><span>Export as .csv</span></a></li>
             </ul>
         </div>
 
