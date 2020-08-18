@@ -12,6 +12,8 @@ from rapidannotator.modules.home.forms import AddExperimentForm, UpdateInfoForm
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
+from io import BytesIO
+import base64
 
 @blueprint.before_request
 def before_request():
@@ -172,23 +174,24 @@ def checkProgress(userId):
     if len(bars) == 0:
         return render_template('home/progress.html', experiments = experiments, displayImg=0)
 
-
-    if os.path.exists('./rapidannotator/static/img/plot.png'):
-        os.remove('./rapidannotator/static/img/plot.png')
     plt.bar(xpos, bars, width=barWidth, label='Experiment Progress')
     plt.legend()
 
     plt.xticks(xpos, names, rotation=90)
     for i in range(len(labels)):
-        plt.text(x = xpos[i] - 0.05, y = bars[i] + 0.1, s = labels[i], size = 10)
-    plt.subplots_adjust(bottom= 0.2, top = 0.98)
+        plt.text(x = xpos[i] - 0.08, y = bars[i] + 0.1, s = labels[i], size = 10)
+    plt.subplots_adjust(bottom= 0.4, top = 0.98)
     plt.xlabel('Experiment Name')
     plt.ylabel('Progress in Percentage')
     plt.ylim(0, 100)
-    plt.savefig('./rapidannotator/static/img/plot.png')
+    tmpfile = BytesIO()
+    plt.savefig(tmpfile, format='png')
+    pngImageB64String = "data:image/png;base64,"
+    encoded = base64.b64encode(tmpfile.getvalue()).decode('utf-8')
+    pngImageB64String = pngImageB64String + encoded
     plt.close()
 
-    return render_template('home/progress.html', experiments = experiments, displayImg=1)
+    return render_template('home/progress.html', experiments = experiments, displayImg=1, html=pngImageB64String)
 
 @blueprint.route('/getExperimentProgressData', methods=['GET', 'POST'])
 def getExperimentProgressData():
