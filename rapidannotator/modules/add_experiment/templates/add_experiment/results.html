@@ -51,7 +51,7 @@
             <span class="glyphicon glyphicon-download-alt"></span> &nbsp;
             <span class="caret"></span></button>
             <ul class="dropdown-menu scrollable-dropdown" id="addOwnersMenu" role="menu" aria-labelledby="addOwners">
-                <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportResultsUrl1}}"><span>Export as .xls</span></a></li>
+                <!-- <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportResultsUrl1}}"><span>Export as .xls</span></a></li> -->
                 <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportResultsUrl2}}"><span>Export as .xlsx</span></a></li>
                 <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportResultsUrl3}}"><span>Export as .csv</span></a></li>
             </ul>
@@ -90,23 +90,23 @@
                             {%- if experiment.uploadType == 'manual' or experiment.uploadType == 'viaSpreadsheet' -%}
                                 {%- if experiment.category == 'image' -%}
                                     <img class="{{file.id}}" id="{{file.id}}" src=""  alt="Red Hen Logo" width="100px"><br>
-                                    {{ file.name }}
+                                    <a>{{ file.name }}</a>
                                 {%- else -%}
                                     {%- if experiment.category == 'video' -%}
                                         <video class="clip" id="{{file.id}}" width="170" height="90" controls>
                                             <source src="" type="video/mp4">
                                             Your browser does not support HTML5 video.
                                         </video>
-                                        &nbsp;&nbsp;&nbsp;&nbsp;{{ file.name }}
+                                        &nbsp;&nbsp;&nbsp;&nbsp; <a>{{ file.name }}</a>
                                     {%- else -%}
                                         {%- if experiment.category == 'audio' -%}
                                             <audio class="clip" id="{{file.id}}" width="10px" controls>
                                                 <source src="" type="audio/mp3">
                                                 Your browser does not support HTML5 audio.
                                             </audio>
-                                            &nbsp;&nbsp;&nbsp;&nbsp;{{ file.name }}
+                                            &nbsp;&nbsp;&nbsp;&nbsp;<a>{{ file.name }}</a>
                                         {%- else -%}
-                                            <span class="glyphicon glyphicon-file" style="font-size:30px;"></span><br>{{file.name}}
+                                            <span class="glyphicon glyphicon-file" style="font-size:30px;"></span><br> <a>{{file.name}} </a>
                                         {%- endif -%}
                                     {%- endif -%}    
                                 {%- endif -%}

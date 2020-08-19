@@ -21,6 +21,9 @@ import xlwt, xlrd, pandas, datetime, random
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
+from io import BytesIO
+import base64
+
 
 @blueprint.before_request
 def before_request():
@@ -826,6 +829,7 @@ def viewSettings(experimentId):
     bars = []
     xpos = []
     names, labels = [], []
+    displayImg = 0
     plt.clf()
     if filesLength > 0:
         for i, association in enumerate(annotatorDetails):
@@ -836,11 +840,9 @@ def viewSettings(experimentId):
             labels.append(str(association.current) + "/" + str(filesLength))
 
         if len(bars) > 0:
-            displayImg = 1
-            if os.path.exists('./rapidannotator/static/img/plot1.png'):
-                os.remove('./rapidannotator/static/img/plot1.png')
-            
+            displayImg = 1 
             barWidth = 0.35
+            fig = plt.figure()
             plt.bar(xpos, bars, width=barWidth, label='Annotator Progress')
             plt.legend()
 
@@ -851,10 +853,15 @@ def viewSettings(experimentId):
             plt.xlabel("Annotator's Name")
             plt.ylabel('Progress in Percentage')
             plt.ylim(0, 100)
-            plt.savefig('./rapidannotator/static/img/plot1.png')
+            tmpfile = BytesIO()
+            plt.savefig(tmpfile, format='png')
+            pngImageB64String = "data:image/png;base64,"
+            encoded = base64.b64encode(tmpfile.getvalue()).decode('utf-8')
+            pngImageB64String = pngImageB64String + encoded
             plt.close()
         else:
             displayImg = 0
+            pngImageB64String = ""
 
 
     return render_template('add_experiment/settings.html',
@@ -866,6 +873,7 @@ def viewSettings(experimentId):
         annotatorDetails = annotatorDetails,
         totalFiles = totalFiles,
         displayImg = displayImg,
+        html = pngImageB64String,
     )
 
 @blueprint.route('/_deleteAnnotator', methods=['POST','GET'])
