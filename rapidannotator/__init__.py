@@ -34,7 +34,7 @@ app.jinja_env.filters['datetimeformat'] = datetimeformat
     ..import all the blueprints
 '''
 from rapidannotator.modules.frontpage import blueprint as frontpage
-app.register_blueprint(frontpage, url_prefix='/frontpage')
+app.register_blueprint(frontpage, url_prefix='/')
 
 from rapidannotator.modules.home import blueprint as home
 app.register_blueprint(home, url_prefix='/home')
@@ -50,6 +50,10 @@ app.register_blueprint(admin, url_prefix='/admin')
 
 from rapidannotator.modules.notification import blueprint as notification
 app.register_blueprint(notification, url_prefix='/notification')
+
+
+from rapidannotator.modules.clustering import blueprint as clustering
+app.register_blueprint(clustering, url_prefix='/clustering')
 
 @app.errorhandler(404)
 def page_not_found(e):

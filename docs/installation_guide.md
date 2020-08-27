@@ -98,13 +98,17 @@ Now, create a database for rapidannotator and select it :
 
 `use [database_name];`
 
+
+
+Create a new user:
+
+``CREATE USER username@localhost IDENTIFIED BY <passoword>;``
+
 Now grant the privileges to rapidannotator :
 
 `grant all privileges on [Database_name].* to username@localhost with grant option;`
 
-Now set an identification password for the user :
 
-`alter user username@localhost identified by 'password';`
 
 Tell the server to reload the grant tables
 
