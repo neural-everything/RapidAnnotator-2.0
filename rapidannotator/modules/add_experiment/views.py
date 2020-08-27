@@ -874,6 +874,7 @@ def viewSettings(experimentId):
         totalFiles = totalFiles,
         displayImg = displayImg,
         html = pngImageB64String,
+        current_user=current_user,
     )
 
 @blueprint.route('/_deleteAnnotator', methods=['POST','GET'])

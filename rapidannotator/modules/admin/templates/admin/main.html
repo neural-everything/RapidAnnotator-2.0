@@ -240,7 +240,7 @@
 
             $.getJSON(url , data, function(response) {
                 if(response.success) {
-                    window.location.replace("{{url_for('admin.settings')}}");
+                    window.location.replace("{{url_for('admin.index')}}");
                 } else {
                 }
             });

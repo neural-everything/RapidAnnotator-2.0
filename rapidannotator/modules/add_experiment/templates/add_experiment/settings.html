@@ -29,6 +29,28 @@
         }
  
     </style>
+    <style>
+        .loader {
+          border: 6px solid #f3f3f3;
+          border-radius: 50%;
+          border-top: 6px solid #3498db;
+          width: 20px;
+          height: 20px;
+          -webkit-animation: spin 2s linear infinite; /* Safari */
+          animation: spin 2s linear infinite;
+        }
+
+        /* Safari */
+        @-webkit-keyframes spin {
+          0% { -webkit-transform: rotate(0deg); }
+          100% { -webkit-transform: rotate(360deg); }
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+    </style>
 {% endblock head %}
 
 {% block experiment_body %}
@@ -151,6 +173,11 @@
         data-target="#dataPartitionModal" data-toggle="modal">
         Data Partition
     </button>
+    &nbsp;
+    {%- if experiment.uploadType == 'fromConcordance' -%}
+        <button id="search" class="btn btn-primary clustering" 
+            data-loading-text="<i class='fa fa-spinner fa-spin fa-fw' aria-hidden='true'></i> Processing"> Clustering </button>
+    {%- endif -%}
 
     &nbsp;&nbsp;
     
@@ -395,6 +422,39 @@
 
 <script charset="utf-8" type="text/javascript">
     $(function() {
+
+        var setLoading = function () {
+            var search = $('#search');
+            if (!search.data('normal-text')) {
+                search.data('normal-text', search.html());
+            }
+            search.html(search.data('loading-text'));
+        };
+
+        var clearLoading = function () {
+            var search = $('#search');
+            search.html(search.data('normal-text'));
+        };
+
+        $('.clustering').on('click', function(e) {
+            setLoading();
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            var url = "{{ url_for('clustering._setJob')}}";
+            var data = {
+                'experimentId' : "{{ experiment.id }}",
+                'userId': "{{current_user.id}}",
+            };
+
+            $.getJSON(url , data, function(response) {
+                if(response.success) {
+                    $('#search').addClass('disabled');
+                    console.log("Hurray!!!!");
+                } else {
+                }
+            });
+        });
+
 
         var selectedAnnotatorButton = '.deleteAnnotatorButton, .editAnnotatorButton';
         var editAnnotatorForm = $('#editAnnotatorForm');

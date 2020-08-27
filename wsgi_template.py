@@ -4,6 +4,6 @@
 #    exec(file_.read(), dict(__file__=activate_this))
 
 import sys
-sys.path.insert(0, '[Path_to_rapidannotator]/rapidannotator')
+sys.path.insert(0, '[Path_to_rapidannotator]')
 
 from rapidannotator import app as application
