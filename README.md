@@ -25,4 +25,14 @@ This is the my Google summer of code project 2020 which is an extension of what 
 The work which I have done during this summer can be found in the following merge request.
 
 * https://github.com/RedHenLab/RapidAnnotator-2.0/pull/22
+* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/25
+* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/26
+* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/27
+* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/28
+* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/29
+* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/30
+* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/31
+* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/32
+* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/33
+* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/34
 
