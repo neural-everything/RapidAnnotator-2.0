@@ -449,8 +449,8 @@
             $.getJSON(url , data, function(response) {
                 if(response.success) {
                     $('#search').addClass('disabled');
-                    console.log("Hurray!!!!");
                 } else {
+                    alert(response.msg);
                 }
             });
         });

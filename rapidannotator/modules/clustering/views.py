@@ -7,6 +7,7 @@ from rapidannotator import bcrypt
 from rapidannotator.modules.clustering import blueprint
 import datetime, os, base64, json, pandas
 from rapidannotator.models import User, Experiment, Clustering
+import requests as rq
 
 
 
@@ -15,15 +16,24 @@ def _setJob():
 	experimentId = int(request.args.get('experimentId', None))
 	userId = int(request.args.get('userId', None))
 	
-	clustering = Clustering.query.filter_by(experiment_id = experimentId, user_id=userId, status=0).first()
+	clustering = Clustering.query.filter_by(experiment_id = experimentId, user_id=userId).first()
 	if clustering is None:
 		clustering = Clustering(experiment_id = experimentId, user_id=userId, status=0)
 		db.session.add(clustering)
 		db.session.commit()
 
-	response = {}
-	response['success'] = True
-	return jsonify(response)
+		response = {}
+		response['success'] = True
+		return jsonify(response)
+	else:
+		clustering = Clustering.query.filter_by(experiment_id = experimentId, user_id=userId).first()
+		response = {}
+		response['success'] = False
+		response['msg'] = ''
+		if clustering.status == 1:
+			response['msg'] = "Clustering is under process ! Please Wait"
+		elif clustering.status == 1:
+			response['msg'] = "Clustering is already Done!"
 
 
 @blueprint.route('/getJobData', methods=['GET'])
@@ -41,5 +51,39 @@ def index():
 			second_pair = list(range(1, len(first_pair) + 1))
 			dictionary = {'fileId': second_pair, 'imageURLS': first_pair, 'jobId': cluster.id, 'experiment_id': str(cluster.experiment_id)}
 			response['jobsData'].append(dictionary)
+	response['success'] = True
+	return jsonify(response)
+
+@blueprint.route('/setJobStatus', methods=['GET', 'POST'])
+def setJobStatus():
+
+	content = request.data
+	content = content.decode('utf-8')
+	content = eval(content)
+
+	jobId = int(content['jobId'])
+	clustering = Clustering.query.filter_by(id = jobId).first()
+	if content['jobStatus'] == 'Processing':
+		clustering.status = 1
+		db.session.commit()
+
+	response = {}
+	response['success'] = True
+	return jsonify(response)
+
+
+@blueprint.route('/publishResults', methods=['GET', 'POST'])
+def publishResults():
+
+	content = request.data
+	content = content.decode('utf-8')
+	content = eval(content)
+
+	jobId = int(content['job_id'])
+	clustering = Clustering.query.filter_by(id = jobId).first()
+	clustering.status = 2
+	db.session.commit()
+
+	response = {}
 	response['success'] = True
 	return jsonify(response)
