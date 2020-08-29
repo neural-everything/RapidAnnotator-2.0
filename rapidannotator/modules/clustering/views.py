@@ -29,11 +29,10 @@ def _setJob():
 		clustering = Clustering.query.filter_by(experiment_id = experimentId, user_id=userId).first()
 		response = {}
 		response['success'] = False
-		response['msg'] = ''
-		if clustering.status == 1:
-			response['msg'] = "Clustering is under process ! Please Wait"
-		elif clustering.status == 1:
+		response['msg'] = "Clustering is under process ! Please Wait!"
+		if clustering.status == 2:
 			response['msg'] = "Clustering is already Done!"
+		return jsonify(response)
 
 
 @blueprint.route('/getJobData', methods=['GET'])
@@ -60,9 +59,14 @@ def setJobStatus():
 	content = request.data
 	content = content.decode('utf-8')
 	content = eval(content)
-
 	jobId = int(content['jobId'])
+	
 	clustering = Clustering.query.filter_by(id = jobId).first()
+	if clustering is None:
+		response = {}
+		response['success'] = False
+		return jsonify(response)
+
 	if content['jobStatus'] == 'Processing':
 		clustering.status = 1
 		db.session.commit()
@@ -81,9 +85,32 @@ def publishResults():
 
 	jobId = int(content['job_id'])
 	clustering = Clustering.query.filter_by(id = jobId).first()
+
+	if clustering is None:
+		response = {}
+		response['success'] = False
+		return jsonify(response)
+
 	clustering.status = 2
 	db.session.commit()
 
 	response = {}
 	response['success'] = True
+	return jsonify(response)
+
+@blueprint.route('/getStatus', methods=['GET', 'POST'])
+def getStatus():
+	experiment_id = request.form['experiment_id']
+	if experiment_id is not None:
+		experiment_id = int(experiment_id)
+
+	clustering = Clustering.query.filter_by(experiment_id = experiment_id, user_id = int(current_user.id)).first()
+	if clustering is None:
+		status = 0
+	else:
+		status = clustering.status
+
+	response = {}
+	response['success'] = True
+	response['status'] = status
 	return jsonify(response)

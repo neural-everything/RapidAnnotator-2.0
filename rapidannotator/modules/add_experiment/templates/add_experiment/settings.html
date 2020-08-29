@@ -176,7 +176,7 @@
     &nbsp;
     {%- if experiment.uploadType == 'fromConcordance' -%}
         <button id="search" class="btn btn-primary clustering" 
-            data-loading-text="<i class='fa fa-spinner fa-spin fa-fw' aria-hidden='true'></i> Processing"> Clustering </button>
+            data-loading-text="<i class='fa fa-spinner fa-spin fa-fw' aria-hidden='true'></i> Processing"> <span class="completeStatus glyphicon glyphicon-ok-circle hidden-element"></span> Clustering </button>
     {%- endif -%}
 
     &nbsp;&nbsp;
@@ -436,8 +436,12 @@
             search.html(search.data('normal-text'));
         };
 
+        var clustering_status = "{{clustering_status}}";
+
         $('.clustering').on('click', function(e) {
-            setLoading();
+            if(clustering_status != 2){
+                setLoading();
+            }
             e.stopImmediatePropagation();
             e.preventDefault();
             var url = "{{ url_for('clustering._setJob')}}";
@@ -455,6 +459,15 @@
             });
         });
 
+        if(clustering_status == 1){
+            setLoading();
+        }
+        else{
+            if(clustering_status == 2){
+                $('.completeStatus').removeClass('hidden-element');
+            }
+            clearLoading();
+        }
 
         var selectedAnnotatorButton = '.deleteAnnotatorButton, .editAnnotatorButton';
         var editAnnotatorForm = $('#editAnnotatorForm');
@@ -865,6 +878,30 @@
             x.className = "show";
             setTimeout(function(){ x.className = x.className.replace("show", ""); }, 2500);
         };
+
+        window.setInterval(function(){
+            clusteringStatus();
+        }, 30000);
+        
+        function clusteringStatus() {
+            var data = {
+                'experiment_id' : "{{ experiment.id }}"
+            };  
+            $.ajax({
+                url: "{{ url_for('clustering.getStatus')}}",
+                type: "POST",
+                data : data,
+                async: true,
+                success: function(response) {
+                    if(response.status == 2){
+                        clearLoading();
+                        $('.completeStatus').removeClass('hidden-element');
+                        $('#search').removeClass('disabled');
+                        clustering_status = 2;
+                    }
+                }
+            });
+        }
 
     });
 </script>
