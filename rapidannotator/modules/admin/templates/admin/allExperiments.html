@@ -57,15 +57,12 @@
                             </a>
                         </td>
                         <td>
-                            <div class="dropdown">
-                                <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Owners
-                                <span class="caret"></span></button>
-                                <ul class="dropdown-menu">
-                                    {% for owner in experiment.owners %}
-                                        <li><a href=""> {{owner.username}} </a></li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
+                            <ul style="padding-left: 20px; margin: 1;">
+                                {% for owner in experiment.owners %}
+                                    {%- set seeProfile_url = url_for('admin.seeProfile', userId = owner.id) %}
+                                    <li><a href="{{seeProfile_url}}"> {{owner.fullname}} (@ {{owner.username}}) </a></li>
+                                {% endfor %}
+                            </ul>
                         </td>
                         <td>
                             {%- if (experiment.displayType == 'fcfs') -%}
