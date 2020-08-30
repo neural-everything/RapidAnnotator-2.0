@@ -23,6 +23,9 @@ This is the my Google summer of code project 2020 which is an extension of what 
 #### Blog Link
 * https://gulshan-mittal.github.io/GSoC20-Blog/
 
+#### Documentation (New in Latest Version 2020)
+* https://sites.google.com/case.edu/techne-public-site/red-hen-rapid-annotator/new-in-the-latest-version-2020
+
 The work which I have done during this summer can be found in the following merge request.![img](https://github.com/gulshan-mittal/GSoC20-Blog/blob/master/assets/images/merge.png)
 
 * https://github.com/RedHenLab/RapidAnnotator-2.0/pull/22
@@ -36,4 +39,5 @@ The work which I have done during this summer can be found in the following merg
 * https://github.com/RedHenLab/RapidAnnotator-2.0/pull/32
 * https://github.com/RedHenLab/RapidAnnotator-2.0/pull/33
 * https://github.com/RedHenLab/RapidAnnotator-2.0/pull/34
+* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/35
 

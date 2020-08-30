@@ -16,9 +16,9 @@ def _setJob():
 	experimentId = int(request.args.get('experimentId', None))
 	userId = int(request.args.get('userId', None))
 	
-	clustering = Clustering.query.filter_by(experiment_id = experimentId, user_id=userId).first()
+	clustering = Clustering.query.filter_by(experiment_id = experimentId).first()
 	if clustering is None:
-		clustering = Clustering(experiment_id = experimentId, user_id=userId, status=0)
+		clustering = Clustering(experiment_id = experimentId, user_id = userId, status=0)
 		db.session.add(clustering)
 		db.session.commit()
 
@@ -26,7 +26,7 @@ def _setJob():
 		response['success'] = True
 		return jsonify(response)
 	else:
-		clustering = Clustering.query.filter_by(experiment_id = experimentId, user_id=userId).first()
+		clustering = Clustering.query.filter_by(experiment_id = experimentId).first()
 		response = {}
 		response['success'] = False
 		response['msg'] = "Clustering is under process ! Please Wait!"
@@ -82,6 +82,19 @@ def publishResults():
 	content = request.data
 	content = content.decode('utf-8')
 	content = eval(content)
+	
+	from rapidannotator import app
+	experimentDIR = os.path.join(app.config['UPLOAD_FOLDER'], str(content['experiment_id']))
+	outJson = os.path.join(experimentDIR, 'output.json')
+
+
+	out = content['largest1']
+	out1 = sorted(range(len(out)), key=lambda k: out[k], reverse=True)
+	content['sortOrder'] = out1
+
+
+	with open(outJson, 'w') as json_file:
+		json.dump(content, json_file, indent = 4, sort_keys=True)
 
 	jobId = int(content['job_id'])
 	clustering = Clustering.query.filter_by(id = jobId).first()

@@ -6,7 +6,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 from rapidannotator import db
 from rapidannotator import bcrypt
 from rapidannotator.models import User, Experiment, AnnotatorAssociation, File, \
-    AnnotationInfo, AnnotationLevel, Label, FileCaption, AnnotationCaptionInfo
+    AnnotationInfo, AnnotationLevel, Label, FileCaption, AnnotationCaptionInfo, Clustering
 from rapidannotator.modules.annotate_experiment import blueprint
 from .api import isAnnotator
 
@@ -206,7 +206,11 @@ def _getFile(experimentId, fileIndex, start):
     
     experiment = Experiment.query.filter_by(id=experimentId).first()
     if experiment.displayType == 'fcfs':
-        currentFile = experiment.files.order_by(File.id)[fileIndex + start]
+        clustering = Clustering.query.filter_by(experiment_id = experimentId).first()
+        if int(clustering.status) == 2:
+            pass
+        else:
+            currentFile = experiment.files.order_by(File.id)[fileIndex + start]
     else:
         currentFile = experiment.files.order_by(File.display_order)[fileIndex + start]
     
