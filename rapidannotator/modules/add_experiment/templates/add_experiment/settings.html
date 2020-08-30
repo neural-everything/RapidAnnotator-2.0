@@ -186,10 +186,13 @@
         Delete Project
         <span class="glyphicon glyphicon-trash"></span>
     </button>
-    <button class="btn btn-danger dropdown-toggle pull-right" style="margin-right:1em;" type="button" id="displayWords"
-        data-target="#displayWordsModalId" data-toggle="modal">
-        Display Words/Second
-    </button>
+
+    {%- if experiment.uploadType == 'fromConcordance' -%}
+        <button class="btn btn-danger dropdown-toggle pull-right" style="margin-right:1em;" type="button" id="displayWords"
+            data-target="#displayWordsModalId" data-toggle="modal">
+            Display Words/Second
+        </button>
+    {%- endif -%}
 </div>
 <br><br><br><br><br>
 
