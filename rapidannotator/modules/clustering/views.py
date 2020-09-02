@@ -6,7 +6,7 @@ from rapidannotator import db
 from rapidannotator import bcrypt
 from rapidannotator.modules.clustering import blueprint
 import datetime, os, base64, json, pandas
-from rapidannotator.models import User, Experiment, Clustering
+from rapidannotator.models import User, Experiment, Clustering, NotificationInfo
 import requests as rq
 
 
@@ -107,6 +107,21 @@ def publishResults():
 	clustering.status = 2
 	db.session.commit()
 
+	experimentId = int(content['experiment_id'])
+	experiment_info = Experiment.query.filter_by(id=experimentId).first()
+	experiment_owners = experiment_info.owners
+	user = User.query.filter_by(id = int(clustering.user_id)).first()
+
+	for owner in experiment_owners:
+		owner.numNotif += 1 
+		message = 'The Clustering for the experiment ' + experiment_info.name + ' got completed by the ' + user.fullname
+		notify = NotificationInfo()
+		notify.user_id = owner.id
+		notify.username = user.username
+		notify.notification = message
+		db.session.add(notify)
+		db.session.commit()
+
 	response = {}
 	response['success'] = True
 	return jsonify(response)
@@ -126,4 +141,21 @@ def getStatus():
 	response = {}
 	response['success'] = True
 	response['status'] = status
+	return jsonify(response)
+
+@blueprint.route('/toggleDisplay', methods=['GET', 'POST'])
+def toggleDisplay():
+	experiment_id = request.args.get('experiment_id', None)
+	option = request.args.get('option')
+	clustering = Clustering.query.filter_by(experiment_id = experiment_id, user_id = int(current_user.id)).first()
+	response = {}
+	if clustering is None:
+		response['success'] = False
+	else:
+		if option == "Yes":
+			clustering.display = 1
+		else:
+			clustering.display = 0
+		db.session.commit()
+		response['success'] = True
 	return jsonify(response)

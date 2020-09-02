@@ -836,17 +836,23 @@ class Clustering(db.Model):
 
     status = db.Column(db.Integer, nullable=False, server_default="0")
 
-
+    display = db.Column(
+        db.Boolean(name='display'),
+        nullable=False,
+        server_default='0',
+    )
 
     def __str__(self):
         """Representation."""
         return 'Clustering <id={0.id}, \
                 Experiment={0.experiment_id}, \
                 User={0.user_id},\
-                status={0.status}>'.format(self)
+                status={0.status},\
+                display={0.display}>'.format(self)
 
     def __repr__(self):
         return 'Clustering <id={0.id}, \
                 Experiment={0.experiment_id}, \
                 User={0.user_id},\
-                status={0.status}>'.format(self)
+                status={0.status},\
+                display={0.display}>'.format(self)
