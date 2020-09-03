@@ -866,8 +866,10 @@ def viewSettings(experimentId):
     clustering =  Clustering.query.filter_by(experiment_id=experimentId, user_id=int(current_user.id)).first()
     if clustering is None:
         clustering_status = 0
+        displayCluster = 0
     else:
         clustering_status = int(clustering.status)
+        displayCluster = (clustering.display)*1
 
     return render_template('add_experiment/settings.html',
         users = users,
@@ -881,6 +883,7 @@ def viewSettings(experimentId):
         html = pngImageB64String,
         current_user=current_user,
         clustering_status= clustering_status,
+        displayCluster = displayCluster,
     )
 
 @blueprint.route('/_deleteAnnotator', methods=['POST','GET'])

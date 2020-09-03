@@ -176,7 +176,20 @@
     &nbsp;
     {%- if experiment.uploadType == 'fromConcordance' -%}
         <button id="search" class="btn btn-primary clustering" 
-            data-loading-text="<i class='fa fa-spinner fa-spin fa-fw' aria-hidden='true'></i> Processing"> <span class="completeStatus glyphicon glyphicon-ok-circle hidden-element"></span> Clustering </button>
+            data-loading-text="<i class='fa fa-spinner fa-spin fa-fw' aria-hidden='true'></i> Processing"> <span class="completeStatus glyphicon glyphicon-ok-circle hidden-element"></span> Clustering </button>&nbsp;
+        <div class="dropdown btn-group btn-group-inline btn-space displayClusterDropdown hidden-element">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="displayCluster" data-toggle="dropdown">
+                {{ ('Anootation Using Clustering') }} &nbsp;
+            <span class="caret"></span></button>
+            <ul class="dropdown-menu scrollable-dropdown" id="displayClusterMenu" role="menu" aria-labelledby="displayCluster">
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="#"><span>
+                    <span class="glyphicon glyphicon-ok" id="yesSpanCluster"> {{ ('Yes') }} </span>
+                </span></a></li>
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="#"><span>
+                    <span class="glyphicon glyphicon-ok" id="noSpanCluster"> {{ ('No') }}</span>
+                </span></a></li>
+            </ul>
+        </div>
     {%- endif -%}
 
     &nbsp;&nbsp;
@@ -357,6 +370,11 @@
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
         <h4 class="modal-title">Files assigned to annotator for annotation.</h4>
+        <div style="line-height:70%">&nbsp;</div>
+        <div class="alert alert-danger alert-dismissible labelWarning" 
+            style="width: 100%; margin-bottom: 1px; height: 85px; line-height:30px; padding:5px 15px;">
+            <div style="line-height:130%; font-size:95%;"><strong> Warning! </strong>If you have already completed the annotations for a file then that will be overwritten in next annotations. </div>
+        </div>
       </div>
         <div class="modal-body">
             <form name="editAnnotatorForm" id="editAnnotatorForm">
@@ -468,6 +486,7 @@
         else{
             if(clustering_status == 2){
                 $('.completeStatus').removeClass('hidden-element');
+                $('.displayClusterDropdown').removeClass('hidden-element');
             }
             clearLoading();
         }
@@ -478,6 +497,7 @@
         var selectedOwnerButton = '.deleteOwnerButton';
         var currentAnnotator = -1;
         var currentOwner = -1;
+        var displayCluster = "{{displayCluster}}";
         
         if("{{experiment.displayTargetCaption}}" != "True"){
             var yesTag = $("#yesSpanCaption");
@@ -493,6 +513,21 @@
             noTag.removeClass('glyphicon-ok');
             noTag.css('margin-left', '2em');
 
+        }
+
+        if(displayCluster == "0"){
+            var yesT = $("#yesSpanCluster");
+            var noT = $("#noSpanCluster");
+            yesT.removeClass('glyphicon');
+            yesT.removeClass('glyphicon-ok');
+            yesT.css('margin-left', '2em');
+        }
+        else{
+            var noT = $("#noSpanCluster");
+            var yesT = $("#yesSpanCluster");
+            noT.removeClass('glyphicon');
+            noT.removeClass('glyphicon-ok');
+            noT.css('margin-left', '2em');
         }
 
         $('.addTag').click(function() {
@@ -603,6 +638,75 @@
                     /*do something here*/
                 }
             });
+        });
+
+        var displayClusterMenu = '#displayClusterMenu li a';
+        $("body").on("click", displayClusterMenu, function() {
+            var currentSelected = $(this);
+            var span_option_tag = currentSelected.find('span')[1];
+            var option = $(span_option_tag).text().trim();
+            var reqChoice = "No";
+            if(displayCluster == "1"){
+                reqChoice = "Yes";
+            }
+            console.log(option);
+            if((reqChoice != option)){
+                if(option == "Yes"){
+                    cnf = confirm("All the current annotations in non-clustering mode will be discarded! Are you sure?");
+                }
+                else{
+                    cnf = confirm("All the current annotations in clustering mode will be discarded! Are you sure?");
+                }
+            }
+            if(cnf && (reqChoice != option)){
+                var url = "{{ url_for('clustering.toggleDisplay')}}";
+                var data = {
+                    'experiment_id' : "{{ experiment.id }}",
+                    'option' : option,
+                };
+                $.getJSON(url , data, function(response) {
+                    if(response.success) {
+                        var noT = $("#noSpanCluster");
+                        var yesT = $("#yesSpanCluster");
+
+                        noT.removeClass('glyphicon');
+                        noT.removeClass('glyphicon-ok');
+                        noT.css('margin-left', '0em');
+
+                        yesT.removeClass('glyphicon');
+                        yesT.removeClass('glyphicon-ok');
+                        yesT.css('margin-left', '0em');
+
+                        if(option == "Yes"){
+                            yesT.addClass('glyphicon');
+                            yesT.addClass('glyphicon-ok');
+                            noT.css('margin-left', '2em');
+                            displayCluster = 1;
+                        }
+                        else{
+                            noT.addClass('glyphicon');
+                            noT.addClass('glyphicon-ok');
+                            yesT.css('margin-left', '2em');
+                            displayCluster = 0;
+                        }
+                    }
+                    else {
+                        /*do something here*/
+                    }
+                });
+
+                var url = "{{ url_for('add_experiment._discardAnnotations')}}";
+                var data = {
+                    'experimentId' : "{{ experiment.id }}",
+                };
+
+                $.getJSON(url , data, function(response) {
+                    if(response.success) {
+                        location.reload();
+                    } else {
+                    }
+                });
+            }
         });
 
         /* (TODO) verify if there is need to bifurcate delete and edit */
@@ -901,6 +1005,7 @@
                         $('.completeStatus').removeClass('hidden-element');
                         $('#search').removeClass('disabled');
                         clustering_status = 2;
+                        $('.displayClusterDropdown').removeClass('hidden-element');
                     }
                 }
             });

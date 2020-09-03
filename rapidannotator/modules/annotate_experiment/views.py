@@ -207,8 +207,17 @@ def _getFile(experimentId, fileIndex, start):
     experiment = Experiment.query.filter_by(id=experimentId).first()
     if experiment.displayType == 'fcfs':
         clustering = Clustering.query.filter_by(experiment_id = experimentId).first()
-        if int(clustering.status) == 2:
-            pass
+        if (int(clustering.status) == 2) and clustering.display:
+            from rapidannotator import app
+            experimentDIR = os.path.join(app.config['UPLOAD_FOLDER'], str(experimentId))
+            outJson = os.path.join(experimentDIR, 'output.json')
+            with open(outJson, 'r') as json_file:
+                json_dict = json.load(json_file)
+            sort_order = json_dict['sortOrder']
+            file_ids = json_dict['file_ids']
+            curr_id = file_ids[sort_order[fileIndex + start]]
+            currentFile = File.query.filter_by(id = int(curr_id)).first()
+
         else:
             currentFile = experiment.files.order_by(File.id)[fileIndex + start]
     else:
