@@ -179,7 +179,7 @@
             data-loading-text="<i class='fa fa-spinner fa-spin fa-fw' aria-hidden='true'></i> Processing"> <span class="completeStatus glyphicon glyphicon-ok-circle hidden-element"></span> Clustering </button>&nbsp;
         <div class="dropdown btn-group btn-group-inline btn-space displayClusterDropdown hidden-element">
             <button class="btn btn-primary dropdown-toggle" type="button" id="displayCluster" data-toggle="dropdown">
-                {{ ('Anootation Using Clustering') }} &nbsp;
+                {{ ('Annotation Using Clustering') }} &nbsp;
             <span class="caret"></span></button>
             <ul class="dropdown-menu scrollable-dropdown" id="displayClusterMenu" role="menu" aria-labelledby="displayCluster">
                 <li role="presentation"><a role="menuitem" tabindex="-1" href="#"><span>
@@ -480,7 +480,7 @@
             });
         });
 
-        if(clustering_status == 1){
+        if(clustering_status == 1 || clustering_status == 0){
             setLoading();
         }
         else{
