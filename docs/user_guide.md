@@ -1,6 +1,6 @@
 # Rapid Annotator User Guide
 
-The **Red Hen Rapid Annotator** is designed to enable you to go through a large number of images in a very short period of time and to to get you started with minimal training. Nonetheless, it is vital that you read carefully through this document.
+The **Red Hen Rapid Annotator** is designed to enable you to go through a large number of images in a very short period of time and to get you started with minimal training. Nonetheless, it is vital that you read carefully through this document.
 
 ## Experimenter section
 
