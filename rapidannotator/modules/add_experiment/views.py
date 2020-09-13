@@ -865,7 +865,7 @@ def viewSettings(experimentId):
 
     clustering =  Clustering.query.filter_by(experiment_id=experimentId, user_id=int(current_user.id)).first()
     if clustering is None:
-        clustering_status = 0
+        clustering_status = -1
         displayCluster = 0
     else:
         clustering_status = int(clustering.status)
