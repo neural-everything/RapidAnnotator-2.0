@@ -6,7 +6,7 @@ from rapidannotator import db
 from rapidannotator import bcrypt
 from rapidannotator.modules.clustering import blueprint
 import datetime, os, base64, json, pandas
-from rapidannotator.models import User, Experiment, Clustering, NotificationInfo
+from rapidannotator.models import User, Experiment, Clustering, NotificationInfo, File
 import requests as rq
 
 
@@ -47,7 +47,11 @@ def index():
 			inputConcordance = os.path.join(experimentDIR, 'concordance.csv')
 			data = pandas.read_csv(inputConcordance)
 			first_pair = data['Screenshot'].tolist()
-			second_pair = list(range(1, len(first_pair) + 1))
+			second_pair = list()
+			myresults = File.query.filter_by(experiment_id=cluster.experiment_id).order_by("id").all()
+			for filetemp in myresults:
+				second_pair.append(filetemp.id)
+			#second_pair = list(range(1, len(first_pair) + 1))
 			dictionary = {'fileId': second_pair, 'imageURLS': first_pair, 'jobId': cluster.id, 'experiment_id': str(cluster.experiment_id)}
 			response['jobsData'].append(dictionary)
 	response['success'] = True
