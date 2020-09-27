@@ -54,8 +54,8 @@
                 data-level={{annotation_level.level_number}}>
                 <div class="col-xs-12">
                     <div class="annotationDescriptionGrp">
-                        <span class="col-xs-4 h5 wrapWord annotationName"><b>Annotation Level Name</b>: {{ annotation_level.name }}</span>
-                        <span class="col-xs-7 h5 annotationDescription"><b>Description</b>: {{ annotation_level.description }}</span>
+                        <span class="col-xs-4 h5 wrapWord annotationName"><b>Annotation Level Name</b>: <span>{{ annotation_level.name }}</span></span>
+                        <span class="col-xs-7 h5 annotationDescription"><b>Description</b>:<span>{{ annotation_level.description }}</span></span>
                         <span class="annotationLevelInstruction hidden-element">{{annotation_level.instruction }}</span>
                         
                         <span class="col-xs-1 pull-right glyphicon glyphicon-pencil edit-button-margin"
@@ -652,10 +652,8 @@
             selectedAnnotation = $(this).closest('.annotation_level');
             selectedAnnotationId = selectedAnnotation.attr('value');
 
-            annotationName = selectedAnnotation.find('.annotationName').text();
-            annotationName = annotationName.substring(23);
-            annotationDescription = selectedAnnotation.find('.annotationDescription').text();
-            annotationDescription = annotationDescription.substring(13);
+            annotationName = selectedAnnotation.find('.annotationName span').text();
+            annotationDescription = selectedAnnotation.find('.annotationDescription span').text();
             annotationLevel = selectedAnnotation.data('level');
             annotationLevelInstruction = selectedAnnotation.find('.annotationLevelInstruction').text();
 
@@ -685,14 +683,15 @@
 
             $.getJSON(url , data, function(response) {
                 if(response.success) {
+                    console.log(name, description);
                     updateAnnotationLevel(selectedAnnotationId, name, description, levelNumber, instruction);
                     $('#editAnnotationLevelModal').modal('hide');
                 }
                 else { }
             });
+            // location.reload();
 
         });
-
         
 
         deleteAnnotationLevelForm.on('submit', function(e) {
@@ -731,8 +730,8 @@
 
         function updateAnnotationLevel(selectedAnnotationId, name, description, levelNumber, instruction) {
             selectedAnnotation = $(".annotation_level[value=" + selectedAnnotationId + "]");
-            selectedAnnotation.find('.annotationName b').text(name);
-            selectedAnnotation.find('.annotationDescription').text(description);
+            selectedAnnotation.find('.annotationName span').text(name);
+            selectedAnnotation.find('.annotationDescription span').text(description);
             selectedAnnotation.find('.annotationLevelInstruction').text(instruction);
             selectedAnnotation.data('level',levelNumber);
         }
