@@ -178,22 +178,25 @@ def get_tagged_context(inputPath, concordance_line_number, before_time, after_ti
     with open(inputPath, encoding='utf-8') as tsvfile:
             in_txt = csv.reader(tsvfile, delimiter = ',')
             text = list(in_txt)[concordance_line_number]
-            tagged_context_before, tagged_quey_item, tagged_context_after = text[5], text[6], text[7]
+            query_final_text = text[3]
+            tagged_context_before, tagged_query_item, tagged_context_after = text[5], text[6], text[7]
             tagged_context_before = tagged_context_before.split(' ')
             tagged_context_before.reverse()
             tagged_context_after = tagged_context_after.split(' ')
     tsvfile.close()
-    query_context, query_bt, query_at, unaligned = getContextBTAT(tagged_quey_item)
+    tagged_query_item = tagged_query_item.split(' ')
+    query_context1, query_bt1, query_at1, unaligned1 = getContextBTAT(tagged_query_item[0])
+    query_context2, query_bt2, query_at2, unaligned2 = getContextBTAT(tagged_query_item[-1])
     import operator as op
-    if not unaligned:
-        left_caption = getRequiredCaption(query_bt - float(before_time) - 0.8, tagged_context_before, op.lt)
-        right_caption = getRequiredCaption(query_bt + float(after_time) + 0.5, tagged_context_after, op.gt)
+    if not unaligned1:
+        left_caption = getRequiredCaption(query_bt1 - float(before_time) - 0.8, tagged_context_before, op.lt)
+        right_caption = getRequiredCaption(query_bt2 + float(after_time) + 0.8, tagged_context_after, op.gt)
     else:
         left_caption = getRequiredCaptionUnaligned(float(before_time), tagged_context_before)
         right_caption = getRequiredCaptionUnaligned(float(after_time), tagged_context_after)
     left_caption = left_caption.split(' ')
     left_caption.reverse()
-    req_tagged_caption = ' '.join(left_caption) + ' ' + query_context + ' ' + right_caption
+    req_tagged_caption = ' '.join(left_caption) + ' ' + query_final_text + ' ' + right_caption
     return req_tagged_caption
 
 
@@ -207,17 +210,17 @@ def _getFile(experimentId, fileIndex, start):
     experiment = Experiment.query.filter_by(id=experimentId).first()
     if experiment.displayType == 'fcfs':
         clustering = Clustering.query.filter_by(experiment_id = experimentId).first()
-        if (int(clustering.status) == 2) and clustering.display:
-            from rapidannotator import app
-            experimentDIR = os.path.join(app.config['UPLOAD_FOLDER'], str(experimentId))
-            outJson = os.path.join(experimentDIR, 'output.json')
-            with open(outJson, 'r') as json_file:
-                json_dict = json.load(json_file)
-            sort_order = json_dict['sortOrder']
-            file_ids = json_dict['file_ids']
-            curr_id = file_ids[sort_order[fileIndex + start]]
-            currentFile = File.query.filter_by(id = int(curr_id)).first()
-
+        if clustering is not None:
+            if (int(clustering.status) == 2) and clustering.display:
+                from rapidannotator import app
+                experimentDIR = os.path.join(app.config['UPLOAD_FOLDER'], str(experimentId))
+                outJson = os.path.join(experimentDIR, 'output.json')
+                with open(outJson, 'r') as json_file:
+                    json_dict = json.load(json_file)
+                sort_order = json_dict['sortOrder']
+                file_ids = json_dict['file_ids']
+                curr_id = file_ids[sort_order[fileIndex + start]]
+                currentFile = File.query.filter_by(id = int(curr_id)).first()
         else:
             currentFile = experiment.files.order_by(File.id)[fileIndex + start]
     else:

@@ -448,7 +448,7 @@ def _addImportedLevels():
         new_annotation_level_id = AnnotationLevel.query.order_by(AnnotationLevel.id.desc()).first().id
         
         for label in labels:
-            new_label = Label(annotation_id=new_annotation_level_id, name=label.name, key_binding=label.key_binding)
+            new_label = Label(annotation_id=new_annotation_level_id, name=label.name, key_binding=label.key_binding, skip=label.skip)
             new_annotation_level.labels.append(new_label)
             db.session.commit()
         

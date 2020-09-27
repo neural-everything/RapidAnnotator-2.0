@@ -26,14 +26,7 @@
          <div class="dropdown btn-group btn-group-inline btn-space">
             <button class="btn btn-primary dropdown-toggle" type="button" id="annotatorResult" data-toggle="dropdown">
                 No Annotator
-            <span class="caret"></span></button>
-            <ul class="dropdown-menu scrollable-dropdown" id="annotatorResultMenu" role="menu" aria-labelledby="annotatorResult">
-                {% for user in annotators %}
-                    {%- set viewResults = url_for('add_experiment.viewResults', experimentId = experiment.id, userId = user.id) %}
-                    <li role="presentation"><a role="menuitem" tabindex="-1" href="{{viewResults}}"><span>{{user.username}}</span></a></li>
-                {% endfor %}
-                
-            </ul>
+            </button>
         </div>
 
         <!-- <a id="discardAnnotationsButtonId" href="" data-target="#discardAnnotations"

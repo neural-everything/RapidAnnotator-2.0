@@ -791,9 +791,12 @@
 
                 }
                 else {
+                    location.reload();
                     /*do something here*/
                 }
             });
+            location.reload();
+            location.reload();
         })
 
         category = "{{ experiment.category }}";
@@ -890,6 +893,8 @@
                 }
             });
             addAnnotatorFeedback(userName);
+            location.reload();
+            location.reload();
         });
 
         function addOwnerToList(id, name) {
