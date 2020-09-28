@@ -6,7 +6,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 from rapidannotator import db
 from rapidannotator import bcrypt
 from rapidannotator.models import User, Experiment, AnnotatorAssociation, File, \
-    AnnotationInfo, AnnotationLevel, Label, FileCaption, AnnotationCaptionInfo, Clustering
+    AnnotationInfo, AnnotationLevel, Label, FileCaption, AnnotationCaptionInfo, Clustering, AnnotationCommentInfo
 from rapidannotator.modules.annotate_experiment import blueprint
 from .api import isAnnotator
 
@@ -232,6 +232,12 @@ def _getFile(experimentId, fileIndex, start):
         target_caption = cp.target_caption
     else:
         target_caption = caption_info.target_caption
+
+    comment_info = AnnotationCommentInfo.query.filter_by(user_id=current_user.id, file_id=currentFile.id).first()
+    if comment_info == None:
+        comment = ""
+    else:
+        comment = comment_info.comment
     
     if (experiment.uploadType == 'fromConcordance') and (experiment.category == "video" or experiment.category == "audio"):
         from rapidannotator import app
@@ -249,6 +255,7 @@ def _getFile(experimentId, fileIndex, start):
         'caption' : tagged_caption,
         'target_caption': target_caption,
         'edge_link': currentFile.edge_link,
+        'comment': comment,
     }
     return currentFile
 
@@ -431,6 +438,23 @@ def saveTargetCaption():
         db.session.commit()
     else:
         annotationCaptionInfo.target_caption = targetCaption
+        db.session.commit()
+
+    response = {}
+    response['success'] = True
+    return jsonify(response)
+
+@blueprint.route('/saveFileComment', methods=["POST"])
+def saveFileComment():
+    fileId = request.form.get('fileId', None)
+    comment = request.form.get('comment', None)
+    annotationCommentInfo = AnnotationCommentInfo.query.filter_by(file_id=fileId, user_id=current_user.id).first()
+    if annotationCommentInfo == None:
+        annotationCommentInfo = AnnotationCommentInfo(file_id=fileId, user_id=current_user.id, comment=comment)
+        db.session.add(annotationCommentInfo)
+        db.session.commit()
+    else:
+        annotationCommentInfo.comment = comment
         db.session.commit()
 
     response = {}

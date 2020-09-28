@@ -117,6 +117,10 @@
                     <h4></h4>
                 </div>
 
+                <div class="fileComment hidden-element">
+                    <h4></h4>
+                </div>
+
                 <div class="targetCaption hidden-element">
                     <h4></h4>
                 </div>
@@ -171,11 +175,18 @@
         <h4></h4>
     </div><br>
 
+    <div class="fileComments">
+            <form method="POST" id="commentsForm" name="commentsForm">
+                <b>Comments:</b> <br><br>
+                <textarea rows = "1" cols = "185" name = "commentsData" id="commentsData"></textarea>
+            </form>
+    </div><br>
+
     <div class="fileTargetCaption">
         {%- if experiment.displayTargetCaption == 1 -%}
             <form method="POST" id="targetCaptionForm" name="targetCaptionForm">
                 <b>Target Caption:</b> <br><br>
-                <textarea rows = "5" cols = "170" name = "targetCaptionData" id="targetCaptionData"></textarea>
+                <textarea rows = "5" cols = "185" name = "targetCaptionData" id="targetCaptionData"></textarea>
             </form>
         {%- endif -%}
     </div><br>
@@ -318,6 +329,9 @@
             var fileTargetCaptionArea = $('.fileTargetCaption');
             fileTargetCaptionArea.addClass('hidden-element');
 
+            var fileCommentsArea = $('.fileComments');
+            fileCommentsArea.addClass('hidden-element');
+
             var exitFsModeButton = $('.content');
             exitFsModeButton.removeClass('hidden-element');
 
@@ -348,6 +362,9 @@
 
             var fileTargetCaptionArea = $('.fileTargetCaption');
             fileTargetCaptionArea.removeClass('hidden-element');
+
+            var fileCommentsArea = $('.fileComments');
+            fileCommentsArea.removeClass('hidden-element');
 
             var exitFsModeButton = $('.content');
             exitFsModeButton.addClass('hidden-element');
@@ -424,6 +441,9 @@
                 var targetCaption = $("#targetCaptionData").val();
                 var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
                 save_targetCaption(currentFileId, targetCaption);
+
+                var commentData = $("#commentsData").val();
+                save_comment(currentFileId, commentData);
             }
             nextLevel(selectedLabel);
             window.setTimeout(function() {
@@ -487,6 +507,9 @@
                         var targetCaption = $("#targetCaptionData").val();
                         var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
                         save_targetCaption(currentFileId, targetCaption);
+
+                        var commentData = $("#commentsData").val();
+                        save_comment(currentFileId, commentData);
                     }
                     nextLevel(key);
                 }
@@ -789,6 +812,8 @@
             if("{{experiment.displayTargetCaption}}"){
                 $("#targetCaptionData").val(targetFileCaption);
             }
+            var fileCommentD = loadedFile.find('.fileComment h4').text();
+            $("#commentsData").val(fileCommentD);
 
         }
 
@@ -870,8 +895,11 @@
 
             var caption = fileToLoad.caption;
             var target_caption = fileToLoad.target_caption;
+            var fileComment = fileToLoad.comment
+            // console.log(fileComment);
             loadedDiv.find('.caption h4').text(caption);
             loadedDiv.find('.targetCaption h4').text(target_caption);
+            loadedDiv.find('.fileComment h4').text(fileComment);
             loadedDiv.data("fileid", fileToLoad.id);
         }
 
@@ -882,6 +910,19 @@
         var data = {
             'fileId' : fileId,
             'targetCaption': targetCaption,
+        };
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: data,
+        });
+    };
+
+    function save_comment(fileId, comment){
+        var url = "{{ url_for('annotate_experiment.saveFileComment')}}";
+        var data = {
+            'fileId' : fileId,
+            'comment': comment,
         };
         $.ajax({
             url: url,
