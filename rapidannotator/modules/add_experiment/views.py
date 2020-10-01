@@ -4,7 +4,7 @@ from flask_babelex import lazy_gettext as _
 from werkzeug.utils import secure_filename
 
 from rapidannotator import db
-from rapidannotator.models import User, Experiment, AnnotatorAssociation, \
+from rapidannotator.models import User, Experiment, AnnotatorAssociation, AnnotationCommentInfo, \
     DisplayTime, AnnotationLevel, Label, File, AnnotationInfo, FileCaption, AnnotationCaptionInfo, Clustering
 from rapidannotator.modules.add_experiment import blueprint
 from rapidannotator.modules.add_experiment.forms import AnnotationLevelForm
@@ -1306,6 +1306,7 @@ def _exportResultsConcordance(experiment, format1):
             col_num += 1
 
         target_caption = ["No Caption Provided" for itr in range(len(data))]
+        comments = ["No Comments" for itr in range(len(data))]
         for f in experiment.files: 
             cp = AnnotationCaptionInfo.query.filter_by(file_id=f.id, user_id=annotator.id).first()
             if cp == None:
@@ -1313,7 +1314,16 @@ def _exportResultsConcordance(experiment, format1):
                 target_caption[f.concordance_lineNumber - 1] = cp_val.target_caption
             else:
                 target_caption[f.concordance_lineNumber - 1] = cp.target_caption
+
+            comments_info = AnnotationCommentInfo.query.filter_by(file_id=f.id, user_id=annotator.id).first()
+            if comments_info == None:
+                comment = "No Comments"
+                comments[f.concordance_lineNumber - 1] = comment
+            else:
+                comments[f.concordance_lineNumber - 1] = comments_info.comment
         data.insert(col_num, "Target Caption of " + annotator.username, target_caption)
+        col_num = col_num + 1
+        data.insert(col_num, "Comments by " + annotator.username, comments)
         col_num = col_num + 1
 
     
@@ -1354,6 +1364,7 @@ def _exportResultsCSV(experimentId, format1):
         for level in annotation_levels:
             column_headers.append(annotator.username + " ( Level: " + str(level.name) + " )" )
         column_headers.append('Target Caption of ' + annotator.username)
+        column_headers.append('Comments by ' + annotator.username)
     column_headers.append('Caption')
     
     if experiment.uploadType == 'viaSpreadsheet':
@@ -1379,6 +1390,13 @@ def _exportResultsCSV(experimentId, format1):
                 csv_row.append(cp_val.target_caption)
             else:
                 csv_row.append(cp.target_caption)
+
+            comments_info = AnnotationCommentInfo.query.filter_by(file_id=f.id, user_id=annotator.id).first()
+            if comments_info == None:
+                comment = "No Comments"
+                csv_row.append(comment)
+            else:
+                csv_row.append(comments_info.comment)
         
         fileCaption = FileCaption.query.filter_by(file_id=f.id).first()
         if fileCaption.caption == '':

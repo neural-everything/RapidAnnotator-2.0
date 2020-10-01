@@ -708,6 +708,43 @@ class AnnotationCaptionInfo(db.Model):
                 target_caption={0.target_caption}, \
                 file_id={0.file_id}>'.format(self)
 
+"""
+    Target Caption's AnnotationInfo of userand file.
+"""
+class AnnotationCommentInfo(db.Model):
+    __tablename__ = 'AnnotationCommentInfo'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    '''the annotator with which the this AnnotationInfo is associated.'''
+    user_id = db.Column(Integer, db.ForeignKey(
+        'User.id', ondelete='CASCADE')
+    )
+
+    '''the file with which the this AnnotationInfo is associated.'''
+    file_id = db.Column(Integer, db.ForeignKey(
+        'File.id', ondelete='CASCADE')
+    )
+
+    '''
+    .. any comments from the user for the annotation file
+    '''
+    comment = db.Column(db.String(2500), nullable=False, server_default='')
+
+
+    def __str__(self):
+        """Representation."""
+        return 'AnnotationCaptionInfo <id={0.id}, \
+                user_id={0.user_id}, \
+                comment={0.comment}, \
+                file_id={0.file_id}>'.format(self)
+
+    def __repr__(self):
+        return 'AnnotationCaptionInfo <id={0.id}, \
+                user_id={0.user_id}, \
+                comment={0.comment}, \
+                file_id={0.file_id}>'.format(self)
+
 
 """
     RightsRequest of users.
