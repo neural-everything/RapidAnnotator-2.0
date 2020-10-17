@@ -21,6 +21,7 @@ Please refer the following links to install the Rapid Annotator-2.0 .
 This is the my Google summer of code project 2020 which is an extension of what I had developed in Google summer of Code 2019. Please find the following blog links for my GSoC work.
 
 #### Blog Link
+* https://gulshan-mittal.github.io/GSoC19-Blog/
 * https://gulshan-mittal.github.io/GSoC20-Blog/
 
 #### Documentation (New in Latest Version 2020)
