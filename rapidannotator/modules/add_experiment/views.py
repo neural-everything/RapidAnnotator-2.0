@@ -830,6 +830,7 @@ def viewSettings(experimentId):
     xpos = []
     names, labels = [], []
     displayImg = 0
+    pngImageB64String = ""
     plt.clf()
     if filesLength > 0:
         for i, association in enumerate(annotatorDetails):
