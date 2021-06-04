@@ -220,7 +220,7 @@
                 </div>
         </div>
     {%- else -%}
-        <img src="{{html}}" alt="Chart" width="600" height="400" class="center">
+        <img src="{{html}}" alt="Chart" width="600" height="400" class="center" id="annotatorsProgressPlot">
     {%- endif -%}
 </div>
 <br><br>
@@ -788,7 +788,7 @@
                     aToAdd.appendTo(liToAdd);
                     liToAdd.appendTo('#addAnnotatorsMenu');
                     $('#annotators').find('a[value=' + currentAnnotator + ']').remove();
-
+                    document.getElementById("annotatorsProgressPlot").src = response.plot
                 }
                 else {
                     location.reload();
@@ -887,9 +887,15 @@
                 if(response.success) {
                     currentSelected.remove();
                     addAnnotatorToList(response.annotatorId, response.annotatorUsername);
+                    document.getElementById("annotatorsProgressPlot").src = response.plot//#image_source_here
+                    // Refreshing the plot only
+
                 }
                 else {
-                    /*do something here*/
+                    displayMessage(response.message);
+                    // This can be replaced with refreshing the list of annotators only
+                    location.reload()
+                    
                 }
             });
             addAnnotatorFeedback(userName);
@@ -973,6 +979,13 @@
             });
         });
 
+        function displayMessage(message){
+            var snackbar = $('#snackbar3');
+            snackbar.text(message)
+            var x = document.getElementById("snackbar3");
+            x.className = "show";
+            setTimeout(function(){ x.className = x.className.replace("show", ""); }, 2500);
+        };
         // Function to display feedback when user is added as annotator of the experiment
         function addAnnotatorFeedback(userName){
             var snackbar = $('#snackbar3');

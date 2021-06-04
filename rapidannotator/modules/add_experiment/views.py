@@ -118,6 +118,53 @@ def _addOwner():
 
     return jsonify(response)
 
+def _annotatorsPlot(experiment):
+    """Description:
+        Utility function to making the annotators progress plot
+    It is to be used inside adding/removing annotators functions 
+    in order to update them on the settings page
+    
+    Args:
+        experiment: Experiment model object
+    Returns:
+        pngImageB64String: encoded matplotlib plot image
+    """
+    annotatorDetails = experiment.annotators
+    filesLength = experiment.files.count()
+    bars = []
+    xpos = []
+    names, labels = [], []
+    pngImageB64String = ""
+    plt.clf()
+    if filesLength > 0:
+        for i, association in enumerate(annotatorDetails):
+            user = User.query.filter_by(id=association.user_id).first()
+            bars.append(((association.current*100)/filesLength))
+            xpos.append(i+1)
+            names.append(user.username)
+            labels.append(str(association.current) + "/" + str(filesLength))
+
+        if len(bars) > 0:
+            barWidth = 0.35
+            plt.bar(xpos, bars, width=barWidth, label='Annotator Progress')
+            plt.legend()
+            plt.xticks(xpos, names, rotation=90)
+            for i in range(len(labels)):
+                plt.text(x = xpos[i] - 0.1, y = bars[i] + 0.1, s = labels[i], size = 10)
+            plt.subplots_adjust(bottom= 0.5, top = 0.98)
+            plt.xlabel("Annotator's Name")
+            plt.ylabel('Progress in Percentage')
+            plt.ylim(0, 100)
+            tmpfile = BytesIO()
+            plt.savefig(tmpfile, format='png')
+            pngImageB64String = "data:image/png;base64,"
+            encoded = base64.b64encode(tmpfile.getvalue()).decode('utf-8')
+            pngImageB64String = pngImageB64String + encoded
+            plt.close()
+        else:
+            pngImageB64String = ""
+    return pngImageB64String
+
 @blueprint.route('/_addAnnotator', methods=['GET','POST'])
 def _addAnnotator():
 
@@ -126,16 +173,26 @@ def _addAnnotator():
 
     experiment = Experiment.query.filter_by(id=experimentId).first()
     user = User.query.filter_by(username=username).first()
+    alreadyExists = AnnotatorAssociation.query.filter_by(user_id = user.id, experiment_id=experimentId).first()
+    if (alreadyExists != None):
+        response = {
+            'success' : False,
+            'annotatorId' : user.id,
+            'annotatorUsername' : user.username,
+            'message' : "User already exists in this experiment"
+        }
+        return jsonify(response)
 
     experimentAnnotator = AnnotatorAssociation()
     experimentAnnotator.experiment = experiment
     experimentAnnotator.annotator = user
     db.session.commit()
-
+    annotatorsPlot = _annotatorsPlot(experiment)
     response = {
         'success' : True,
         'annotatorId' : user.id,
         'annotatorUsername' : user.username,
+        'plot': annotatorsPlot,
     }
 
     return jsonify(response)
@@ -897,12 +954,12 @@ def _deleteAnnotator():
                             experiment_id = experimentId,
                             user_id = annotatorId)
     experimentAnnotator.delete()
-
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    annotatorsPlot = _annotatorsPlot(experiment)
     db.session.commit()
 
-    response = {}
-    response['success'] = True
-
+    response = {'success': True, 'plot': annotatorsPlot}
+    
     return jsonify(response)
 
 @blueprint.route('/_editAnnotator', methods=['POST','GET'])
