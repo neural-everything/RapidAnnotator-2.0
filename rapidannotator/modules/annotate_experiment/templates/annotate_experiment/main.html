@@ -440,28 +440,7 @@
         $(".annotationLevel[data-index=1]").removeClass('hidden-element');
 
         labelButton.on('click', function() {
-            var currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
-            var multichoice = currentLevelBody.data("multichoice"); // Used for multichoice labels for the current level
-            if (multichoice == "True"){
-                $(this).toggleClass('btn-secondary');
-                $(this).toggleClass('btn-primary');
-                selectedLabel = $(this).data("labelid");
-                textField = $(`input[data-labelid='${selectedLabel}']`);
-                if (textField.attr('hidden')){
-                    textField.attr('hidden',false);
-                }
-                else {
-                    textField.attr('hidden',true);
-                    textField.val("");
-                }
-            }
-            else {
-                $(".labelButton").removeClass('btn-primary');
-                $(this).addClass('btn-primary');
-                $('input.label_other').hide();
-                selectedLabel = $(this).data("labelid");
-                $(`input[data-labelid='${selectedLabel}']`).show();
-            }
+            updateSelectedLabel($(this));
             if("{{experiment.displayTargetCaption}}" == "True"){
                 var targetCaption = $("#targetCaptionData").val();
                 var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
@@ -470,12 +449,6 @@
                 var commentData = $("#commentsData").val();
                 save_comment(currentFileId, commentData);
             }
-            //nextLevel(selectedLabel);
-            /*
-            window.setTimeout(function() {
-                labelButton.removeAttr("disabled");
-            }, [100]);
-            */
         });
         
         
@@ -537,21 +510,60 @@
                         var commentData = $("#commentsData").val();
                         save_comment(currentFileId, commentData);
                     }
-                    $(`.labelButton[data-labelid='${key}']`).toggleClass('btn-primary');
-                    $(`.labelButton[data-labelid='${key}']`).toggleClass('btn-secondary');
-                    var textField = $(`input[data-labelid='${key}']`);
-                    if (textField.attr('hidden')){
-                        textField.attr('hidden',false);
-                    }
-                    else {
-                        textField.attr('hidden',true);
-                        textField.val("");
-                    }
-                    //nextLevel(key);
+                    selectedLabelButton = $(`.labelButton[data-labelid='${key}']`);
+                    updateSelectedLabel(selectedLabelButton);
                 }
             });
         }
-
+        function updateSelectedLabel(labelButton){
+            var currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+            var multichoice = currentLevelBody.data("multichoice"); // Used for multichoice labels for the current level
+            levelId = currentLevelBody.data("levelid");
+            selectedLabel = labelButton.data("labelid");
+            if (multichoice == "True"){
+                labelButton.toggleClass('btn-secondary');
+                labelButton.toggleClass('btn-primary');
+                textField = $(`input[data-labelid='${selectedLabel}']`);
+                if (!textField.is(":visible")){
+                    textField.show();
+                    if (annotations[levelId] == null){
+                        annotations[levelId] = {}
+                        annotations[levelId][selectedLabel] = textField.val();
+                    }
+                    else{
+                        annotations[levelId][selectedLabel] = textField.val();
+                    }
+                }
+                else {
+                    textField.hide();
+                    textField.val("");
+                    delete annotations[levelId][selectedLabel];
+                }
+            }
+            else {
+                $(".labelButton").removeClass('btn-primary');
+                textField = $(`input[data-labelid='${selectedLabel}']`);
+                visible = textField.is(":visible");
+                $('input.label_other').hide();
+                selectedLabel = labelButton.data("labelid");
+                if (!visible){
+                    labelButton.addClass('btn-primary');
+                    labelButton.removeClass('btn-secondary');
+                    textField.show();
+                    selectedLabel = labelButton.data("labelid");
+                    annotations[levelId] = {}
+                    annotations[levelId][selectedLabel] = textField.val();
+                }
+                else {
+                    labelButton.removeClass('btn-primary');
+                    labelButton.addClass('btn-secondary');
+                    textField.hide();
+                    textField.val("");
+                    delete annotations[levelId][selectedLabel];
+                }
+            }
+            return
+        }
         function nextLevel(label) {
             currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
             levelId = currentLevelBody.data("levelid");
@@ -596,7 +608,26 @@
         }
 
         function nextLevelHandler(){
-            nextLevel(label);
+            currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+            already_submitted[levelId] = 1;
+            multichoice = currentLevelBody.data("multichoice") == "True";
+            currentLevelBody.addClass('hidden-element');
+            label = selectedLabel;
+            console.log(levelId)
+            labels_ids = Object.keys(annotations[levelId]);
+            labels_ids.forEach(id=>{
+                annotations[levelId][id] = $(`input.label_other[data-labelid=${id}]`).val()
+            })
+            if (currentLevel == totalAnnotationLevels) {
+                fileAnnotationCompleted();
+            }
+            else if(!multichoice && skipLevelDict[levelId][label] == 1 ){
+                currentLevel = totalAnnotationLevels;
+                fileAnnotationCompleted();
+            }
+            currentLevel = (currentLevel % totalAnnotationLevels) + 1;
+            currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+            currentLevelBody.removeClass('hidden-element');
         }
 
         function undoProcess(){
@@ -744,6 +775,11 @@
                 if(response.success) {
                     annotations = {};
                     already_submitted = {};
+                    // reset buttons and labels 
+                    $('.labelButton').removeClass('btn-primary');
+                    $('.labelButton').addClass('btn-secondary');
+                    $('input.label_other').hide();
+                    $('input.label_other').val("");
                     if(currentFileIndex == {{lastFile}}) {
 
                         //  Code for Progress bar
