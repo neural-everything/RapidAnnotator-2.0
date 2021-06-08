@@ -350,6 +350,16 @@ class AnnotationLevel(db.Model):
         server_default='0',
     )
 
+    ''' multichoice 
+    ..  decides the level whether is multi-choice level or single level
+    ..  to allow multiple labels selection for that level.
+    '''
+    multichoice = db.Column(
+        db.Boolean(name='multichoice'),
+        nullable=False,
+        server_default='0',
+    )
+
     """ One to Many relation
     ..  For AnnotationLevel:
     ..  list of the labels associated with this annotation level.
@@ -653,6 +663,9 @@ class AnnotationInfo(db.Model):
     label_id = db.Column(Integer, db.ForeignKey(
         'Label.id', ondelete='CASCADE')
     )
+    
+    '''the other text field for that label by the annotator.'''
+    label_other = db.Column(db.String(512), nullable=True)
 
     def __str__(self):
         """Representation."""

@@ -129,7 +129,7 @@
         {% endfor %}
         <div class="annotationLevelArea">
 	        {% for level in experiment.annotation_levels | sort(attribute='id')%}
-	            <div class="col-xs-7 annotationLevel hidden-element" data-index="{{loop.index}}" data-levelid="{{level.id}}">
+	            <div class="col-xs-7 annotationLevel hidden-element" data-index="{{loop.index}}" data-levelid="{{level.id}}" data-multichoice="{{level.multichoice}}">
 	                {%- set levelIndex = loop.index %}
 	                {%- if level.instruction != "" -%}
 	                    <div class="alert alert-info alert-dismissible">
@@ -154,13 +154,13 @@
 	                <ul class="labelKeyBindings">
 	                    {% for label in level.labels %}
 	                    <li data-key="{{label.key_binding}}" data-labelid="{{label.id}}">
-	                        <p> {{keyBindingDict[levelIndex][label.id]}} : {{label.name}}</p>
+	                        <p> {{keyBindingDict[levelIndex][label.id]}} : {{label.name}} <input data-labelid="{{label.id}}" hidden value="" class="label_other"> </p>
 	                    </li>
 	                    {% endfor %}
 	                </ul>
 
 	                {% for label in level.labels %}
-	                <button type="button" class="labelButton btn btn-primary btn-group btn-group-inline
+	                <button type="button" class="labelButton btn btn-secondary btn-group btn-group-inline
 	                    btn-space btn-space-top" data-labelid="{{label.id}}">
 	                    {{ label.name }}
 	                </button>
@@ -169,6 +169,11 @@
 	            </div>
 	        {% endfor %}
     	</div>
+        <div class="col-xs-7 flex align-items-xxl-center" style="padding-top:10px;">
+            <button type="button" class="btn btn-success btn-group btn-group-inline col-xs-3 nextButton" style="margin:auto;">
+            Next
+            </button>
+        </div>
     </div>
 
     <div class="fileCaption">
@@ -178,7 +183,7 @@
     <div class="fileComments">
             <form method="POST" id="commentsForm" name="commentsForm">
                 <b>Comments:</b> <br><br>
-                <textarea rows = "1" cols = "185" name = "commentsData" id="commentsData"></textarea>
+                <textarea rows = "1" cols = "100" name = "commentsData" id="commentsData"></textarea>
             </form>
     </div><br>
 
@@ -186,7 +191,7 @@
         {%- if experiment.displayTargetCaption == 1 -%}
             <form method="POST" id="targetCaptionForm" name="targetCaptionForm">
                 <b>Target Caption:</b> <br><br>
-                <textarea rows = "5" cols = "185" name = "targetCaptionData" id="targetCaptionData"></textarea>
+                <textarea rows = "5" cols = "100" name = "targetCaptionData" id="targetCaptionData"></textarea>
             </form>
         {%- endif -%}
     </div><br>
@@ -239,7 +244,7 @@
 
         var undoButton = $('.undoButton');
         var doneButton = $('.doneButton');
-        
+        var nextButton = $('.nextButton');
 
         var file = $('.file');
         loopingButton = $('.toggleLooping');
@@ -435,8 +440,28 @@
         $(".annotationLevel[data-index=1]").removeClass('hidden-element');
 
         labelButton.on('click', function() {
-            labelButton.attr("disabled", "disabled");
-            selectedLabel = $(this).data("labelid");
+            var currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+            var multichoice = currentLevelBody.data("multichoice"); // Used for multichoice labels for the current level
+            if (multichoice == "True"){
+                $(this).toggleClass('btn-secondary');
+                $(this).toggleClass('btn-primary');
+                selectedLabel = $(this).data("labelid");
+                textField = $(`input[data-labelid='${selectedLabel}']`);
+                if (textField.attr('hidden')){
+                    textField.attr('hidden',false);
+                }
+                else {
+                    textField.attr('hidden',true);
+                    textField.val("");
+                }
+            }
+            else {
+                $(".labelButton").removeClass('btn-primary');
+                $(this).addClass('btn-primary');
+                $('input.label_other').hide();
+                selectedLabel = $(this).data("labelid");
+                $(`input[data-labelid='${selectedLabel}']`).show();
+            }
             if("{{experiment.displayTargetCaption}}" == "True"){
                 var targetCaption = $("#targetCaptionData").val();
                 var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
@@ -445,17 +470,18 @@
                 var commentData = $("#commentsData").val();
                 save_comment(currentFileId, commentData);
             }
-            nextLevel(selectedLabel);
+            //nextLevel(selectedLabel);
+            /*
             window.setTimeout(function() {
                 labelButton.removeAttr("disabled");
-            }, [800]);
+            }, [100]);
+            */
         });
         
         
 
         $(document).keyup(function(event) {
-            
-            if(event.target.nodeName == "TEXTAREA"){
+            if(event.target.nodeName == "TEXTAREA" || event.target.nodeName == "INPUT" ){
                 return;
             }
             var x = event.charCode || event.keyCode;
@@ -511,7 +537,17 @@
                         var commentData = $("#commentsData").val();
                         save_comment(currentFileId, commentData);
                     }
-                    nextLevel(key);
+                    $(`.labelButton[data-labelid='${key}']`).toggleClass('btn-primary');
+                    $(`.labelButton[data-labelid='${key}']`).toggleClass('btn-secondary');
+                    var textField = $(`input[data-labelid='${key}']`);
+                    if (textField.attr('hidden')){
+                        textField.attr('hidden',false);
+                    }
+                    else {
+                        textField.attr('hidden',true);
+                        textField.val("");
+                    }
+                    //nextLevel(key);
                 }
             });
         }
@@ -559,6 +595,10 @@
             }
         }
 
+        function nextLevelHandler(){
+            nextLevel(label);
+        }
+
         function undoProcess(){
             undoButton.attr("disabled", "disabled");
             $('.toggleLooping').removeClass('hidden-element');
@@ -591,6 +631,8 @@
         undoButton.on('click', function() {
             undoProcess();
         });
+
+        nextButton.on('click', nextLevelHandler)
 
         doneButton.on('click', function(){
             

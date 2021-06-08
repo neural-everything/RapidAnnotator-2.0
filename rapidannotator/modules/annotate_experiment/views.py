@@ -365,14 +365,14 @@ def _addAnnotationInfo():
     if annotationInfo is not None:
         AnnotationInfo.query.filter(and_(AnnotationInfo.user_id==userId, AnnotationInfo.file_id==fileId)).delete()
         db.session.commit()
-
+    print(annotations) #label_other
     for annotationLevelId in annotations:
         labelId = annotations[annotationLevelId]
         annotationInfo = AnnotationInfo(
             file_id = fileId,
             annotationLevel_id = annotationLevelId,
             label_id = labelId,
-            user_id = userId
+            user_id = userId,
         )
         db.session.add(annotationInfo)
 

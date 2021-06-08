@@ -57,7 +57,7 @@
                         <span class="col-xs-4 h5 wrapWord annotationName"><b>Annotation Level Name</b>: <span>{{ annotation_level.name }}</span></span>
                         <span class="col-xs-7 h5 annotationDescription"><b>Description</b>:<span>{{ annotation_level.description }}</span></span>
                         <span class="annotationLevelInstruction hidden-element">{{annotation_level.instruction }}</span>
-                        
+                        <span class="multiChoiceLevel hidden-element">{{annotation_level.mutlichoice }}</span>
                         <span class="col-xs-1 pull-right glyphicon glyphicon-pencil edit-button-margin"
                             data-toggle="modal" data-target="#editAnnotationLevelModal" title="Edit/Delete Annotation level"></span>
                     </div>
@@ -220,7 +220,10 @@
                     class="form-control validate" placeholder="Annotation level Instruction">
                 <span class="help-block"><small><div style="line-height:135%">A short instruction : guidelines for the annotator. Can't exceed 1500 chars.
                 </div></small></span>
-
+                
+                <b>Multichoice Annotation level?</b>
+                <input type="checkbox" name="multiChoiceLevel" class="form-control">
+                
                 <div class="form-actions">
                     <button type="submit" name="submit" value="" class="btn btn-primary"> {{ ('Save') }}</button>
                     <button type="button" class="btn btn-danger pull-right" data-toggle="modal"
@@ -656,11 +659,12 @@
             annotationDescription = selectedAnnotation.find('.annotationDescription span').text();
             annotationLevel = selectedAnnotation.data('level');
             annotationLevelInstruction = selectedAnnotation.find('.annotationLevelInstruction').text();
-
+            multiChoiceLevel = selectedAnnotation.find('.multichoice').text();
             editAnnotationLevelForm.find('input[name="annotationName"]').val(annotationName);
             editAnnotationLevelForm.find('input[name="annotationDescription"]').val(annotationDescription);
             editAnnotationLevelForm.find('input[name="annotationLevel"]').val(annotationLevel);
             editAnnotationLevelForm.find('input[name="annotationLevelInstruction"]').val(annotationLevelInstruction);
+            editAnnotationLevelForm.find('input[name="multiChoiceLevel"]').attr('checked',multiChoiceLevel);
         });
 
         editAnnotationLevelForm.on('submit', function(e) {
@@ -671,7 +675,9 @@
             description = editAnnotationLevelForm.find('input[name="annotationDescription"]').val();
             levelNumber = editAnnotationLevelForm.find('input[name="annotationLevel"]').val();
             instruction = editAnnotationLevelForm.find('input[name="annotationLevelInstruction"]').val();
-
+            multichoice =  editAnnotationLevelForm.find('input[name="multiChoiceLevel"]').is(':checked');
+            console.log( editAnnotationLevelForm.find('input[name="multiChoiceLevel"]'));
+            console.log(multichoice);
             var url = "{{ url_for('add_experiment._editAnnotationLevel')}}";
             var data = {
                 annotationId:   selectedAnnotationId,
@@ -679,12 +685,13 @@
                 annotationDescription: description,
                 annotationLevelNumber: levelNumber,
                 annotationLevelInstruction: instruction,
+                multichoice: multichoice,
             };
 
             $.getJSON(url , data, function(response) {
                 if(response.success) {
-                    console.log(name, description);
-                    updateAnnotationLevel(selectedAnnotationId, name, description, levelNumber, instruction);
+                    //console.log(name, description);
+                    updateAnnotationLevel(selectedAnnotationId, name, description, levelNumber, instruction, multichoice);
                     $('#editAnnotationLevelModal').modal('hide');
                 }
                 else { }
@@ -728,12 +735,13 @@
             selectedLabel.find('.skipVal').text(skipText);
         }
 
-        function updateAnnotationLevel(selectedAnnotationId, name, description, levelNumber, instruction) {
+        function updateAnnotationLevel(selectedAnnotationId, name, description, levelNumber, instruction, multichoice) {
             selectedAnnotation = $(".annotation_level[value=" + selectedAnnotationId + "]");
             selectedAnnotation.find('.annotationName span').text(name);
             selectedAnnotation.find('.annotationDescription span').text(description);
             selectedAnnotation.find('.annotationLevelInstruction').text(instruction);
             selectedAnnotation.data('level',levelNumber);
+            selectedAnnotation.find(".multiChoiceLevel").val(multichoice);
         }
 
         function deleteAsync(labelId, annotationId) {
