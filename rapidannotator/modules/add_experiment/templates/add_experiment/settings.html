@@ -213,7 +213,7 @@
     <h4 style="text-align:center"> Experiment Progress </h4>
     <hr>
     {%- if displayImg == 0 -%}
-        <div class="info1" style="margin-left: auto; margin-right: auto; display: block; ">
+        <div class="info1" style="margin-left: auto; margin-right: auto; display: block; " id="noprogressAlert">
                 <br>
                 <div class="alert alert-info col-md-6" role="alert">
                     Experiment doesn't have any annotators progress yet!
@@ -221,6 +221,12 @@
         </div>
         <img src="{{html}}" alt="Chart" width="600" height="400" class="center" id="annotatorsProgressPlot" style="display:none;">
     {%- else -%}
+       <div class="info1" style="margin-left: auto; margin-right: auto; display: none;" id="noprogressAlert">
+                <br>
+                <div class="alert alert-info col-md-6" role="alert">
+                    Experiment doesn't have any annotators progress yet!
+                </div>
+        </div>
         <img src="{{html}}" alt="Chart" width="600" height="400" class="center" id="annotatorsProgressPlot">
     {%- endif -%}
 </div>
@@ -792,10 +798,12 @@
                     if (response.plot) {
                         $("#annotatorsProgressPlot").attr('src',response.plot);
                         $("#annotatorsProgressPlot").show();
+                        $("#noprogressAlert").hide();
                         }
                     else {
                         $("#annotatorsProgressPlot").attr('src',"");
                         $("#annotatorsProgressPlot").hide();
+                        $("#noprogressAlert").show();
                     }
                 }
                 else {
@@ -897,6 +905,7 @@
                     addAnnotatorToList(response.annotatorId, response.annotatorUsername);
                     $("#annotatorsProgressPlot").attr('src',response.plot);
                     $("#annotatorsProgressPlot").show();
+                    $("#noprogressAlert").hide();
                     // Refreshing the plot only
 
                 }
