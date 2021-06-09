@@ -154,13 +154,13 @@
 	                <ul class="labelKeyBindings">
 	                    {% for label in level.labels %}
 	                    <li data-key="{{label.key_binding}}" data-labelid="{{label.id}}">
-	                        <p> {{keyBindingDict[levelIndex][label.id]}} : {{label.name}} <input data-labelid="{{label.id}}" hidden value="" class="label_other"> </p>
+	                        <p> {{keyBindingDict[levelIndex][label.id]}} : {{label.name}} <input data-labelid="{{label.id}}" hidden value="" class="label_other inputLevel-{{level.id}}"> </p>
 	                    </li>
 	                    {% endfor %}
 	                </ul>
 
 	                {% for label in level.labels %}
-	                <button type="button" class="labelButton btn btn-secondary btn-group btn-group-inline
+	                <button type="button" class="labelButton btn btn-secondary btn-group btn-group-inline labelLevel-{{level.id}}
 	                    btn-space btn-space-top" data-labelid="{{label.id}}">
 	                    {{ label.name }}
 	                </button>
@@ -541,10 +541,12 @@
                 }
             }
             else {
-                $(".labelButton").removeClass('btn-primary');
+                currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+                levelId = currentLevelBody.data("levelid");
+                $(`.labelLevel-${levelId}`).removeClass('btn-primary');
                 textField = $(`input[data-labelid='${selectedLabel}']`);
                 visible = textField.is(":visible");
-                $('input.label_other').hide();
+                $(`.inputLevel-${levelId}`).hide();
                 selectedLabel = labelButton.data("labelid");
                 if (!visible){
                     labelButton.addClass('btn-primary');
@@ -609,15 +611,17 @@
 
         function nextLevelHandler(){
             currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+            levelId = currentLevelBody.data("levelid");
             already_submitted[levelId] = 1;
             multichoice = currentLevelBody.data("multichoice") == "True";
             currentLevelBody.addClass('hidden-element');
             label = selectedLabel;
-            console.log(levelId)
-            labels_ids = Object.keys(annotations[levelId]);
-            labels_ids.forEach(id=>{
-                annotations[levelId][id] = $(`input.label_other[data-labelid=${id}]`).val()
-            })
+            if (annotations[levelId]){
+                labels_ids = Object.keys(annotations[levelId]);
+                labels_ids.forEach(id=>{
+                    annotations[levelId][id] = $(`input.label_other[data-labelid=${id}]`).val()
+                })
+            }
             if (currentLevel == totalAnnotationLevels) {
                 fileAnnotationCompleted();
             }
@@ -625,6 +629,10 @@
                 currentLevel = totalAnnotationLevels;
                 fileAnnotationCompleted();
             }
+            updateLevelBody();
+        }
+
+        function updateLevelBody(){
             currentLevel = (currentLevel % totalAnnotationLevels) + 1;
             currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
             currentLevelBody.removeClass('hidden-element');
@@ -757,8 +765,15 @@
             }
         }
 
-        function fileAnnotationCompleted() {
+        function resetButtonsAndLabels(){
+            // reset buttons and labels 
+            $('.labelButton').removeClass('btn-primary');
+            $('.labelButton').addClass('btn-secondary');
+            $('input.label_other').hide();
+            $('input.label_other').val("");
+        }
 
+        function fileAnnotationCompleted() {
             var url = "{{ url_for('annotate_experiment._addAnnotationInfo')}}";
             var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
 
@@ -775,60 +790,58 @@
                 if(response.success) {
                     annotations = {};
                     already_submitted = {};
-                    // reset buttons and labels 
-                    $('.labelButton').removeClass('btn-primary');
-                    $('.labelButton').addClass('btn-secondary');
-                    $('input.label_other').hide();
-                    $('input.label_other').val("");
-                    if(currentFileIndex == {{lastFile}}) {
-
-                        //  Code for Progress bar
-                        progress_value = 'Progress: ' + (currentFileIndex + 1).toString() + ' / ' + ({{lastFile}}  + 1).toString()
-                        $("#prg").text(progress_value);                        
-                        var prog_width = ((currentFileIndex + 1)/({{lastFile}} + 1))*100
-                        prog_width = prog_width.toFixed(2)
-                        $("#progress-bar").width(prog_width.toString() + '%');
-                        $('#preview').text(prog_width.toString() + '%');
-                        // Code for Progress bar Ends
-
-                        last_previous = 1
-                        doneButton.removeClass('hidden-element');
-                        $('.toggleLooping').addClass('hidden-element');
-                        $('.annotationArea').addClass('hidden-element');
-                        $('.thanksNote').removeClass('hidden-element');
-
-                        if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
-                            if( "{{ experiment.uploadType }}" === "manual" ) {
-                            }
-                                var f = $(".file[data-index='" + currentLoadedFile + "']");
-                                f.find(".clip")[0].pause();
-                                // f.find(".clip")[0].removeAttribute('src');
-                                // f.find(".clip")[0].load();
-                        }
-                    } 
-                    else {
-                        if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
-                            stopThisClip(currentLoadedFile);
-                        }
-                        currentFileIndex += 1;
-                        $(".file[data-index='" + currentLoadedFile + "']").addClass('hidden-element');
-                        currentLoadedFile = (currentLoadedFile + 1) % preLoadLimit;
-                        preLoadFiles();
-                        showCurrentFile(currentLoadedFile);
-
-                        progress_value = 'Progress: ' + (currentFileIndex).toString() + ' / ' + ({{lastFile}} + 1).toString()
-                        $("#prg").text(progress_value);                                                
-                        var prog_width = (currentFileIndex/({{lastFile}} + 1))*100
-                        prog_width = prog_width.toFixed(2)
-                        $("#progress-bar").width(prog_width.toString() + '%');
-                        $('#preview').text(prog_width.toString() + '%');
-                    }
+                    resetButtonsAndLabels();
+                    updateProgressbar();
                 }
                 else{
                     $('.labelWarning').removeClass('hidden-element');
-                    
                 }
             });
+        }
+
+        function updateProgressbar(){
+            if(currentFileIndex == {{lastFile}}) {
+                //  Code for Progress bar
+                progress_value = 'Progress: ' + (currentFileIndex + 1).toString() + ' / ' + ({{lastFile}}  + 1).toString()
+                $("#prg").text(progress_value);                        
+                var prog_width = ((currentFileIndex + 1)/({{lastFile}} + 1))*100
+                prog_width = prog_width.toFixed(2)
+                $("#progress-bar").width(prog_width.toString() + '%');
+                $('#preview').text(prog_width.toString() + '%');
+                // Code for Progress bar Ends
+
+                last_previous = 1
+                doneButton.removeClass('hidden-element');
+                $('.toggleLooping').addClass('hidden-element');
+                $('.annotationArea').addClass('hidden-element');
+                $('.thanksNote').removeClass('hidden-element');
+
+                if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
+                    if( "{{ experiment.uploadType }}" === "manual" ) {
+                    }
+                        var f = $(".file[data-index='" + currentLoadedFile + "']");
+                        f.find(".clip")[0].pause();
+                        // f.find(".clip")[0].removeAttribute('src');
+                        // f.find(".clip")[0].load();
+                }
+            } 
+            else {
+                if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
+                    stopThisClip(currentLoadedFile);
+                }
+                currentFileIndex += 1;
+                $(".file[data-index='" + currentLoadedFile + "']").addClass('hidden-element');
+                currentLoadedFile = (currentLoadedFile + 1) % preLoadLimit;
+                preLoadFiles();
+                showCurrentFile(currentLoadedFile);
+
+                progress_value = 'Progress: ' + (currentFileIndex).toString() + ' / ' + ({{lastFile}} + 1).toString()
+                $("#prg").text(progress_value);                                                
+                var prog_width = (currentFileIndex/({{lastFile}} + 1))*100
+                prog_width = prog_width.toFixed(2)
+                $("#progress-bar").width(prog_width.toString() + '%');
+                $('#preview').text(prog_width.toString() + '%');
+            }
         }
 
         function newFile(divIndex, fileIndex, showCurrent) {
