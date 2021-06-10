@@ -382,14 +382,16 @@ class AnnotationLevel(db.Model):
                 Experiment={0.experiment_id}, \
                 name={0.name}, \
                 description={0.description}, \
-                level_number={0.level_number}>'.format(self)
+                level_number={0.level_number}, \
+                multichoice={0.multichoice}>'.format(self)
 
     def __repr__(self):
         return 'AnnotationLevel <id={0.id}, \
                 Experiment={0.experiment_id}, \
                 name={0.name}, \
                 description={0.description}, \
-                level_number={0.level_number}>'.format(self)
+                level_number={0.level_number}>, \
+                multichoice={0.multichoice}>'.format(self)
 
 """
     Label of an annoatation level.

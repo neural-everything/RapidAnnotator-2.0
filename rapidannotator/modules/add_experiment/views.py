@@ -234,7 +234,6 @@ def editLabels(experimentId):
             skipLevel[level.id] = 1
         else:
             skipLevel[level.id] = 0
-
     return render_template('add_experiment/labels.html',
         experiment = experiment,
         annotation_levels = annotation_levels,
