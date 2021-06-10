@@ -1091,13 +1091,13 @@ def viewResults(experimentId, userId):
             annotations[f.id] = annotation
         else:
             for level in annotation_levels:
-                annotation[level.id] = {}
-                anno_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=userId, annotationLevel_id=level.id).first()
+                annotation[level.id] = []
+                anno_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=userId, annotationLevel_id=level.id).all()
                 if anno_info is not None:
                     for label in level.labels:
                         info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=userId, annotationLevel_id=level.id, label_id=label.id).first()
                         if info is not None:
-                            annotation[level.id] = label.name
+                            annotation[level.id].append(label.name)
                 else:
                     annotation[level.id] = "SKIPPED"
                     # for label in level.labels:

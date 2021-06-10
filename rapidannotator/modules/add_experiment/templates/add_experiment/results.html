@@ -117,7 +117,9 @@
                          {% for level in experiment.annotation_levels %}
                              <td style="padding-left: {{padLeft}}%">
                                     {%- if annotations[file.id][level.id] -%}
-                                        {{annotations[file.id][level.id]}}
+                                        {% for label in annotations[file.id][level.id] %}
+                                           <div>{{label}}</div>
+                                        {% endfor %}
                                     {%- else -%}
                                         {{('Not Annotated')}}
                                      {%- endif -%}
