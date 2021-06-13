@@ -659,8 +659,7 @@
             annotationDescription = selectedAnnotation.find('.annotationDescription span').text();
             annotationLevel = selectedAnnotation.data('level');
             annotationLevelInstruction = selectedAnnotation.find('.annotationLevelInstruction').text();
-            multichoice = selectedAnnotation.find('.multichoice').text() == "True";
-            console.log(multichoice);
+            multichoice = selectedAnnotation.find('.multichoice').text().toLowerCase() == "true";
             editAnnotationLevelForm.find('input[name="annotationName"]').val(annotationName);
             editAnnotationLevelForm.find('input[name="annotationDescription"]').val(annotationDescription);
             editAnnotationLevelForm.find('input[name="annotationLevel"]').val(annotationLevel);
@@ -740,7 +739,7 @@
             selectedAnnotation.find('.annotationDescription span').text(description);
             selectedAnnotation.find('.annotationLevelInstruction').text(instruction);
             selectedAnnotation.data('level',levelNumber);
-            selectedAnnotation.find(".multichoice").prop("checked", multichoice);
+            selectedAnnotation.find(".multichoice").text(multichoice);
         }
 
         function deleteAsync(labelId, annotationId) {

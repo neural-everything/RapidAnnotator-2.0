@@ -675,14 +675,16 @@ class AnnotationInfo(db.Model):
                 annotationLevel_id={0.annotationLevel_id}, \
                 user_id={0.user_id}, \
                 label_id={0.label_id}, \
-                file_id={0.file_id}>'.format(self)
+                file_id={0.file_id}, \
+                label_other={0.label_other}>'.format(self)
 
     def __repr__(self):
         return 'AnnotationInfo <id={0.id}, \
                 annotationLevel_id={0.annotationLevel_id}, \
                 user_id={0.user_id}, \
                 label_id={0.label_id}, \
-                file_id={0.file_id}>'.format(self)
+                file_id={0.file_id}, \
+                label_other={0.label_other}>'.format(self)
 
 
 """
