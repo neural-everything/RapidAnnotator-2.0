@@ -9,6 +9,7 @@ from rapidannotator.models import User, Experiment, AnnotatorAssociation, Annota
 from rapidannotator.modules.add_experiment import blueprint
 from rapidannotator.modules.add_experiment.forms import AnnotationLevelForm
 from rapidannotator import bcrypt
+from math import ceil
 
 from flask_login import current_user, login_required
 from flask_login import login_user, logout_user, current_user
@@ -46,7 +47,6 @@ def index(experimentId):
     for fl in expFiles:
         fileCaption = FileCaption.query.filter_by(file_id=fl.id).first()
         exp_files.append((fl, fileCaption))
-    from math import ceil
     total = ceil(File.query.filter_by(experiment_id=experiment.id).count() / per_page)
 
     pagination = Pagination(page=page, per_page=per_page, total=total, css_framework='bootstrap3')
@@ -1068,7 +1068,6 @@ def viewResults(experimentId, userId):
     annotators_assoc = experiment.annotators
     annotators = [assoc.annotator for assoc in annotators_assoc]
 
-    from math import ceil
     total = ceil(File.query.filter_by(experiment_id=experiment.id).count() / per_page)
     pagination = Pagination(page=page, per_page=per_page, total=total, css_framework='bootstrap3')
 
