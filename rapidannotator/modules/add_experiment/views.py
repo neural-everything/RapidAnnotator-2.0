@@ -1467,10 +1467,10 @@ def _exportResultsCSV(experimentId, format1):
         csv_data.append(csv_row)
     
     fd = pandas.DataFrame(csv_data, columns=column_headers)
-
+    
+    from rapidannotator import app
     if format1 == '.xlsx':
         filename = str(experimentId) + '.xlsx'
-        from rapidannotator import app
         filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         with pandas.ExcelWriter(filePath, date_format='YYYY-MM-DD', datetime_format='YYYY-MM-DD HH:MM:SS') as writer:
             fd.to_excel(writer, sheet_name='Sheet1', index=False)
