@@ -1070,21 +1070,12 @@ def viewResults(experimentId, userId):
 
     from math import ceil
     total = ceil(File.query.filter_by(experiment_id=experiment.id).count() / per_page)
-    exp_files = []
-
     pagination = Pagination(page=page, per_page=per_page, total=total, css_framework='bootstrap3')
-    
+
     annotations = {}
-
-    if userId == 3000:
-        return render_template('add_experiment/noResults.html', exp_files=exp_files, page=page, \
-        per_page=per_page, pagination=pagination, experiment = experiment, annotations = annotations, annotators=annotators)
-
     user = User.query.filter_by(id=userId).first()
-
     for f in expFiles:
         annotation = {}
-        labelDict = {}
         fileAnnotations = AnnotationInfo.query.filter_by(file_id=f.id, user_id=userId)
         if fileAnnotations.count() == 0:
             annotations[f.id] = annotation
@@ -1099,8 +1090,6 @@ def viewResults(experimentId, userId):
                             annotation[level.id] = label.name
                 else:
                     annotation[level.id] = "SKIPPED"
-                    # for label in level.labels:
-                        # annotation[level.id][label.id] = "SKIP"                    
         annotations[f.id] = annotation       
     
     return render_template('add_experiment/results.html', exp_files=expFiles, page=page, \
