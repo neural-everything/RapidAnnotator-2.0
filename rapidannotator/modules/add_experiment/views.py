@@ -1,6 +1,7 @@
 from flask import render_template, flash, redirect, url_for, request, jsonify, \
     current_app, g, abort, jsonify, session, send_file
 from flask_babelex import lazy_gettext as _
+from sqlalchemy.sql.functions import user
 from werkzeug.utils import secure_filename
 
 from rapidannotator import db
@@ -9,6 +10,7 @@ from rapidannotator.models import User, Experiment, AnnotatorAssociation, Annota
 from rapidannotator.modules.add_experiment import blueprint
 from rapidannotator.modules.add_experiment.forms import AnnotationLevelForm
 from rapidannotator import bcrypt
+from math import ceil
 
 from flask_login import current_user, login_required
 from flask_login import login_user, logout_user, current_user
@@ -41,13 +43,13 @@ def index(experimentId):
     users = User.query.all()
     experiment = Experiment.query.filter_by(id=experimentId).first()
     page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
-    expFiles = File.query.filter_by(experiment_id=experiment.id).all()
+    expFiles = File.query.filter_by(experiment_id=experiment.id).limit(per_page).offset(offset)
     exp_files = []
     for fl in expFiles:
         fileCaption = FileCaption.query.filter_by(file_id=fl.id).first()
         exp_files.append((fl, fileCaption))
-    pagination_files = exp_files[offset: offset + per_page]
-    total = len(exp_files)
+    total = ceil(File.query.filter_by(experiment_id=experiment.id).count() / per_page)
+
     pagination = Pagination(page=page, per_page=per_page, total=total, css_framework='bootstrap3')
 
     
@@ -74,7 +76,7 @@ def index(experimentId):
         experiment = experiment,
         notOwners = notOwners,
         notAnnotators = notAnnotators,
-        exp_files=pagination_files, page=page,
+        exp_files=exp_files, page=page,
         per_page=per_page, pagination=pagination,
         firstID=firstID,
     )
@@ -234,6 +236,7 @@ def editLabels(experimentId):
             skipLevel[level.id] = 1
         else:
             skipLevel[level.id] = 0
+
     return render_template('add_experiment/labels.html',
         experiment = experiment,
         annotation_levels = annotation_levels,
@@ -252,6 +255,7 @@ def _addAnnotationLevel():
     experiment = Experiment.query.filter_by(id=experimentId).first()
     annotation_levels = experiment.annotation_levels
 
+
     if annotationLevelForm.validate_on_submit():
         levelNumberValidated = True
 
@@ -269,7 +273,6 @@ def _addAnnotationLevel():
                 name = annotationLevelForm.name.data,
                 description = annotationLevelForm.description.data,
                 instruction = annotationLevelForm.instruction.data,
-                multichoice = annotationLevelForm.multichoice.data,
             )
             if levelNumber:
                 annotationLevel.level_number = annotationLevelForm.levelNumber.data
@@ -383,7 +386,7 @@ def _editAnnotationLevel():
     annotationLevel.description = request.args.get('annotationDescription', None)
     annotationLevel.level_number = request.args.get('annotationLevelNumber', None)
     annotationLevel.instruction = request.args.get('annotationLevelInstruction', None)
-    annotationLevel.multichoice = request.args.get('multichoice', None) == "true"
+
     db.session.commit()
     response = {}
     response['success'] = True
@@ -524,7 +527,6 @@ def skipLevels():
     levels = AnnotationLevel.query.filter_by(experiment_id=\
                 experimentId).order_by(AnnotationLevel.id)
     for level in levels:
-        print(int(level.id))
         if int(level.id) > int(annotationId):
             level.skip = 1
         else:
@@ -551,7 +553,6 @@ def _uploadFiles():
         ''' TODO? also check for the allowed filename '''
         if flaskFile:
             fl_name, fl_ext = os.path.splitext(flaskFile.filename)
-            print(fl_name, fl_ext)
             experimentId = request.form.get('experimentId', None)
             experiment = Experiment.query.filter_by(id=experimentId).first()
             if experiment.is_done:
@@ -1060,32 +1061,19 @@ def viewResults(experimentId, userId):
     page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
     experiment = Experiment.query.filter_by(id=experimentId).first()
     
-    expFiles = File.query.filter_by(experiment_id=experiment.id).all()
-    
+    expFiles = File.query.filter_by(experiment_id=experiment.id).limit(per_page).offset(offset)
     annotation_levels = experiment.annotation_levels
     
     annotators_assoc = experiment.annotators
     annotators = [assoc.annotator for assoc in annotators_assoc]
 
-    
-    exp_files = []
-    for fl in expFiles:
-        exp_files.append(fl)
-    pagination_files = exp_files[offset: offset + per_page]
-    total = len(exp_files)
+    total = ceil(File.query.filter_by(experiment_id=experiment.id).count() / per_page)
     pagination = Pagination(page=page, per_page=per_page, total=total, css_framework='bootstrap3')
-    
+
     annotations = {}
-
-    if userId == 3000:
-        return render_template('add_experiment/noResults.html', exp_files=pagination_files, page=page, \
-        per_page=per_page, pagination=pagination, experiment = experiment, annotations = annotations, annotators=annotators)
-
     user = User.query.filter_by(id=userId).first()
-
-    for f in experiment.files:
+    for f in expFiles:
         annotation = {}
-        labelDict = {}
         fileAnnotations = AnnotationInfo.query.filter_by(file_id=f.id, user_id=userId)
         if fileAnnotations.count() == 0:
             annotations[f.id] = annotation
@@ -1100,11 +1088,9 @@ def viewResults(experimentId, userId):
                             annotation[level.id].append(label.name)
                 else:
                     annotation[level.id] = "SKIPPED"
-                    # for label in level.labels:
-                        # annotation[level.id][label.id] = "SKIP"                    
         annotations[f.id] = annotation       
     
-    return render_template('add_experiment/results.html', exp_files=pagination_files, page=page, \
+    return render_template('add_experiment/results.html', exp_files=expFiles, page=page, \
         per_page=per_page, pagination=pagination, experiment = experiment, annotations = annotations, annotators=annotators, user=user)
 
 
@@ -1258,7 +1244,12 @@ def _exportResults(experimentId):
 
 @blueprint.route('/_exportResultsXLS/<int:experimentId>', methods=['POST','GET'])
 def _exportResultsXLS(experimentId):
-
+    """
+    multichoice = AnnotationLevel.query.filter_by(experiment_id=experimentId, multichoice=True).count()
+    if(multichoice):
+        pass
+        return _exportMultichoiceResult(experimentId, "xlsx")
+    """
     experiment = Experiment.query.filter_by(id=experimentId).first()
     
     excel_file = xlwt.Workbook()
@@ -1299,6 +1290,7 @@ def _exportResultsXLS(experimentId):
                     sheet.write(row, col, RESERVED_LABEL)
                 else:
                     for info in annotation_info:
+                        print(info)
                         label = Label.query.filter_by(id=info.label_id).first()
                         sheet.write(row, col, str(label.name))
                 col += 1
@@ -1385,7 +1377,6 @@ def _exportResultsConcordance(experiment, format1):
 
     
     if format1 == '.xlsx':
-        print(format1)
         filename = str(experiment.id) + '.xlsx'
         from rapidannotator import app
         filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -1405,6 +1396,12 @@ def _exportResultsConcordance(experiment, format1):
 @blueprint.route('/_exportResultsCSV/<int:experimentId>/<string:format1>', methods=['POST','GET'])
 def _exportResultsCSV(experimentId, format1):
 
+    """
+    multichoice = AnnotationLevel.query.filter_by(experiment_id=experimentId, multichoice=True).count()
+    if(multichoice):
+        pass
+        return _exportMultichoiceResult(experimentId, format1)
+    """
     experiment = Experiment.query.filter_by(id=experimentId).first()
     if experiment.uploadType == 'fromConcordance':
         return _exportResultsConcordance(experiment, format1)
@@ -1438,9 +1435,17 @@ def _exportResultsCSV(experimentId, format1):
                 if annotation_info.count() == 0:
                     csv_row.append(RESERVED_LABEL)
                 else:
+                    prev_file_id = -1
+                    prev_annotation_level_id = -1
                     for info in annotation_info:
+                        file_id = str(info.file_id)
+                        annotation_level_id = str(info.annotationLevel_id)
+                        if (file_id == prev_file_id and annotation_level_id == prev_annotation_level_id):
+                            continue
                         label = Label.query.filter_by(id=info.label_id).first()
                         csv_row.append(str(label.name))
+                        prev_file_id = file_id
+                        prev_annotation_level_id = annotation_level_id
             cp = AnnotationCaptionInfo.query.filter_by(file_id=f.id, user_id=annotator.id).first()
             if cp == None:
                 cp_val = FileCaption.query.filter_by(file_id=f.id).first()
@@ -1465,7 +1470,6 @@ def _exportResultsCSV(experimentId, format1):
             csv_row.append(f.content)
         csv_data.append(csv_row)
     fd = pandas.DataFrame(csv_data, columns=column_headers)
-
     from rapidannotator import app
     if format1 == '.xlsx':
         filename = str(experimentId) + '.xlsx'
@@ -1476,6 +1480,39 @@ def _exportResultsCSV(experimentId, format1):
         filename = str(experimentId) + '.csv'
         filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         fd.to_csv(filePath, index=False)
+
+    response = {}
+    response['success'] = True
+
+    return send_file(filePath, as_attachment=True)
+
+
+def _exportMultichoiceResult(experimentId, format):
+    annotation_levels = AnnotationLevel.query.filter_by(experiment_id=experimentId).with_entities(AnnotationLevel.id).all()
+    result = []
+    for annotation_level in annotation_levels:
+        result.extend(AnnotationInfo.query.filter_by(annotationLevel_id=annotation_level)
+        .join(AnnotationLevel, AnnotationInfo.annotationLevel_id == AnnotationLevel.id)
+        .join(Label, Label.id == AnnotationInfo.label_id)
+        .join(File, File.id == AnnotationInfo.file_id)
+        .join(User, User.id == AnnotationInfo.user_id)
+        .with_entities()
+        .add_columns(AnnotationLevel.name, Label.name, AnnotationInfo.label_other, User.username, File.name)
+        .all()
+        )
+    import pandas as pd
+    df = pd.DataFrame(result)
+    df.columns = ["level_name", "label_name", "label_other", "annotator_username", "file_name"]
+    from rapidannotator import app
+    if format == '.xlsx':
+        filename = str(experimentId) + '.xlsx'
+        filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        with pandas.ExcelWriter(filePath, date_format='YYYY-MM-DD', datetime_format='YYYY-MM-DD HH:MM:SS') as writer:
+            df.to_excel(writer, sheet_name='Sheet1', index=False)
+    else:
+        filename = str(experimentId) + '.csv'
+        filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        df.to_csv(filePath, index=False)
 
     response = {}
     response['success'] = True

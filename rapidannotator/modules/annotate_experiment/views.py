@@ -367,7 +367,6 @@ def _addAnnotationInfo():
         db.session.commit()
     for levelId, labels in annotations.items():
         for labelId, labelOther in labels.items():
-            print(labelOther)
             annotationInfo = AnnotationInfo(
                 file_id = fileId,
                 annotationLevel_id = levelId,
