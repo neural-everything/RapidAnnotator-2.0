@@ -31,8 +31,14 @@ Run
 `source venv/bin/activate`
 
 `pip3 install -r requirements.txt`
-
-
+```SHELL
+#### Initalize the flask-migrate files.
+flask db init  
+#### Make a migration, it is like commit it and a comment beside.
+flask db migrate -m "Initial migration." # OR just add your comment right there  
+#### Then apply your migration to the database, it is like push.
+flask db upgrade  
+```
 Since we need to deploy rapidannotator [flask app] on apache server, we need to link Flask and Apache using wsgi interface. For that you need to add the following lines in `/etc/apache2/sites-enabled/000-default.conf`
 
 Copy wsgi_template.py to wsgi.py and make the required changes in the new file.
