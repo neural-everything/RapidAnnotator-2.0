@@ -1058,16 +1058,56 @@ def _deleteExperiment():
 @blueprint.route('/viewResults/<int:experimentId>/<int:userId>')
 @isPerimitted2
 def viewResults(experimentId, userId):
+    """ Viewing results of a user/annotator's annotation at an experiment.
+    Args:
+        experimentId: Id of the experiment requested to be viewed.
+        userId: Id of a specific annotator of that experiment.
+        levelId: (optional) Id of annotation level, filtering option.
+        labelId: (optional) Id of annotation level's label, filtering option.
+    Returns: 
+        HTML view @add_experiment/results.html
+    """
+    levelId = request.args.get('levelId', None)
+    labelId = request.args.get('labelId', None)
 
     page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
     experiment = Experiment.query.filter_by(id=experimentId).first()
-    
-    expFiles = File.query.filter_by(experiment_id=experiment.id).limit(per_page).offset(offset)
+
+    selected_level = None
+    selected_label = None
+
     annotation_levels = experiment.annotation_levels
-    
+    # Finding the selected annotation level and setting it to selected_level.
+    if levelId and levelId.isnumeric():
+        for level in annotation_levels:
+            if level.id == int(levelId):
+                selected_level = level
+                # Finding the selected label and setting it to selected_label.
+                if labelId and labelId.isnumeric():
+                    for label in level.labels:
+                        if label.id == int(labelId):
+                            selected_label = label
+                            break
+                break
+
+    expFiles = []
+    if not selected_level and not selected_label:
+        expFiles = File.query.filter_by(experiment_id=experiment.id).limit(per_page).offset(offset)
+    elif not selected_label:
+        expFiles = File.query.filter_by(experiment_id=experiment.id)\
+            .join(AnnotationInfo, AnnotationInfo.file_id == File.id)\
+            .filter_by(annotationLevel_id = selected_level.id)\
+            .limit(per_page).offset(offset)
+    else:
+        expFiles = File.query.filter_by(experiment_id=experiment.id)\
+            .join(AnnotationInfo, AnnotationInfo.file_id == File.id)\
+            .filter_by(annotationLevel_id = selected_level.id)\
+            .filter_by(label_id = selected_label.id)\
+            .limit(per_page).offset(offset)
+
     annotators_assoc = experiment.annotators
     annotators = [assoc.annotator for assoc in annotators_assoc]
-
+    
     total = ceil(File.query.filter_by(experiment_id=experiment.id).count() / per_page)
     pagination = Pagination(page=page, per_page=per_page, total=total, css_framework='bootstrap3')
 
@@ -1090,9 +1130,11 @@ def viewResults(experimentId, userId):
                 else:
                     annotation[level.id] = "SKIPPED"
         annotations[f.id] = annotation       
-    
     return render_template('add_experiment/results.html', exp_files=expFiles, page=page, \
-        per_page=per_page, pagination=pagination, experiment = experiment, annotations = annotations, annotators=annotators, user=user)
+        per_page=per_page, pagination=pagination, experiment = experiment,
+             annotations = annotations, annotators=annotators, user=user, 
+             annotation_levels=annotation_levels, 
+             selected_level=selected_level, selected_label=selected_label)
 
 
 @blueprint.route('/_discardAnnotations', methods=['POST','GET'])

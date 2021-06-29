@@ -22,8 +22,8 @@
 
 
     <div class="pull-right" style="display: inline-block">
-
-         <div class="dropdown btn-group btn-group-inline btn-space">
+        <!-- Annotators selection box -->
+        <div class="dropdown btn-group btn-group-inline btn-space">
             <button class="btn btn-primary dropdown-toggle" type="button" id="annotatorResult" data-toggle="dropdown">
                 {{user.username}}
             <span class="caret"></span></button>
@@ -35,7 +35,37 @@
                 
             </ul>
         </div>
-
+        <!-- Levels selection box -->
+        <div class="dropdown btn-group btn-group-inline btn-space">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="levelsResult" data-toggle="dropdown">
+                {{ selected_level.name or "All levels" }}
+            <span class="caret"></span></button>
+            <ul class="dropdown-menu scrollable-dropdown" id="levelsResultMenu" role="menu" aria-labelledby="levelsResult">
+                {%- set viewResults = url_for('add_experiment.viewResults', experimentId = experiment.id, userId = user.id) %}
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="{{viewResults}}"><span>All levels</span></a></li>
+                {% for level in annotation_levels %}
+                    {%- set viewResults = url_for('add_experiment.viewResults', experimentId = experiment.id, userId = user.id, levelId=level.id) %}
+                    <li role="presentation"><a role="menuitem" tabindex="-1" href="{{viewResults}}"><span>{{level.name}}</span></a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        <!-- Labels selection box -->
+        <div class="dropdown btn-group btn-group-inline btn-space">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="labelsResult" data-toggle="dropdown">
+                {{selected_label.name or "All labels"}}
+            <span class="caret"></span></button>
+            <ul class="dropdown-menu scrollable-dropdown" id="labelsResultMenu" role="menu" aria-labelledby="labelsResult">
+                {%if selected_level%}
+                {%- set viewResults = url_for('add_experiment.viewResults', experimentId = experiment.id, userId = user.id, levelId=selected_level.id) %}
+                {% endif %}
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="{{viewResults}}"><span>All labels</span></a></li>
+                {% for label in selected_level.labels %}
+                    {%- set viewResults = url_for('add_experiment.viewResults', experimentId = experiment.id, userId = user.id, levelId=selected_level.id, labelId=label.id) %}
+                    <li role="presentation"><a role="menuitem" tabindex="-1" href="{{viewResults}}"><span>{{label.name}}</span></a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        
         <a id="discardAnnotationsButtonId" href="" data-target="#discardAnnotations"
             data-toggle="modal" class="btn btn-danger btn-group btn-group-inline
             btn-space">
