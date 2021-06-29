@@ -1369,11 +1369,14 @@ def _exportResultsConcordance(experiment, format1):
         col_num = col_num + 1
         data.insert(col_num, "Comments by " + annotator.username, comments)
         col_num = col_num + 1
-
-    before_time = experiment.display_time.before_time
-    after_time = experiment.display_time.after_time
-    data['Video Snippet Annotated'] = data['Video Snippet'].apply(lambda video_snippet: _addOffsetTime(video_snippet, before_time, after_time))
     
+    if experiment.display_time:
+        before_time = experiment.display_time.before_time
+        after_time = experiment.display_time.after_time
+        data['Video Snippet Annotated'] = data['Video Snippet'].apply(lambda video_snippet: _addOffsetTime(video_snippet, before_time, after_time))
+    else:
+        data['Video Snippet Annotated'] = data['Video Snippet']
+        
     if format1 == '.xlsx':
         print(format1)
         filename = str(experiment.id) + '.xlsx'
