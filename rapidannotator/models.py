@@ -533,7 +533,7 @@ class File(db.Model):
         return 'File <id={0.id}, \
                 Experiment={0.experiment_id}, \
                 name={0.name}, \
-                url={0.url}>'.format(self)
+                content={0.content}>'.format(self)
 
 """
     Modal to store File Captions 

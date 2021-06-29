@@ -1411,8 +1411,14 @@ def _exportResultsConcordance(experiment, format1):
         col_num = col_num + 1
         data.insert(col_num, "Comments by " + annotator.username, comments)
         col_num = col_num + 1
-
     
+    if experiment.display_time:
+        before_time = experiment.display_time.before_time
+        after_time = experiment.display_time.after_time
+        data['Video Snippet Annotated'] = data['Video Snippet'].apply(lambda video_snippet: _addOffsetTime(video_snippet, before_time, after_time))
+    else:
+        data['Video Snippet Annotated'] = data['Video Snippet']
+        
     if format1 == '.xlsx':
         print(format1)
         filename = str(experiment.id) + '.xlsx'
@@ -1430,6 +1436,36 @@ def _exportResultsConcordance(experiment, format1):
 
     return send_file(filePath, as_attachment=True)
 
+def _addOffsetTime(video_snippet, before_time, after_time):
+    """ Utility function used at exporting concordance results.
+    Modifying offset of the video snippet link
+    by applying the following equations:
+        new_start = video_snippet_start - exp.display_caption.before_time
+        new_end = video_snippet_end + exp.display_caption.after_time
+    and replacing those with the existing on the video snippet using regular expression
+    Args:
+        video_snippet: str. of the link expected to change it's offset
+        before_time: float representes the exp.'s display_caption before_time
+        after_time: float representes the exp.'s display_caption after_time
+    Returns:
+        video_snippet: modified video_snippet start and end times on the link
+    """
+    # If the sent video_snippet is not string, returning it without processing.
+    if not isinstance(video_snippet, str):
+        return video_snippet
+    float_re = "([0-9]*)?[.]?([0-9]*)?"
+    video_time = re.search(f'start=({float_re})&end=({float_re})$', video_snippet)
+    # If the sent video_snippet is not matching the re. so it miss the start and end
+    # Just returns it without any modifications
+    if not video_time:
+        return video_snippet
+    start_time = float(video_time.group(1)) - before_time
+    start_time = 0 if start_time < 0 else start_time
+    end_time = float(video_time.group(2)) + after_time
+    end_time = 0 if end_time < 0 else end_time
+    video_snippet = re.sub(f'end=({float_re})', "end=" + str(end_time), video_snippet)
+    video_snippet = re.sub(f'start=({float_re})', "start=" + str(start_time), video_snippet)
+    return video_snippet
 
 @blueprint.route('/_exportResultsCSV/<int:experimentId>/<string:format1>', methods=['POST','GET'])
 def _exportResultsCSV(experimentId, format1):
