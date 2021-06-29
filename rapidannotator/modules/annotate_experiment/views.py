@@ -2,6 +2,7 @@ from flask import render_template, flash, redirect, url_for, request, jsonify, \
     current_app, abort, send_from_directory
 from flask_babelex import lazy_gettext as _
 from flask_login import current_user, login_required, login_user, logout_user
+from sqlalchemy.sql.expression import label
 
 from rapidannotator import db
 from rapidannotator import bcrypt
@@ -338,6 +339,7 @@ def _addAnnotationInfo():
 
     fileId = arguments.get('fileId', None)
     annotations = arguments.get('annotations')
+    annotationsOrder = arguments.get('annotationsOrder')
     prevLabelCount = int(arguments.get('labelCount', None))
     userId = int(arguments.get('userId', None))
     hasToIncreaseCurrent = int(arguments.get('hasToIncreaseCurrent', None))
@@ -366,13 +368,14 @@ def _addAnnotationInfo():
         AnnotationInfo.query.filter(and_(AnnotationInfo.user_id==userId, AnnotationInfo.file_id==fileId)).delete()
         db.session.commit()
     for levelId, labels in annotations.items():
-        for labelId, labelOther in labels.items():
+        for labelId in annotationsOrder[levelId]:
+            print(labelId, labels[str(labelId)])
             annotationInfo = AnnotationInfo(
                 file_id = fileId,
                 annotationLevel_id = levelId,
                 label_id = labelId,
                 user_id = userId,
-                label_other = labelOther,
+                label_other = labels[str(labelId)],
             )
             db.session.add(annotationInfo)
 

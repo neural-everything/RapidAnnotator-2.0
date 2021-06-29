@@ -390,6 +390,7 @@
         var preLoadedTill = 0;
         var space_pressed = 0;
         var annotations = {};
+        var annotationsOrder = {};
         var already_submitted = {};
         var progress_num = 0;
         var totalAnnotationLevels = {{ totalAnnotationLevels }};
@@ -529,15 +530,20 @@
                     if (annotations[levelId] == null){
                         annotations[levelId] = {}
                         annotations[levelId][selectedLabel] = textField.val();
+                        annotationsOrder[levelId] = [selectedLabel];
                     }
                     else{
                         annotations[levelId][selectedLabel] = textField.val();
+                        annotationsOrder[levelId].push(selectedLabel)
                     }
                 }
                 else {
                     textField.hide();
                     textField.val("");
                     delete annotations[levelId][selectedLabel];
+                    const index = annotationsOrder[levelId].indexOf(selectedLabel);
+                    if (index > -1) 
+                        annotationsOrder[levelId].splice(index, 1);
                 }
             }
             else {
@@ -555,6 +561,7 @@
                     selectedLabel = labelButton.data("labelid");
                     annotations[levelId] = {}
                     annotations[levelId][selectedLabel] = textField.val();
+                    annotationsOrder[levelId] = [selectedLabel];
                 }
                 else {
                     labelButton.removeClass('btn-primary');
@@ -562,27 +569,12 @@
                     textField.hide();
                     textField.val("");
                     delete annotations[levelId][selectedLabel];
+                    annotationsOrder[levelId] = [];
                 }
             }
             return
         }
-        function nextLevel(label) {
-            currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
-            levelId = currentLevelBody.data("levelid");
-            annotations[levelId] = label;
-            already_submitted[levelId] = 1;
-            currentLevelBody.addClass('hidden-element');
-            if (currentLevel == totalAnnotationLevels) {
-                fileAnnotationCompleted();
-            }
-            else if(skipLevelDict[levelId][label] == 1){
-                currentLevel = totalAnnotationLevels;
-                fileAnnotationCompleted();
-            }
-            currentLevel = (currentLevel % totalAnnotationLevels) + 1;
-            currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
-            currentLevelBody.removeClass('hidden-element');
-        }
+
 
         function previousLevel() {
             if(last_previous == 1){
@@ -724,6 +716,7 @@
 
         function loadPreviousFile(load_previous) {
             annotations = {};
+            annotationsOrder = {};
             var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
             // console.log(load_previous, currentFileId);
             var data = {
@@ -780,17 +773,19 @@
             var data = {
                 'fileId' :          currentFileId,
                 'annotations' :     annotations, 
+                'annotationsOrder': annotationsOrder,
                 'labelCount' :     {{labelCount}},
                 'userId'    : "{{userId}}",
                 'hasToIncreaseCurrent': 1,
             };
 
             data = JSON.stringify(data);
+            resetButtonsAndLabels();
             $.getJSON(url , data, function(response) {
                 if(response.success) {
                     annotations = {};
+                    annotationsOrder = {};
                     already_submitted = {};
-                    resetButtonsAndLabels();
                     updateProgressbar();
                 }
                 else{
