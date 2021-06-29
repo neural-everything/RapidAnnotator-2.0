@@ -9,6 +9,7 @@ from rapidannotator.models import User, Experiment, AnnotatorAssociation, Annota
 from rapidannotator.modules.add_experiment import blueprint
 from rapidannotator.modules.add_experiment.forms import AnnotationLevelForm
 from rapidannotator import bcrypt
+from math import ceil
 
 from flask_login import current_user, login_required
 from flask_login import login_user, logout_user, current_user
@@ -41,13 +42,13 @@ def index(experimentId):
     users = User.query.all()
     experiment = Experiment.query.filter_by(id=experimentId).first()
     page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
-    expFiles = File.query.filter_by(experiment_id=experiment.id).all()
+    expFiles = File.query.filter_by(experiment_id=experiment.id).limit(per_page).offset(offset)
     exp_files = []
     for fl in expFiles:
         fileCaption = FileCaption.query.filter_by(file_id=fl.id).first()
         exp_files.append((fl, fileCaption))
-    pagination_files = exp_files[offset: offset + per_page]
-    total = len(exp_files)
+    total = ceil(File.query.filter_by(experiment_id=experiment.id).count() / per_page)
+
     pagination = Pagination(page=page, per_page=per_page, total=total, css_framework='bootstrap3')
 
     
@@ -74,7 +75,7 @@ def index(experimentId):
         experiment = experiment,
         notOwners = notOwners,
         notAnnotators = notAnnotators,
-        exp_files=pagination_files, page=page,
+        exp_files=exp_files, page=page,
         per_page=per_page, pagination=pagination,
         firstID=firstID,
     )
@@ -1061,32 +1062,19 @@ def viewResults(experimentId, userId):
     page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
     experiment = Experiment.query.filter_by(id=experimentId).first()
     
-    expFiles = File.query.filter_by(experiment_id=experiment.id).all()
-    
+    expFiles = File.query.filter_by(experiment_id=experiment.id).limit(per_page).offset(offset)
     annotation_levels = experiment.annotation_levels
     
     annotators_assoc = experiment.annotators
     annotators = [assoc.annotator for assoc in annotators_assoc]
 
-    
-    exp_files = []
-    for fl in expFiles:
-        exp_files.append(fl)
-    pagination_files = exp_files[offset: offset + per_page]
-    total = len(exp_files)
+    total = ceil(File.query.filter_by(experiment_id=experiment.id).count() / per_page)
     pagination = Pagination(page=page, per_page=per_page, total=total, css_framework='bootstrap3')
-    
+
     annotations = {}
-
-    if userId == 3000:
-        return render_template('add_experiment/noResults.html', exp_files=pagination_files, page=page, \
-        per_page=per_page, pagination=pagination, experiment = experiment, annotations = annotations, annotators=annotators)
-
     user = User.query.filter_by(id=userId).first()
-
-    for f in experiment.files:
+    for f in expFiles:
         annotation = {}
-        labelDict = {}
         fileAnnotations = AnnotationInfo.query.filter_by(file_id=f.id, user_id=userId)
         if fileAnnotations.count() == 0:
             annotations[f.id] = annotation
@@ -1101,11 +1089,9 @@ def viewResults(experimentId, userId):
                             annotation[level.id] = label.name
                 else:
                     annotation[level.id] = "SKIPPED"
-                    # for label in level.labels:
-                        # annotation[level.id][label.id] = "SKIP"                    
         annotations[f.id] = annotation       
     
-    return render_template('add_experiment/results.html', exp_files=pagination_files, page=page, \
+    return render_template('add_experiment/results.html', exp_files=expFiles, page=page, \
         per_page=per_page, pagination=pagination, experiment = experiment, annotations = annotations, annotators=annotators, user=user)
 
 
