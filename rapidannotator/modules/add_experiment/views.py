@@ -1236,14 +1236,13 @@ def _exportResults(experimentId):
 
 @blueprint.route('/_exportResultsXLS/<int:experimentId>', methods=['POST','GET'])
 def _exportResultsXLS(experimentId):
-    """
+    
     multichoice = AnnotationLevel.query.filter_by(experiment_id=experimentId, multichoice=True).count()
     if(multichoice):
         pass
         return _exportMultichoiceResult(experimentId, "xlsx")
-    """
-    experiment = Experiment.query.filter_by(id=experimentId).first()
     
+    experiment = Experiment.query.filter_by(id=experimentId).first()
     excel_file = xlwt.Workbook()
     sheet = excel_file.add_sheet('results')
     style0 = xlwt.easyxf('font: name Arial, color-index black, bold on')
@@ -1385,12 +1384,11 @@ def _exportResultsConcordance(experiment, format1):
 @blueprint.route('/_exportResultsCSV/<int:experimentId>/<string:format1>', methods=['POST','GET'])
 def _exportResultsCSV(experimentId, format1):
 
-    """
     multichoice = AnnotationLevel.query.filter_by(experiment_id=experimentId, multichoice=True).count()
     if(multichoice):
         pass
         return _exportMultichoiceResult(experimentId, format1)
-    """
+
     experiment = Experiment.query.filter_by(id=experimentId).first()
     if experiment.uploadType == 'fromConcordance':
         return _exportResultsConcordance(experiment, format1)
@@ -1485,10 +1483,23 @@ def _exportMultichoiceResult(experimentId, format):
         .join(User, User.id == AnnotationInfo.user_id)
         .with_entities()
         .add_columns(AnnotationLevel.name, Label.name, AnnotationInfo.label_other, User.username, File.name)
+        .order_by(AnnotationInfo.id)
         .all()
         )
     df = pd.DataFrame(result)
     df.columns = ["level_name", "label_name", "label_other", "annotator_username", "file_name"]
+    # Selection order column
+    annotation_order = [1] * len(df)
+    for i in range(1, len(df)):
+        if  df.iloc[i]['level_name'] == df.iloc[i-1]['level_name'] and \
+            df.iloc[i]['file_name'] == df.iloc[i-1]['file_name'] and \
+            df.iloc[i]['annotator_username'] == df.iloc[i-1]['annotator_username'] :
+        # if prev. annotation is same as current annotation 
+        # in(level_name, file_name and annotator_username)
+        # it means it is multi-choice level selected so we need to increment.
+            annotation_order[i] =  annotation_order[i-1] + 1
+    df['annotation_order'] = annotation_order
+    
     if format == '.xlsx':
         filename = str(experimentId) + '.xlsx'
         filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
