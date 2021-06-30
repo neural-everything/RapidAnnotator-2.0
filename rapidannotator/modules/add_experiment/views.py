@@ -1096,13 +1096,12 @@ def viewResults(experimentId, userId):
     elif not selected_label:
         expFiles = File.query.filter_by(experiment_id=experiment.id)\
             .join(AnnotationInfo, AnnotationInfo.file_id == File.id)\
-            .filter_by(annotationLevel_id = selected_level.id)\
+            .filter_by(annotationLevel_id = selected_level.id, user_id = userId)\
             .limit(per_page).offset(offset)
     else:
         expFiles = File.query.filter_by(experiment_id=experiment.id)\
             .join(AnnotationInfo, AnnotationInfo.file_id == File.id)\
-            .filter_by(annotationLevel_id = selected_level.id)\
-            .filter_by(label_id = selected_label.id)\
+            .filter_by(annotationLevel_id = selected_level.id, user_id = userId, label_id = selected_label.id)\
             .limit(per_page).offset(offset)
 
     annotators_assoc = experiment.annotators
