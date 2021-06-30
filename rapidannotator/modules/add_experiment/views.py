@@ -26,6 +26,9 @@ from matplotlib import pyplot as plt
 from io import BytesIO
 import base64
 
+import pandas as pd
+from rapidannotator import app
+import shutil
 
 @blueprint.before_request
 def before_request():
@@ -542,7 +545,6 @@ def skipLevels():
 
 @blueprint.route('/_uploadFiles', methods=['POST','GET'])
 def _uploadFiles():
-    from rapidannotator import app
 
     if request.method == 'POST':
         if 'file' not in request.files:
@@ -621,7 +623,6 @@ def _uploadFiles():
 def addFilesViaSpreadsheetXLS(experimentId, spreadsheet):
     experiment = Experiment.query.filter_by(id=experimentId).first()
 
-    from rapidannotator import app
     filename = 'temp_' + current_user.username + '.xls'
     filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     spreadsheet.save(filePath)
@@ -651,7 +652,6 @@ def addFilesViaSpreadsheetXLS(experimentId, spreadsheet):
 def addFilesViaSpreadsheetCSV(experimentId, spreadsheet):
     experiment = Experiment.query.filter_by(id=experimentId).first()
 
-    from rapidannotator import app
     filename = 'temp_' + current_user.username + '.csv'
     filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     spreadsheet.save(filePath)
@@ -687,7 +687,6 @@ def convert_txt_to_csv(inFileName, outFileName):
 def addFilesFromConcordance(experimentId, concordance):
     experiment = Experiment.query.filter_by(id=experimentId).first()
 
-    from rapidannotator import app
     experimentDir = os.path.join(app.config['UPLOAD_FOLDER'], str(experimentId))
     if not os.path.exists(experimentDir):
         os.makedirs(experimentDir)
@@ -758,7 +757,6 @@ def addFilesFromConcordance(experimentId, concordance):
 def _deleteFile():
 
     ''' TODO? check when to import app '''
-    from rapidannotator import app
 
     experimentCategory = request.args.get('experimentCategory', None)
     experimentId = request.args.get('experimentId', None)
@@ -796,7 +794,6 @@ def _deleteFile():
 @blueprint.route('/_deleteAllFiles', methods=['POST','GET'])
 def _deleteAllFiles():
 
-    from rapidannotator import app
 
     experimentId = request.args.get('experimentId', None)
     experiment = Experiment.query.filter_by(id=experimentId).first()
@@ -827,7 +824,6 @@ def _deleteAllFiles():
 @blueprint.route('/_updateFileName', methods=['POST','GET'])
 def _updateFileName():
 
-    from rapidannotator import app
 
     fileId = request.args.get('fileId', None)
     currentFile = File.query.filter_by(id=fileId).first()
@@ -967,9 +963,6 @@ def _deleteAnnotator():
 @blueprint.route('/_editAnnotator', methods=['POST','GET'])
 def _editAnnotator():
 
-    import sys
-    from rapidannotator import app
-
     annotatorId = request.args.get('annotatorId', None)
     experimentId = request.args.get('experimentId', None)
     annotatorDetails = AnnotatorAssociation.query.filter_by(
@@ -1041,8 +1034,6 @@ def _deleteExperiment():
     db.session.delete(experiment)
     db.session.commit()
 
-    import shutil
-    from rapidannotator import app
     experimentDir = os.path.join(app.config['UPLOAD_FOLDER'],
                             str(experimentId))
 
@@ -1235,7 +1226,6 @@ def _exportResults(experimentId):
 
     filename = str(experimentId) + '.xls'
 
-    from rapidannotator import app
     filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     excel_file.save(filePath)
 
@@ -1316,7 +1306,6 @@ def _exportResultsXLS(experimentId):
 
     filename = str(experimentId) + '.xls'
 
-    from rapidannotator import app
     filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     excel_file.save(filePath)
 
@@ -1331,7 +1320,6 @@ def _exportResultsXLS(experimentId):
 
 def _exportResultsConcordance(experiment, format1):
 
-    from rapidannotator import app
     experimentDIR = os.path.join(app.config['UPLOAD_FOLDER'], str(experiment.id))
     inputConcordance = os.path.join(experimentDIR, 'concordance.csv')
     data = pandas.read_csv(inputConcordance)
@@ -1380,7 +1368,6 @@ def _exportResultsConcordance(experiment, format1):
     
     if format1 == '.xlsx':
         filename = str(experiment.id) + '.xlsx'
-        from rapidannotator import app
         filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         with pandas.ExcelWriter(filePath, date_format='YYYY-MM-DD', datetime_format='YYYY-MM-DD HH:MM:SS') as writer:
             data.to_excel(writer, sheet_name='Sheet1', index=False)
@@ -1472,7 +1459,6 @@ def _exportResultsCSV(experimentId, format1):
             csv_row.append(f.content)
         csv_data.append(csv_row)
     fd = pandas.DataFrame(csv_data, columns=column_headers)
-    from rapidannotator import app
     if format1 == '.xlsx':
         filename = str(experimentId) + '.xlsx'
         filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -1488,7 +1474,6 @@ def _exportResultsCSV(experimentId, format1):
 
     return send_file(filePath, as_attachment=True)
 
-
 def _exportMultichoiceResult(experimentId, format):
     annotation_levels = AnnotationLevel.query.filter_by(experiment_id=experimentId).with_entities(AnnotationLevel.id).all()
     result = []
@@ -1502,10 +1487,8 @@ def _exportMultichoiceResult(experimentId, format):
         .add_columns(AnnotationLevel.name, Label.name, AnnotationInfo.label_other, User.username, File.name)
         .all()
         )
-    import pandas as pd
     df = pd.DataFrame(result)
     df.columns = ["level_name", "label_name", "label_other", "annotator_username", "file_name"]
-    from rapidannotator import app
     if format == '.xlsx':
         filename = str(experimentId) + '.xlsx'
         filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
