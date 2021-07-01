@@ -1240,7 +1240,7 @@ def _exportResultsXLS(experimentId):
     multichoice = AnnotationLevel.query.filter_by(experiment_id=experimentId, multichoice=True).count()
     if(multichoice):
         pass
-        return _exportMultichoiceResult(experimentId, "xlsx")
+        return _exportLongFormat(experimentId, "xlsx")
     
     experiment = Experiment.query.filter_by(id=experimentId).first()
     excel_file = xlwt.Workbook()
@@ -1387,7 +1387,7 @@ def _exportResultsCSV(experimentId, format1):
     multichoice = AnnotationLevel.query.filter_by(experiment_id=experimentId, multichoice=True).count()
     if(multichoice):
         pass
-        return _exportMultichoiceResult(experimentId, format1)
+        return _exportLongFormat(experimentId, format1)
 
     experiment = Experiment.query.filter_by(id=experimentId).first()
     if experiment.uploadType == 'fromConcordance':
@@ -1457,22 +1457,51 @@ def _exportResultsCSV(experimentId, format1):
             csv_row.append(f.content)
         csv_data.append(csv_row)
     fd = pandas.DataFrame(csv_data, columns=column_headers)
-    if format1 == '.xlsx':
-        filename = str(experimentId) + '.xlsx'
-        filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        with pandas.ExcelWriter(filePath, date_format='YYYY-MM-DD', datetime_format='YYYY-MM-DD HH:MM:SS') as writer:
-            fd.to_excel(writer, sheet_name='Sheet1', index=False)
-    else:
-        filename = str(experimentId) + '.csv'
-        filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        fd.to_csv(filePath, index=False)
-
-    response = {}
-    response['success'] = True
-
+    filePath = make_file(fd, experimentId, format)
     return send_file(filePath, as_attachment=True)
 
-def _exportMultichoiceResult(experimentId, format):
+@blueprint.route('/_exportResultsWide/<int:experimentId>/<string:format>', methods=['POST','GET'])
+def _exportWideFormat(experimentId, format):
+    """
+    Foreach annotator in the exp:
+        Foreach annotation level in exp:
+            Foreach label in annotation level:
+                Foreach File in exp.files:
+                    is_this_label_is_selected_by_the_annotator? (BINARY)
+    """
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    annotators = experiment.annotators
+    annotators = [assoc.annotator for assoc in annotators]
+    levels = experiment.annotation_levels
+    levels_ids = map(lambda level: level.id, levels)
+    print(levels_ids)
+    ## ID and Files and Label
+    annotations_info = AnnotationInfo.query.filter(AnnotationInfo.annotationLevel_id.in_(levels_ids))
+    annotations_map = {}
+    for row in annotations_info:
+        annotations_map[(row.file_id, row.label_id, row.user_id)] = 1
+    headers = ['Filename']
+    labels_annotators = []
+    for annotator in annotators:
+        for level in levels:
+            for label in level.labels:
+                headers.append(f'{level.name}({label.name}) {annotator.username}')
+                labels_annotators.append([label.id, annotator.id])
+    
+    result = []
+    for file in experiment.files:
+        row = [file.name]
+        for label_id, annotator_id in labels_annotators:
+            row.append(annotations_map.get((file.id, label_id, annotator_id),0))
+        result.append(row)
+    result = pd.DataFrame(columns=headers,data=result)
+    filePath = make_file(result, experimentId, format)
+    return send_file(filePath, as_attachment=True)
+
+@blueprint.route('/_exportResultsLong/<int:experimentId>/<string:format>', methods=['POST','GET'])
+def _exportLongFormat(experimentId, format):
+    """
+    """
     annotation_levels = AnnotationLevel.query.filter_by(experiment_id=experimentId).with_entities(AnnotationLevel.id).all()
     result = []
     for annotation_level in annotation_levels:
@@ -1499,7 +1528,10 @@ def _exportMultichoiceResult(experimentId, format):
         # it means it is multi-choice level selected so we need to increment.
             annotation_order[i] =  annotation_order[i-1] + 1
     df['annotation_order'] = annotation_order
-    
+    filePath = make_file(df, experimentId, format)
+    return send_file(filePath, as_attachment=True)
+
+def make_file(df, experimentId, format):
     if format == '.xlsx':
         filename = str(experimentId) + '.xlsx'
         filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -1509,8 +1541,4 @@ def _exportMultichoiceResult(experimentId, format):
         filename = str(experimentId) + '.csv'
         filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         df.to_csv(filePath, index=False)
-
-    response = {}
-    response['success'] = True
-
-    return send_file(filePath, as_attachment=True)
+    return filePath
