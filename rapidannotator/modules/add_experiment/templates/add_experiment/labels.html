@@ -223,7 +223,7 @@
                 
                 <b>Multichoice Annotation level?</b>
                 <input type="checkbox" name="multichoice" class="form-control">
-                
+                <span class="help-block"><small><div style="line-height:135%">(Take care in case of changing multi-choice option will effect the results export)</div></small></span>
                 <div class="form-actions">
                     <button type="submit" name="submit" value="" class="btn btn-primary"> {{ ('Save') }}</button>
                     <button type="button" class="btn btn-danger pull-right" data-toggle="modal"
@@ -668,7 +668,11 @@
         });
 
         editAnnotationLevelForm.on('submit', function(e) {
-
+            var confirmed = confirm("Are you sure that you want to update the annotation level?");
+            if (!confirmed){
+                e.preventDefault();
+                return;
+                }
             e.stopImmediatePropagation();
             e.preventDefault();
             name = editAnnotationLevelForm.find('input[name="annotationName"]').val();

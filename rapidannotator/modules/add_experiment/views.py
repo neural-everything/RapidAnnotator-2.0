@@ -1082,9 +1082,11 @@ def viewResults(experimentId, userId):
                 else:
                     annotation[level.id] = "SKIPPED"
         annotations[f.id] = annotation       
+    multichoice = AnnotationLevel.query.filter_by(experiment_id=experimentId, multichoice=True).count()
     
     return render_template('add_experiment/results.html', exp_files=expFiles, page=page, \
-        per_page=per_page, pagination=pagination, experiment = experiment, annotations = annotations, annotators=annotators, user=user)
+        per_page=per_page, pagination=pagination, multichoice = multichoice, \
+        experiment = experiment, annotations = annotations, annotators=annotators, user=user)
 
 
 @blueprint.route('/_discardAnnotations', methods=['POST','GET'])
@@ -1237,11 +1239,6 @@ def _exportResults(experimentId):
 @blueprint.route('/_exportResultsXLS/<int:experimentId>', methods=['POST','GET'])
 def _exportResultsXLS(experimentId):
     
-    multichoice = AnnotationLevel.query.filter_by(experiment_id=experimentId, multichoice=True).count()
-    if(multichoice):
-        pass
-        return _exportLongFormat(experimentId, "xlsx")
-    
     experiment = Experiment.query.filter_by(id=experimentId).first()
     excel_file = xlwt.Workbook()
     sheet = excel_file.add_sheet('results')
@@ -1384,11 +1381,6 @@ def _exportResultsConcordance(experiment, format1):
 @blueprint.route('/_exportResultsCSV/<int:experimentId>/<string:format1>', methods=['POST','GET'])
 def _exportResultsCSV(experimentId, format1):
 
-    multichoice = AnnotationLevel.query.filter_by(experiment_id=experimentId, multichoice=True).count()
-    if(multichoice):
-        pass
-        return _exportLongFormat(experimentId, format1)
-
     experiment = Experiment.query.filter_by(id=experimentId).first()
     if experiment.uploadType == 'fromConcordance':
         return _exportResultsConcordance(experiment, format1)
@@ -1461,13 +1453,16 @@ def _exportResultsCSV(experimentId, format1):
     return send_file(filePath, as_attachment=True)
 
 @blueprint.route('/_exportResultsWide/<int:experimentId>/<string:format>', methods=['POST','GET'])
-def _exportWideFormat(experimentId, format):
+def _exportResultsWide(experimentId, format):
     """
-    Foreach annotator in the exp:
-        Foreach annotation level in exp:
-            Foreach label in annotation level:
-                Foreach File in exp.files:
-                    is_this_label_is_selected_by_the_annotator? (BINARY)
+    Exporting results at wide format, wide format is as the following:
+    Col for each (label,annotator) pairs:
+    Level[Label] Annotator Username: Cell = 1 in case of this label is selected by the annotator
+    Args:
+        experimentId: The experiment id
+        format: needed format of exported results file (csv or xlsx)
+    Returns:
+        filePath: File in csv/xlsx format (based on sent argument)
     """
     experiment = Experiment.query.filter_by(id=experimentId).first()
     annotators = experiment.annotators
@@ -1499,8 +1494,17 @@ def _exportWideFormat(experimentId, format):
     return send_file(filePath, as_attachment=True)
 
 @blueprint.route('/_exportResultsLong/<int:experimentId>/<string:format>', methods=['POST','GET'])
-def _exportLongFormat(experimentId, format):
+def _exportResultsLong(experimentId, format):
     """
+    Exporting results at long format, long format is as the following:
+    For each annotation info entry there exist a corresponding record
+    Columns are as the following
+        level_name, label_name, label_other, annotator_username, file_name
+    Args:
+        experimentId: The experiment id
+        format: needed format of exported results file (csv or xlsx)
+    Returns:
+        filePath: File in csv/xlsx format (based on sent argument)
     """
     annotation_levels = AnnotationLevel.query.filter_by(experiment_id=experimentId).with_entities(AnnotationLevel.id).all()
     result = []
@@ -1517,7 +1521,7 @@ def _exportLongFormat(experimentId, format):
         )
     df = pd.DataFrame(result)
     df.columns = ["level_name", "label_name", "label_other", "annotator_username", "file_name"]
-    # Selection order column
+    # Annotation selection order column
     annotation_order = [1] * len(df)
     for i in range(1, len(df)):
         if  df.iloc[i]['level_name'] == df.iloc[i-1]['level_name'] and \
