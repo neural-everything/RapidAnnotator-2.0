@@ -464,10 +464,7 @@
                 textAlreadyAnnotated = "The Level is SKIPPED in the current annotation."    
             }
             else{
-                textAlreadyAnnotated = "Currently selected label is: " + "<b>" + alreadyAnnotatedDict[levelId1][1] + "</b>";
-                var tp = $(".labelButton[data-labelid='" + alreadyAnnotatedDict[levelId1][0] +"']");
-                tp.removeClass('btn-primary');
-                tp.addClass('btn-danger');
+                updateAnnotation(alreadyAnnotatedDict, levelId1);
             }
             $('.alreadyAnnotated').html(textAlreadyAnnotated);
 
@@ -493,14 +490,10 @@
                 textAlreadyAnnotated = "The Level is SKIPPED in the current annotation."    
             }
             else{
-                textAlreadyAnnotated = "Currently selected label is: " + "<b>" + alreadyAnnotatedDict[levelId1][1] + "</b>";
-                var tp = $(".labelButton[data-labelid='" + alreadyAnnotatedDict[levelId1][0] +"']");
-                tp.removeClass('btn-primary');
-                tp.addClass('btn-danger');
+                updateAnnotation(alreadyAnnotatedDict, levelId1);
             }
             $('.alreadyAnnotated').html(textAlreadyAnnotated);
         }
-
         function undoProcess(){
             undoButton.attr("disabled", "disabled");
             $('.toggleLooping').removeClass('hidden-element');
@@ -725,12 +718,7 @@
         var currentLevelBody1 = $(".annotationLevel[data-index='" + currentLevel +"']");
         var levelId1 = currentLevelBody1.data("levelid");
         var alreadyAnnotatedDict = {{annotationAlreadyDone | safe}};
-        var textAlreadyAnnotated = "Currently selected label is: " + "<b>" + alreadyAnnotatedDict[levelId1][1] + "</b>";
-        $('.alreadyAnnotated').html(textAlreadyAnnotated);
-
-        var tp = $(".labelButton[data-labelid='" + alreadyAnnotatedDict[levelId1][0] +"']");
-        tp.removeClass('btn-primary');
-        tp.addClass('btn-danger');
+        updateAnnotation(alreadyAnnotatedDict, levelId1);
 
         console.log(keyBindingDict, alreadyAnnotatedDict);
 
@@ -796,6 +784,20 @@
         return text;
     }
 
+    function updateAnnotation(alreadyAnnotatedDict, levelId1){
+        if(alreadyAnnotatedDict[levelId1]) {
+            labels_names = [];
+            alreadyAnnotatedDict[levelId1].forEach(e=>{
+                labels_names.push(e[1]);
+                var tp = $(".labelButton[data-labelid='" + e[0] +"']");
+                tp.removeClass('btn-primary');
+                tp.addClass('btn-danger');
+            });
+            console.log(labels_names)
+            textAlreadyAnnotated = "Currently selected label/s:" + "<b>"+ labels_names +"</b>";
+            $('.alreadyAnnotated').html(textAlreadyAnnotated);
+        }
+    }
 </script>
 
 {% endblock annotate_experiment_body %}
