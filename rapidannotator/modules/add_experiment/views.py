@@ -1385,71 +1385,67 @@ def _exportResultsCSV(experimentId, format1):
     if experiment.uploadType == 'fromConcordance':
         return _exportResultsConcordance(experiment, format1)
     
-    RESERVED_LABEL = '99999'
-    
+    RESERVED_LABEL = '99999'    
+    """
     column_headers = []
     column_headers.append('File Name')
-    annotators_assoc = experiment.annotators
-    annotators = [assoc.annotator for assoc in annotators_assoc]
-    annotation_levels = AnnotationLevel.query.filter_by(experiment_id=experimentId).all()
-
-    for annotator in annotators:
-        for level in annotation_levels:
-            column_headers.append(annotator.username + " ( Level: " + str(level.name) + " )" )
-        column_headers.append('Target Caption of ' + annotator.username)
-        column_headers.append('Comments by ' + annotator.username)
-    column_headers.append('Caption')
+    if experiment.uploadType == 'viaSpreadsheet':
+        column_headers.append('Video Link')
+    """
     
+    df = []
+    levels_map = {}
+    labels_map = {}
+    annotators_map = {}
+    annotations_map = {}
+
+    annotators_assoc = experiment.annotators
+    for assoc in annotators_assoc:
+        annotators_map[assoc.annotator.id] = assoc.annotator.username
+    
+    levels = experiment.annotation_levels
+    for level in levels:
+        levels_map[level.id] = level.name
+        for label in level.labels:
+            labels_map[label.id] = label.name
+    # TODO
+    annotation_caption_map = {}
+    files = File.query.filter_by(experiment_id = experimentId)\
+            .join(FileCaption, FileCaption.file_id == File.id)\
+            .with_entities()\
+            .add_columns(File.id, File.name, FileCaption.caption)\
+            .all()
+    df = pd.DataFrame(files)
+    df.set_index('id',inplace=True)
+    RESERVED_COL = [RESERVED_LABEL] * len(files)
+    for annotator in annotators_map.values():
+        for level in levels_map.values():
+            df[annotator + " ( Level: " + level + " )"] = RESERVED_COL
+        df['Target Caption of ' + annotator] = df['caption']
+        df['Comments by ' + annotator] = ["No Comments"] * len(files)
+    df.rename(columns={'name': 'Filename', 'caption':'Caption'}, inplace=True)
+    
+    annotations = AnnotationInfo.query.filter(AnnotationInfo.annotationLevel_id.in_(levels_map.keys()))
+    for a in annotations:
+        df.loc[a.file_id][annotators_map[a.user_id] + " ( Level: " + levels_map[a.annotationLevel_id] + " )"] = labels_map[a.label_id]
+    """
+    captions_info = AnnotationCaptionInfo.query.filter_by(files-or-exp)
+    for ci in captions_info:
+        df.loc[ci.file_id]['Target Caption of ' + annotators_map[ci.user_id]] = ci.target_caption
+    
+    comments_info = AnnotationCommentInfo.query.filter_by(files-or-exp)
+    for ci in comments_info:
+        df.loc[ci.file_id]['Comments by ' + annotators_map[ci.user_id]] = ci.target_caption
+    """
+    """
     if experiment.uploadType == 'viaSpreadsheet':
         column_headers.append('Video Link')
     
-    csv_data = []
-
-    for f in experiment.files:
-        csv_row = []
-        csv_row.append(f.name)
-        for annotator in annotators:
-            for level in annotation_levels:
-                annotation_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=annotator.id, annotationLevel_id=level.id).order_by(AnnotationInfo.annotationLevel_id)
-                if annotation_info.count() == 0:
-                    csv_row.append(RESERVED_LABEL)
-                else:
-                    prev_file_id = -1
-                    prev_annotation_level_id = -1
-                    for info in annotation_info:
-                        file_id = str(info.file_id)
-                        annotation_level_id = str(info.annotationLevel_id)
-                        if (file_id == prev_file_id and annotation_level_id == prev_annotation_level_id):
-                            continue
-                        label = Label.query.filter_by(id=info.label_id).first()
-                        csv_row.append(str(label.name))
-                        prev_file_id = file_id
-                        prev_annotation_level_id = annotation_level_id
-            cp = AnnotationCaptionInfo.query.filter_by(file_id=f.id, user_id=annotator.id).first()
-            if cp == None:
-                cp_val = FileCaption.query.filter_by(file_id=f.id).first()
-                csv_row.append(cp_val.target_caption)
-            else:
-                csv_row.append(cp.target_caption)
-
-            comments_info = AnnotationCommentInfo.query.filter_by(file_id=f.id, user_id=annotator.id).first()
-            if comments_info == None:
-                comment = "No Comments"
-                csv_row.append(comment)
-            else:
-                csv_row.append(comments_info.comment)
-        
-        fileCaption = FileCaption.query.filter_by(file_id=f.id).first()
-        if fileCaption.caption == '':
-            csv_row.append('No Caption Provided')
-        else:
-            csv_row.append(fileCaption.caption)
-        
-        if experiment.uploadType == 'viaSpreadsheet':
-            csv_row.append(f.content)
-        csv_data.append(csv_row)
-    fd = pandas.DataFrame(csv_data, columns=column_headers)
-    filePath = make_file(fd, experimentId, format)
+    if experiment.uploadType == 'viaSpreadsheet':
+        csv_row.append(f.content)
+    csv_data.append(csv_row)
+    """
+    filePath = make_file(df, experimentId, format1)
     return send_file(filePath, as_attachment=True)
 
 @blueprint.route('/_exportResultsWide/<int:experimentId>/<string:format>', methods=['POST','GET'])
@@ -1469,8 +1465,6 @@ def _exportResultsWide(experimentId, format):
     annotators = [assoc.annotator for assoc in annotators]
     levels = experiment.annotation_levels
     levels_ids = map(lambda level: level.id, levels)
-    print(levels_ids)
-    ## ID and Files and Label
     annotations_info = AnnotationInfo.query.filter(AnnotationInfo.annotationLevel_id.in_(levels_ids))
     annotations_map = {}
     for row in annotations_info:
