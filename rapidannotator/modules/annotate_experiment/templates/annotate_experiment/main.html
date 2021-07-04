@@ -469,7 +469,6 @@
                 if(tp.readyState == 3 || tp.readyState == 4 || tp.readyState == 2){
                     if(!already_submitted[levelId]){
                         annotationProcess(y);
-
                     }
                 }
             }
@@ -663,7 +662,7 @@
             undoProcess();
         });
 
-        nextButton.on('click', nextLevelHandler)
+        nextButton.on('click', nextLevelHandler);
 
         doneButton.on('click', function(){
             

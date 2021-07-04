@@ -128,7 +128,7 @@
         </div>
         <div class="annotationLevelArea">
 	        {% for level in experiment.annotation_levels | sort(attribute='id')%}
-	            <div class="col-xs-7 annotationLevel hidden-element" data-index="{{loop.index}}" data-levelid="{{level.id}}">
+	            <div class="col-xs-7 annotationLevel hidden-element" data-index="{{loop.index}}" data-levelid="{{level.id}}"  data-multichoice="{{level.multichoice}}">
 	                {%- set levelIndex = loop.index %}
 	                {%- if level.instruction != "" -%}
 	                    <div class="alert alert-info alert-dismissible">
@@ -153,21 +153,26 @@
 	                <ul class="labelKeyBindings">
 	                    {% for label in level.labels %}
 	                    <li data-key="{{label.key_binding}}" data-labelid="{{label.id}}">
-	                        <p> {{keyBindingDict[levelIndex][label.id]}} : {{label.name}}</p>
+	                        <p> {{keyBindingDict[levelIndex][label.id]}} : {{label.name}} <input data-labelid="{{label.id}}" hidden value="" class="label_other inputLevel-{{level.id}}"> </p>
 	                    </li>
 	                    {% endfor %}
 	                </ul>
 
 	                {% for label in level.labels %}
-	                <button type="button" class="labelButton btn btn-primary btn-group btn-group-inline
+	                <button type="button" class="labelButton btn btn-secondary btn-group btn-group-inline labelLevel-{{level.id}}
 	                    btn-space btn-space-top" data-labelid="{{label.id}}">
 	                    {{ label.name }}
 	                </button>
 	                {% endfor %}
-
-	            </div>
+                </div>
 	        {% endfor %}
     	</div>
+        <div class="col-xs-7 flex align-items-xxl-center" style="padding-top:10px;">
+            <button type="button" class="btn btn-success btn-group btn-group-inline col-xs-3 nextButton" style="margin:auto;">
+            Next
+            </button>
+        </div>
+
     </div>
 
     <div class="fileCaption">
@@ -210,6 +215,7 @@
 
         var undoButton = $('.undoButton');
         var doneButton = $('.doneButton');
+        var nextButton = $('.nextButton');
         
 
         var file = $('.file');
@@ -350,6 +356,7 @@
         var preLoadedTill = 0;
         var space_pressed = 0;
         var annotations = {};
+        var annotationsOrder = {};
         var already_submitted = {};
         var progress_num = 0;
         var totalAnnotationLevels = "{{ totalAnnotationLevels }}";
@@ -365,24 +372,23 @@
         $(".annotationLevel[data-index=1]").removeClass('hidden-element');
 
         labelButton.on('click', function() {
-            labelButton.attr("disabled", "disabled");
-            selectedLabel = $(this).data("labelid");
+            updateSelectedLabel($(this));
             if("{{experiment.displayTargetCaption}}" == "True"){
                 var targetCaption = $("#targetCaptionData").val();
                 var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
                 save_targetCaption(currentFileId, targetCaption);
             }
-            nextLevel(selectedLabel);
+            /*
             window.setTimeout(function() {
                 labelButton.removeAttr("disabled");
             }, [800]);
+            */
         });
         
         
 
         $(document).keyup(function(event) {
-            
-            if(event.target.nodeName == "TEXTAREA"){
+            if(event.target.nodeName == "TEXTAREA" || event.target.nodeName == "INPUT" ){
                 return;
             }
             var x = event.charCode || event.keyCode;
@@ -396,7 +402,6 @@
                 if(tp.readyState == 3 || tp.readyState == 4 || tp.readyState == 2){
                     if(!already_submitted[levelId]){
                         annotationProcess(y);
-
                     }
                 }
             }
@@ -436,10 +441,104 @@
                         var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
                         save_targetCaption(currentFileId, targetCaption);
                     }
-                    nextLevel(key);
+                    selectedLabelButton = $(`.labelButton[data-labelid='${key}']`);
+                    updateSelectedLabel(selectedLabelButton);
                 }
             });
         }
+
+        function updateSelectedLabel(labelButton){
+            var currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+            var multichoice = currentLevelBody.data("multichoice"); // Used for multichoice labels for the current level
+            console.log(multichoice);
+            levelId = currentLevelBody.data("levelid");
+            selectedLabel = labelButton.data("labelid");
+            if (multichoice == "True"){
+                labelButton.toggleClass('btn-secondary');
+                labelButton.toggleClass('btn-primary');
+                textField = $(`input[data-labelid='${selectedLabel}']`);
+                if (!textField.is(":visible")){
+                    textField.show();
+                    if (annotations[levelId] == null){
+                        annotations[levelId] = {}
+                        annotations[levelId][selectedLabel] = textField.val();
+                        annotationsOrder[levelId] = [selectedLabel];
+                    }
+                    else{
+                        annotations[levelId][selectedLabel] = textField.val();
+                        annotationsOrder[levelId].push(selectedLabel)
+                    }
+                }
+                else {
+                    textField.hide();
+                    textField.val("");
+                    delete annotations[levelId][selectedLabel];
+                    const index = annotationsOrder[levelId].indexOf(selectedLabel);
+                    if (index > -1) 
+                        annotationsOrder[levelId].splice(index, 1);
+                }
+            }
+            else {
+                currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+                levelId = currentLevelBody.data("levelid");
+                $(`.labelLevel-${levelId}`).removeClass('btn-primary');
+                textField = $(`input[data-labelid='${selectedLabel}']`);
+                visible = textField.is(":visible");
+                $(`.inputLevel-${levelId}`).hide();
+                selectedLabel = labelButton.data("labelid");
+                if (!visible){
+                    labelButton.addClass('btn-primary');
+                    labelButton.removeClass('btn-secondary');
+                    textField.show();
+                    selectedLabel = labelButton.data("labelid");
+                    annotations[levelId] = {}
+                    annotations[levelId][selectedLabel] = textField.val();
+                    annotationsOrder[levelId] = [selectedLabel];
+                }
+                else {
+                    labelButton.removeClass('btn-primary');
+                    labelButton.addClass('btn-secondary');
+                    textField.hide();
+                    textField.val("");
+                    delete annotations[levelId][selectedLabel];
+                    annotationsOrder[levelId] = [];
+                }
+            }
+            return
+        }
+
+        function nextLevelHandler(){
+            currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+            levelId = currentLevelBody.data("levelid");
+            already_submitted[levelId] = 1;
+            multichoice = currentLevelBody.data("multichoice") == "True";
+            currentLevelBody.addClass('hidden-element');
+            label = selectedLabel;
+            if (annotations[levelId]){
+                labels_ids = Object.keys(annotations[levelId]);
+                labels_ids.forEach(id=>{
+                    annotations[levelId][id] = $(`input.label_other[data-labelid=${id}]`).val()
+                })
+            }
+            if (currentLevel == totalAnnotationLevels) {
+                fileAnnotationCompleted();
+            }
+            else if(!multichoice && skipLevelDict[levelId][label] == 1 ){
+                currentLevel = totalAnnotationLevels;
+                fileAnnotationCompleted();
+            }
+            updateLevelBody();
+            updateAnnotation();
+        }
+
+        function updateLevelBody(){
+            currentLevel = (currentLevel % totalAnnotationLevels) + 1;
+            currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+            currentLevelBody.removeClass('hidden-element');
+            levelId = currentLevelBody.data("levelid");
+            updateAnnotation(alreadyAnnotatedDict, levelId);
+        }
+
 
         function nextLevel(label) {
             currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
@@ -456,15 +555,15 @@
             }
             currentLevel = (currentLevel % totalAnnotationLevels) + 1;
             
-            var currentLevelBody1 = $(".annotationLevel[data-index='" + currentLevel +"']");
-            var levelId1 = currentLevelBody1.data("levelid");
+            var currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+            var levelId = currentLevelBody.data("levelid");
             var alreadyAnnotatedText = {{annotationAlreadyDone | safe}};
             var textAlreadyAnnotated = "";
-            if(!alreadyAnnotatedDict[levelId1]){
+            if(!alreadyAnnotatedDict[levelId]){
                 textAlreadyAnnotated = "The Level is SKIPPED in the current annotation."    
             }
             else{
-                updateAnnotation(alreadyAnnotatedDict, levelId1);
+                updateAnnotation(alreadyAnnotatedDict, levelId);
             }
             $('.alreadyAnnotated').html(textAlreadyAnnotated);
 
@@ -486,11 +585,11 @@
 
             var alreadyAnnotatedText = {{annotationAlreadyDone | safe}};
             var textAlreadyAnnotated = "";
-            if(!alreadyAnnotatedDict[levelId1]){
+            if(!alreadyAnnotatedDict[levelId]){
                 textAlreadyAnnotated = "The Level is SKIPPED in the current annotation."    
             }
             else{
-                updateAnnotation(alreadyAnnotatedDict, levelId1);
+                updateAnnotation(alreadyAnnotatedDict, levelId);
             }
             $('.alreadyAnnotated').html(textAlreadyAnnotated);
         }
@@ -507,6 +606,8 @@
         undoButton.on('click', function() {
             undoProcess();
         });
+
+        nextButton.on('click', nextLevelHandler);
 
         doneButton.on('click', function(){
             
@@ -566,9 +667,10 @@
             var data = {
                 'fileId' :          currentFileId,
                 'annotations' :     annotations, 
-                'labelCount' :     "{{labelCount}}",
+                'annotationsOrder': annotationsOrder,
+                'labelCount' :     {{labelCount}},
                 'userId'    : "{{userId}}",
-                'hasToIncreaseCurrent': 0,
+                'hasToIncreaseCurrent': 1,
             };
 
             data = JSON.stringify(data);
@@ -576,6 +678,7 @@
                 if(response.success) {
                     displayEnd();
                     annotations = {};
+                    annotationsOrder = {};
                     already_submitted = {};
                     // doneButton.removeClass('hidden-element');
                     if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
@@ -715,13 +818,29 @@
             loadedDiv.data("fileid", fileToLoad.id);
         }
 
-        var currentLevelBody1 = $(".annotationLevel[data-index='" + currentLevel +"']");
-        var levelId1 = currentLevelBody1.data("levelid");
+        function updateAnnotation(alreadyAnnotatedDict, levelId){
+                if(alreadyAnnotatedDict[levelId]) {
+                    labels_names = [];
+                    annotations[levelId] = {};
+                    annotationsOrder[levelId] = [];
+                    alreadyAnnotatedDict[levelId].forEach(e=>{
+                        labels_names.push(e[1]);
+                        var tp = $(".labelButton[data-labelid='" + e[0] +"']");
+                        tp.addClass('btn-primary');
+                        $(`input.label_other[data-labelid=${e[0]}]`).show();
+                        $(`input.label_other[data-labelid=${e[0]}]`).val(e[2]);
+                        annotations[levelId][e[0]] = e[1];
+                        annotationsOrder[levelId].push(e[0]);
+                    });
+                    textAlreadyAnnotated = "Currently selected label/s:" + "<b>"+ labels_names +"</b>";
+                    $('.alreadyAnnotated').html(textAlreadyAnnotated);
+                }
+            }
+            
+        var currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+        var levelId = currentLevelBody.data("levelid");
         var alreadyAnnotatedDict = {{annotationAlreadyDone | safe}};
-        updateAnnotation(alreadyAnnotatedDict, levelId1);
-
-        console.log(keyBindingDict, alreadyAnnotatedDict);
-
+        updateAnnotation(alreadyAnnotatedDict, levelId);
     });
 
     function save_targetCaption(fileId, targetCaption){
@@ -782,21 +901,6 @@
             text = document.selection.createRange().text;
         }
         return text;
-    }
-
-    function updateAnnotation(alreadyAnnotatedDict, levelId1){
-        if(alreadyAnnotatedDict[levelId1]) {
-            labels_names = [];
-            alreadyAnnotatedDict[levelId1].forEach(e=>{
-                labels_names.push(e[1]);
-                var tp = $(".labelButton[data-labelid='" + e[0] +"']");
-                tp.removeClass('btn-primary');
-                tp.addClass('btn-danger');
-            });
-            console.log(labels_names)
-            textAlreadyAnnotated = "Currently selected label/s:" + "<b>"+ labels_names +"</b>";
-            $('.alreadyAnnotated').html(textAlreadyAnnotated);
-        }
     }
 </script>
 
