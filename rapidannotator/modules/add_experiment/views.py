@@ -1386,18 +1386,10 @@ def _exportResultsCSV(experimentId, format1):
         return _exportResultsConcordance(experiment, format1)
     
     RESERVED_LABEL = '99999'    
-    """
-    column_headers = []
-    column_headers.append('File Name')
-    if experiment.uploadType == 'viaSpreadsheet':
-        column_headers.append('Video Link')
-    """
     
-    df = []
     levels_map = {}
     labels_map = {}
     annotators_map = {}
-    annotations_map = {}
 
     annotators_assoc = experiment.annotators
     for assoc in annotators_assoc:
@@ -1408,12 +1400,15 @@ def _exportResultsCSV(experimentId, format1):
         levels_map[level.id] = level.name
         for label in level.labels:
             labels_map[label.id] = label.name
-    # TODO
-    annotation_caption_map = {}
+
+    files_columns = [File.id, File.name, FileCaption.caption]
+
+    if experiment.uploadType == 'viaSpreadsheet':
+        files_columns.append(File.content)
     files = File.query.filter_by(experiment_id = experimentId)\
             .join(FileCaption, FileCaption.file_id == File.id)\
             .with_entities()\
-            .add_columns(File.id, File.name, FileCaption.caption)\
+            .add_columns(*files_columns)\
             .all()
     df = pd.DataFrame(files)
     df.set_index('id',inplace=True)
@@ -1425,26 +1420,21 @@ def _exportResultsCSV(experimentId, format1):
         df['Comments by ' + annotator] = ["No Comments"] * len(files)
     df.rename(columns={'name': 'Filename', 'caption':'Caption'}, inplace=True)
     
+    if experiment.uploadType == 'viaSpreadsheet':
+        df.rename(columns={'content': 'Video Link'}, inplace=True)
+
     annotations = AnnotationInfo.query.filter(AnnotationInfo.annotationLevel_id.in_(levels_map.keys()))
     for a in annotations:
-        df.loc[a.file_id][annotators_map[a.user_id] + " ( Level: " + levels_map[a.annotationLevel_id] + " )"] = labels_map[a.label_id]
-    """
-    captions_info = AnnotationCaptionInfo.query.filter_by(files-or-exp)
+        df.loc[a.file_id, [annotators_map[a.user_id] + " ( Level: " + levels_map[a.annotationLevel_id] + " )"]] = labels_map[a.label_id]
+    
+    captions_info = AnnotationCaptionInfo.query.filter(AnnotationCaptionInfo.file_id.in_(df.index.values))
     for ci in captions_info:
-        df.loc[ci.file_id]['Target Caption of ' + annotators_map[ci.user_id]] = ci.target_caption
+        df.loc[ci.file_id, ['Target Caption of ' + annotators_map[ci.user_id]]] = ci.target_caption
     
-    comments_info = AnnotationCommentInfo.query.filter_by(files-or-exp)
+    comments_info = AnnotationCommentInfo.query.filter(AnnotationCommentInfo.file_id.in_(df.index.values))
     for ci in comments_info:
-        df.loc[ci.file_id]['Comments by ' + annotators_map[ci.user_id]] = ci.target_caption
-    """
-    """
-    if experiment.uploadType == 'viaSpreadsheet':
-        column_headers.append('Video Link')
+        df.loc[ci.file_id, ['Comments by ' + annotators_map[ci.user_id]]] = ci.comment
     
-    if experiment.uploadType == 'viaSpreadsheet':
-        csv_row.append(f.content)
-    csv_data.append(csv_row)
-    """
     filePath = make_file(df, experimentId, format1)
     return send_file(filePath, as_attachment=True)
 
@@ -1461,30 +1451,37 @@ def _exportResultsWide(experimentId, format):
         filePath: File in csv/xlsx format (based on sent argument)
     """
     experiment = Experiment.query.filter_by(id=experimentId).first()
-    annotators = experiment.annotators
-    annotators = [assoc.annotator for assoc in annotators]
+    levels_map = {}
+    labels_map = {}
+    annotators_map = {}
+
+    annotators_assoc = experiment.annotators
+    for assoc in annotators_assoc:
+        annotators_map[assoc.annotator.id] = assoc.annotator.username
+    
     levels = experiment.annotation_levels
-    levels_ids = map(lambda level: level.id, levels)
-    annotations_info = AnnotationInfo.query.filter(AnnotationInfo.annotationLevel_id.in_(levels_ids))
-    annotations_map = {}
-    for row in annotations_info:
-        annotations_map[(row.file_id, row.label_id, row.user_id)] = 1
-    headers = ['Filename']
-    labels_annotators = []
-    for annotator in annotators:
+    for level in levels:
+        levels_map[level.id] = level.name
+        for label in level.labels:
+            labels_map[label.id] = label.name
+    
+    files = File.query.filter_by(experiment_id = experimentId)\
+            .with_entities(File.id, File.name)\
+            .all()
+    empty_col = len(files) * [0]
+    df = pd.DataFrame(files)
+    df.set_index('id',inplace=True)
+    for annotator in annotators_map.values():
         for level in levels:
             for label in level.labels:
-                headers.append(f'{level.name}({label.name}) {annotator.username}')
-                labels_annotators.append([label.id, annotator.id])
+                df[f'{level.name}({label.name}) {annotator}'] = empty_col
     
-    result = []
-    for file in experiment.files:
-        row = [file.name]
-        for label_id, annotator_id in labels_annotators:
-            row.append(annotations_map.get((file.id, label_id, annotator_id),0))
-        result.append(row)
-    result = pd.DataFrame(columns=headers,data=result)
-    filePath = make_file(result, experimentId, format)
+    annotations_info = AnnotationInfo.query.filter(AnnotationInfo.annotationLevel_id.in_(levels_map.keys()))
+    for a in annotations_info:
+        col = f'{levels_map[a.annotationLevel_id]}({labels_map[a.label_id]}) {annotators_map[a.user_id]}'
+        df.loc[a.file_id,[col]] = 1
+    
+    filePath = make_file(df, experimentId, format)
     return send_file(filePath, as_attachment=True)
 
 @blueprint.route('/_exportResultsLong/<int:experimentId>/<string:format>', methods=['POST','GET'])
@@ -1530,6 +1527,14 @@ def _exportResultsLong(experimentId, format):
     return send_file(filePath, as_attachment=True)
 
 def make_file(df, experimentId, format):
+    """ Utility function for making results file functions
+    Args:
+        df: DataFrame sheet of the results to be exported
+        experimentId: experiment id, exported file name
+        format: csv or xlsx sheets file format
+    Returns:
+        filePath: path of the exported file to be sent.
+    """
     if format == '.xlsx':
         filename = str(experimentId) + '.xlsx'
         filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
