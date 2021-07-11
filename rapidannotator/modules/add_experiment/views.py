@@ -224,7 +224,8 @@ def _displayTargetCaption():
 def editLabels(experimentId):
 
     experiment = Experiment.query.filter_by(id=experimentId).first()
-    annotation_levels = experiment.annotation_levels
+    annotation_levels = AnnotationLevel.query.filter_by(experiment_id=\
+                        experimentId).order_by(AnnotationLevel.level_number)
     annotationLevelForm = AnnotationLevelForm(experimentId = experimentId)
     annotationInfo = AnnotatorAssociation.query.filter_by(experiment_id=experimentId, user_id=current_user.id)
     if annotationInfo.count() > 0:
@@ -309,6 +310,37 @@ def _addAnnotationLevel():
         skipLevel = skipLevel,
         errors = errors,
     )
+@blueprint.route('/_reorderAnnotationLevels', methods=['POST'])
+def _reorderAnnotationLevels():
+    """ Reordering the annotation levels
+    Request Args:
+        data: dict. contains each annoationlevel as key and its new order as value
+        experimentId: the experiment id to be edited
+    Returns:
+        response: {success:True} when it is has updated 
+        and {success:False} when something is missed from the expected inputs.
+    """
+    data = request.get_json(force=True)
+    order = data.get('order')
+    experimentId = data.get('experimentId')
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    # Checks whether experimentId is okay and ordering info is compelete or not
+    if not experiment or not isinstance(order,dict):
+        response = {'success' : False, 'message': "Incorrect request parameters"}
+        return jsonify(response)
+    # Making sure each level is given with its new order
+    for level in experiment.annotation_levels:
+        if order.get(str(level.id),None) == None:
+            response = {'success' : False, 'message': "Incompelete annotation levels info"}
+            return jsonify(response)
+    # Updating each level with its new order
+    for level in experiment.annotation_levels:
+        level.level_number = order[str(level.id)]
+    db.session.commit()
+    response = {
+        'success' : True,
+    }
+    return jsonify(response)
 
 @blueprint.route('/_addLabels', methods=['POST','GET'])
 def _addLabels():
@@ -1050,16 +1082,58 @@ def _deleteExperiment():
 @blueprint.route('/viewResults/<int:experimentId>/<int:userId>')
 @isPerimitted2
 def viewResults(experimentId, userId):
+    """ Viewing results of a user/annotator's annotation at an experiment.
+    Args:
+        experimentId: Id of the experiment requested to be viewed.
+        userId: Id of a specific annotator of that experiment.
+        levelId: (optional) Id of annotation level, filtering option.
+        labelId: (optional) Id of annotation level's label, filtering option.
+    Returns: 
+        HTML view @add_experiment/results.html
+    """
+    levelId = request.args.get('levelId', None)
+    labelId = request.args.get('labelId', None)
 
     page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
     experiment = Experiment.query.filter_by(id=experimentId).first()
     
     expFiles = File.query.filter_by(experiment_id=experiment.id).limit(per_page).offset(offset)
+
+    selected_level = None
+    selected_label = None
+
     annotation_levels = experiment.annotation_levels
-    
+    # Finding the selected annotation level and setting it to selected_level.
+    if levelId and levelId.isnumeric():
+        for level in annotation_levels:
+            if level.id == int(levelId):
+                selected_level = level
+                # Finding the selected label and setting it to selected_label.
+                if labelId and labelId.isnumeric():
+                    for label in level.labels:
+                        if label.id == int(labelId):
+                            selected_label = label
+                            break
+                break
+
+    expFiles = []
+    if not selected_level and not selected_label:
+        expFiles = File.query.filter_by(experiment_id=experiment.id).limit(per_page).offset(offset)
+    elif not selected_label:
+        expFiles = File.query.filter_by(experiment_id=experiment.id)\
+            .join(AnnotationInfo, AnnotationInfo.file_id == File.id)\
+            .filter_by(annotationLevel_id = selected_level.id, user_id = userId)\
+            .limit(per_page).offset(offset)
+    else:
+        expFiles = File.query.filter_by(experiment_id=experiment.id)\
+            .join(AnnotationInfo, AnnotationInfo.file_id == File.id)\
+            .filter_by(annotationLevel_id = selected_level.id, user_id = userId, label_id = selected_label.id)\
+            .limit(per_page).offset(offset)
+
     annotators_assoc = experiment.annotators
     annotators = [assoc.annotator for assoc in annotators_assoc]
 
+    
     total = ceil(File.query.filter_by(experiment_id=experiment.id).count() / per_page)
     pagination = Pagination(page=page, per_page=per_page, total=total, css_framework='bootstrap3')
 
@@ -1083,10 +1157,11 @@ def viewResults(experimentId, userId):
                     annotation[level.id] = "SKIPPED"
         annotations[f.id] = annotation       
     multichoice = AnnotationLevel.query.filter_by(experiment_id=experimentId, multichoice=True).count()
-    
     return render_template('add_experiment/results.html', exp_files=expFiles, page=page, \
-        per_page=per_page, pagination=pagination, multichoice = multichoice, \
-        experiment = experiment, annotations = annotations, annotators=annotators, user=user)
+        per_page=per_page, pagination=pagination, experiment = experiment,\
+        annotations = annotations, annotators=annotators, user=user, \
+        annotation_levels=annotation_levels, multichoice=multichoice,\
+        selected_level=selected_level, selected_label=selected_label)
 
 
 @blueprint.route('/_discardAnnotations', methods=['POST','GET'])
@@ -1360,8 +1435,14 @@ def _exportResultsConcordance(experiment, format1):
         col_num = col_num + 1
         data.insert(col_num, "Comments by " + annotator.username, comments)
         col_num = col_num + 1
-
     
+    if experiment.display_time:
+        before_time = experiment.display_time.before_time
+        after_time = experiment.display_time.after_time
+        data['Video Snippet Annotated'] = data['Video Snippet'].apply(lambda video_snippet: _addOffsetTime(video_snippet, before_time, after_time))
+    else:
+        data['Video Snippet Annotated'] = data['Video Snippet']
+        
     if format1 == '.xlsx':
         filename = str(experiment.id) + '.xlsx'
         filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -1377,6 +1458,36 @@ def _exportResultsConcordance(experiment, format1):
 
     return send_file(filePath, as_attachment=True)
 
+def _addOffsetTime(video_snippet, before_time, after_time):
+    """ Utility function used at exporting concordance results.
+    Modifying offset of the video snippet link
+    by applying the following equations:
+        new_start = video_snippet_start - exp.display_caption.before_time
+        new_end = video_snippet_end + exp.display_caption.after_time
+    and replacing those with the existing on the video snippet using regular expression
+    Args:
+        video_snippet: str. of the link expected to change it's offset
+        before_time: float representes the exp.'s display_caption before_time
+        after_time: float representes the exp.'s display_caption after_time
+    Returns:
+        video_snippet: modified video_snippet start and end times on the link
+    """
+    # If the sent video_snippet is not string, returning it without processing.
+    if not isinstance(video_snippet, str):
+        return video_snippet
+    float_re = "([0-9]*)?[.]?([0-9]*)?"
+    video_time = re.search(f'start=({float_re})&end=({float_re})$', video_snippet)
+    # If the sent video_snippet is not matching the re. so it miss the start and end
+    # Just returns it without any modifications
+    if not video_time:
+        return video_snippet
+    start_time = float(video_time.group(1)) - before_time
+    start_time = 0 if start_time < 0 else start_time
+    end_time = float(video_time.group(2)) + after_time
+    end_time = 0 if end_time < 0 else end_time
+    video_snippet = re.sub(f'end=({float_re})', "end=" + str(end_time), video_snippet)
+    video_snippet = re.sub(f'start=({float_re})', "start=" + str(start_time), video_snippet)
+    return video_snippet
 
 @blueprint.route('/_exportResultsCSV/<int:experimentId>/<string:format1>', methods=['POST','GET'])
 def _exportResultsCSV(experimentId, format1):
