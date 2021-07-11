@@ -6,6 +6,21 @@
   {{ super() }}
   <style type="text/css">
     .important { color: #336699; }
+    #sortable { 
+        list-style-type: square; 
+        margin: 1rem; 
+        padding: 1rem; 
+    }
+    #sortable li{
+        margin: 0.3em; 
+        padding: 0.5em 1em 0.5em 1em; 
+        font-size: 1.3em;
+        cursor: move;
+        border-left: 6px solid #ccc;
+        border-color: palevioletred;
+        color: #000;
+        background-color: ghostwhit;
+    }
   </style>
 {% endblock head %}
 
@@ -35,6 +50,10 @@
                 {{ ('Make Global') }}
             </button>
         <!-- </button> -->
+        <button type="button"
+                class="btn btn-primary btn-group btn-group-inline btn-space" id="showReorderModal">
+                {{ ('Reorder Annotation Levels') }}
+        </button>
         <a href="{{ url_for('add_experiment._importAnnotationtLevel', experimentId = experiment.id) }}" 
             class="btn btn-primary btn-group btn-group-inline btn-space">{{ ('Import Existing Levels') }}
         </a>
@@ -55,6 +74,7 @@
                 <div class="col-xs-12">
                     <div class="annotationDescriptionGrp">
                         <span class="col-xs-4 h5 wrapWord annotationName"><b>Annotation Level Name</b>: <span>{{ annotation_level.name }}</span></span>
+                        <span class="col-xs-4 h5 wrapWord annotationNumber"><b>Annotation Level Number</b>: <span id="levelnumber-{{annotation_level.id}}">{{ annotation_level.level_number }}</span></span>
                         <span class="col-xs-7 h5 annotationDescription"><b>Description</b>:<span>{{ annotation_level.description }}</span></span>
                         <span class="annotationLevelInstruction hidden-element">{{annotation_level.instruction }}</span>
                         
@@ -376,9 +396,67 @@
   </div>
 </div>
 
+
+<!-- Reorder-Annotation-Levels-Modal -->
+<div class="modal fade" id="reorderLevels" role="dialog" tabindex="-1"
+    aria-labelledby="reorderLevels" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Reoder Annotation Levels</h4>
+      </div>
+        <div class="modal-body">
+            <span class="help-block">
+            Drag and drop the annotation levels to reorder them as you wish
+            </span>
+            <ul id="sortable">
+                {% for annotation_level in annotation_levels %}
+                    <li class="ui-state-default" 
+                    data-levelnumber={{annotation_level.level_number}} 
+                    data-id={{annotation_level.id}}>
+                        {{ annotation_level.name }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary" id="saveOrderingBtn"> Save new ordering </button>
+        </div>
+    </div>
+  </div>
+</div>
+
 <script charset="utf-8" type="text/javascript">
 
     $(function() {
+        // For reordering levels functionality
+        $("#saveOrderingBtn").on("click", function(){
+            data = {order:{}, experimentId: {{experiment.id}}}
+            $("#sortable li").each(function(index, value) {
+                data.order[this.dataset.id] = index+1;
+                $(`#levelnumber-${this.dataset.id}`).text(index+1);
+            });
+            var url = "{{ url_for('add_experiment._reorderAnnotationLevels')}}";
+            data = JSON.stringify(data)
+            $.post(url , data, function(response) {
+                if(response.success)
+                    location.reload();
+                else
+                    alert("Something gone wrong please try later!");
+            });
+            $("#reorderLevels").modal("hide");
+        });
+        $("#showReorderModal").on("click", function(){
+            $("#reorderLevels").modal("show");
+        });
+        $("#sortable").sortable({
+            change: function(event, ui) {
+                console.log(event);
+            }
+        });
+        $("#sortable").disableSelection();
 
         var errors = "{{errors}}";
         if( "{{ errors }}" == "annotationLevelErrors") {
@@ -734,6 +812,7 @@
             selectedAnnotation.find('.annotationDescription span').text(description);
             selectedAnnotation.find('.annotationLevelInstruction').text(instruction);
             selectedAnnotation.data('level',levelNumber);
+            $(`#levelnumber-${selectedAnnotationId}`).text(levelNumber);
         }
 
         function deleteAsync(labelId, annotationId) {

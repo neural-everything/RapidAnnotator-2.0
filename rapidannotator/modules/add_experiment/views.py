@@ -220,7 +220,8 @@ def _displayTargetCaption():
 def editLabels(experimentId):
 
     experiment = Experiment.query.filter_by(id=experimentId).first()
-    annotation_levels = experiment.annotation_levels
+    annotation_levels = AnnotationLevel.query.filter_by(experiment_id=\
+                        experimentId).order_by(AnnotationLevel.level_number)
     annotationLevelForm = AnnotationLevelForm(experimentId = experimentId)
     annotationInfo = AnnotatorAssociation.query.filter_by(experiment_id=experimentId, user_id=current_user.id)
     if annotationInfo.count() > 0:
@@ -304,6 +305,37 @@ def _addAnnotationLevel():
         skipLevel = skipLevel,
         errors = errors,
     )
+@blueprint.route('/_reorderAnnotationLevels', methods=['POST'])
+def _reorderAnnotationLevels():
+    """ Reordering the annotation levels
+    Request Args:
+        data: dict. contains each annoationlevel as key and its new order as value
+        experimentId: the experiment id to be edited
+    Returns:
+        response: {success:True} when it is has updated 
+        and {success:False} when something is missed from the expected inputs.
+    """
+    data = request.get_json(force=True)
+    order = data.get('order')
+    experimentId = data.get('experimentId')
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    # Checks whether experimentId is okay and ordering info is compelete or not
+    if not experiment or not isinstance(order,dict):
+        response = {'success' : False, 'message': "Incorrect request parameters"}
+        return jsonify(response)
+    # Making sure each level is given with its new order
+    for level in experiment.annotation_levels:
+        if order.get(str(level.id),None) == None:
+            response = {'success' : False, 'message': "Incompelete annotation levels info"}
+            return jsonify(response)
+    # Updating each level with its new order
+    for level in experiment.annotation_levels:
+        level.level_number = order[str(level.id)]
+    db.session.commit()
+    response = {
+        'success' : True,
+    }
+    return jsonify(response)
 
 @blueprint.route('/_addLabels', methods=['POST','GET'])
 def _addLabels():
