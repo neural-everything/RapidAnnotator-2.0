@@ -32,7 +32,6 @@ Run
 
 `pip3 install -r requirements.txt`
 
-
 Since we need to deploy rapidannotator [flask app] on apache server, we need to link Flask and Apache using wsgi interface. For that you need to add the following lines in `/etc/apache2/sites-enabled/000-default.conf`
 
 Copy wsgi_template.py to wsgi.py and make the required changes in the new file.
@@ -121,6 +120,16 @@ Copy config_template.py to config.py and make the required changes in the new fi
 Finally in _rapidannotator/config.py_ update the database uri :
 
 `SQLALCHEMY_DATABASE_URI = 'mysql://username:password@localhost/[Database_name]'`
+
+```SHELL
+# Run the following commands after setting up the db at config file
+# Initalize the flask-migrate files.
+flask db init  
+# Make a migration, it is like commit it and a comment beside.
+flask db migrate -m "Initial migration." # OR just add your comment right there  
+# Then apply your migration to the database, it is like push.
+flask db upgrade  
+```
 
 Run the following in the directory where rapidannotator is kept.
 

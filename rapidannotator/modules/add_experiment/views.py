@@ -1,6 +1,7 @@
 from flask import render_template, flash, redirect, url_for, request, jsonify, \
     current_app, g, abort, jsonify, session, send_file
 from flask_babelex import lazy_gettext as _
+from sqlalchemy.sql.functions import user
 from werkzeug.utils import secure_filename
 
 from rapidannotator import db
@@ -25,6 +26,9 @@ from matplotlib import pyplot as plt
 from io import BytesIO
 import base64
 
+import pandas as pd
+from rapidannotator import app
+import shutil
 
 @blueprint.before_request
 def before_request():
@@ -273,6 +277,7 @@ def _addAnnotationLevel():
                 name = annotationLevelForm.name.data,
                 description = annotationLevelForm.description.data,
                 instruction = annotationLevelForm.instruction.data,
+                multichoice = annotationLevelForm.multichoice.data,
             )
             if levelNumber:
                 annotationLevel.level_number = annotationLevelForm.levelNumber.data
@@ -417,6 +422,7 @@ def _editAnnotationLevel():
     annotationLevel.description = request.args.get('annotationDescription', None)
     annotationLevel.level_number = request.args.get('annotationLevelNumber', None)
     annotationLevel.instruction = request.args.get('annotationLevelInstruction', None)
+    annotationLevel.multichoice = request.args.get('multichoice', None) == 'true'
 
     db.session.commit()
     response = {}
@@ -558,7 +564,6 @@ def skipLevels():
     levels = AnnotationLevel.query.filter_by(experiment_id=\
                 experimentId).order_by(AnnotationLevel.id)
     for level in levels:
-        print(int(level.id))
         if int(level.id) > int(annotationId):
             level.skip = 1
         else:
@@ -572,7 +577,6 @@ def skipLevels():
 
 @blueprint.route('/_uploadFiles', methods=['POST','GET'])
 def _uploadFiles():
-    from rapidannotator import app
 
     if request.method == 'POST':
         if 'file' not in request.files:
@@ -585,7 +589,6 @@ def _uploadFiles():
         ''' TODO? also check for the allowed filename '''
         if flaskFile:
             fl_name, fl_ext = os.path.splitext(flaskFile.filename)
-            print(fl_name, fl_ext)
             experimentId = request.form.get('experimentId', None)
             experiment = Experiment.query.filter_by(id=experimentId).first()
             if experiment.is_done:
@@ -652,7 +655,6 @@ def _uploadFiles():
 def addFilesViaSpreadsheetXLS(experimentId, spreadsheet):
     experiment = Experiment.query.filter_by(id=experimentId).first()
 
-    from rapidannotator import app
     filename = 'temp_' + current_user.username + '.xls'
     filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     spreadsheet.save(filePath)
@@ -682,7 +684,6 @@ def addFilesViaSpreadsheetXLS(experimentId, spreadsheet):
 def addFilesViaSpreadsheetCSV(experimentId, spreadsheet):
     experiment = Experiment.query.filter_by(id=experimentId).first()
 
-    from rapidannotator import app
     filename = 'temp_' + current_user.username + '.csv'
     filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     spreadsheet.save(filePath)
@@ -718,7 +719,6 @@ def convert_txt_to_csv(inFileName, outFileName):
 def addFilesFromConcordance(experimentId, concordance):
     experiment = Experiment.query.filter_by(id=experimentId).first()
 
-    from rapidannotator import app
     experimentDir = os.path.join(app.config['UPLOAD_FOLDER'], str(experimentId))
     if not os.path.exists(experimentDir):
         os.makedirs(experimentDir)
@@ -789,7 +789,6 @@ def addFilesFromConcordance(experimentId, concordance):
 def _deleteFile():
 
     ''' TODO? check when to import app '''
-    from rapidannotator import app
 
     experimentCategory = request.args.get('experimentCategory', None)
     experimentId = request.args.get('experimentId', None)
@@ -827,7 +826,6 @@ def _deleteFile():
 @blueprint.route('/_deleteAllFiles', methods=['POST','GET'])
 def _deleteAllFiles():
 
-    from rapidannotator import app
 
     experimentId = request.args.get('experimentId', None)
     experiment = Experiment.query.filter_by(id=experimentId).first()
@@ -858,7 +856,6 @@ def _deleteAllFiles():
 @blueprint.route('/_updateFileName', methods=['POST','GET'])
 def _updateFileName():
 
-    from rapidannotator import app
 
     fileId = request.args.get('fileId', None)
     currentFile = File.query.filter_by(id=fileId).first()
@@ -998,9 +995,6 @@ def _deleteAnnotator():
 @blueprint.route('/_editAnnotator', methods=['POST','GET'])
 def _editAnnotator():
 
-    import sys
-    from rapidannotator import app
-
     annotatorId = request.args.get('annotatorId', None)
     experimentId = request.args.get('experimentId', None)
     annotatorDetails = AnnotatorAssociation.query.filter_by(
@@ -1072,8 +1066,6 @@ def _deleteExperiment():
     db.session.delete(experiment)
     db.session.commit()
 
-    import shutil
-    from rapidannotator import app
     experimentDir = os.path.join(app.config['UPLOAD_FOLDER'],
                             str(experimentId))
 
@@ -1104,6 +1096,8 @@ def viewResults(experimentId, userId):
 
     page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
     experiment = Experiment.query.filter_by(id=experimentId).first()
+    
+    expFiles = File.query.filter_by(experiment_id=experiment.id).limit(per_page).offset(offset)
 
     selected_level = None
     selected_label = None
@@ -1138,6 +1132,7 @@ def viewResults(experimentId, userId):
 
     annotators_assoc = experiment.annotators
     annotators = [assoc.annotator for assoc in annotators_assoc]
+
     
     total = ceil(File.query.filter_by(experiment_id=experiment.id).count() / per_page)
     pagination = Pagination(page=page, per_page=per_page, total=total, css_framework='bootstrap3')
@@ -1151,21 +1146,22 @@ def viewResults(experimentId, userId):
             annotations[f.id] = annotation
         else:
             for level in annotation_levels:
-                annotation[level.id] = {}
-                anno_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=userId, annotationLevel_id=level.id).first()
+                annotation[level.id] = []
+                anno_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=userId, annotationLevel_id=level.id).all()
                 if anno_info is not None:
                     for label in level.labels:
                         info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=userId, annotationLevel_id=level.id, label_id=label.id).first()
                         if info is not None:
-                            annotation[level.id] = label.name
+                            annotation[level.id].append(label.name)
                 else:
                     annotation[level.id] = "SKIPPED"
         annotations[f.id] = annotation       
+    multichoice = AnnotationLevel.query.filter_by(experiment_id=experimentId, multichoice=True).count()
     return render_template('add_experiment/results.html', exp_files=expFiles, page=page, \
-        per_page=per_page, pagination=pagination, experiment = experiment,
-             annotations = annotations, annotators=annotators, user=user, 
-             annotation_levels=annotation_levels, 
-             selected_level=selected_level, selected_label=selected_label)
+        per_page=per_page, pagination=pagination, experiment = experiment,\
+        annotations = annotations, annotators=annotators, user=user, \
+        annotation_levels=annotation_levels, multichoice=multichoice,\
+        selected_level=selected_level, selected_label=selected_label)
 
 
 @blueprint.route('/_discardAnnotations', methods=['POST','GET'])
@@ -1307,7 +1303,6 @@ def _exportResults(experimentId):
 
     filename = str(experimentId) + '.xls'
 
-    from rapidannotator import app
     filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     excel_file.save(filePath)
 
@@ -1318,9 +1313,8 @@ def _exportResults(experimentId):
 
 @blueprint.route('/_exportResultsXLS/<int:experimentId>', methods=['POST','GET'])
 def _exportResultsXLS(experimentId):
-
-    experiment = Experiment.query.filter_by(id=experimentId).first()
     
+    experiment = Experiment.query.filter_by(id=experimentId).first()
     excel_file = xlwt.Workbook()
     sheet = excel_file.add_sheet('results')
     style0 = xlwt.easyxf('font: name Arial, color-index black, bold on')
@@ -1359,6 +1353,7 @@ def _exportResultsXLS(experimentId):
                     sheet.write(row, col, RESERVED_LABEL)
                 else:
                     for info in annotation_info:
+                        print(info)
                         label = Label.query.filter_by(id=info.label_id).first()
                         sheet.write(row, col, str(label.name))
                 col += 1
@@ -1382,7 +1377,6 @@ def _exportResultsXLS(experimentId):
 
     filename = str(experimentId) + '.xls'
 
-    from rapidannotator import app
     filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     excel_file.save(filePath)
 
@@ -1397,7 +1391,6 @@ def _exportResultsXLS(experimentId):
 
 def _exportResultsConcordance(experiment, format1):
 
-    from rapidannotator import app
     experimentDIR = os.path.join(app.config['UPLOAD_FOLDER'], str(experiment.id))
     inputConcordance = os.path.join(experimentDIR, 'concordance.csv')
     data = pandas.read_csv(inputConcordance)
@@ -1451,9 +1444,7 @@ def _exportResultsConcordance(experiment, format1):
         data['Video Snippet Annotated'] = data['Video Snippet']
         
     if format1 == '.xlsx':
-        print(format1)
         filename = str(experiment.id) + '.xlsx'
-        from rapidannotator import app
         filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         with pandas.ExcelWriter(filePath, date_format='YYYY-MM-DD', datetime_format='YYYY-MM-DD HH:MM:SS') as writer:
             data.to_excel(writer, sheet_name='Sheet1', index=False)
@@ -1505,76 +1496,163 @@ def _exportResultsCSV(experimentId, format1):
     if experiment.uploadType == 'fromConcordance':
         return _exportResultsConcordance(experiment, format1)
     
-    RESERVED_LABEL = '99999'
+    RESERVED_LABEL = '99999'    
     
-    column_headers = []
-    column_headers.append('File Name')
-    annotators_assoc = experiment.annotators
-    annotators = [assoc.annotator for assoc in annotators_assoc]
-    annotation_levels = AnnotationLevel.query.filter_by(experiment_id=experimentId).all()
+    levels_map = {}
+    labels_map = {}
+    annotators_map = {}
 
-    for annotator in annotators:
-        for level in annotation_levels:
-            column_headers.append(annotator.username + " ( Level: " + str(level.name) + " )" )
-        column_headers.append('Target Caption of ' + annotator.username)
-        column_headers.append('Comments by ' + annotator.username)
-    column_headers.append('Caption')
+    annotators_assoc = experiment.annotators
+    for assoc in annotators_assoc:
+        annotators_map[assoc.annotator.id] = assoc.annotator.username
+    
+    levels = experiment.annotation_levels
+    for level in levels:
+        levels_map[level.id] = level.name
+        for label in level.labels:
+            labels_map[label.id] = label.name
+
+    files_columns = [File.id, File.name, FileCaption.caption]
+
+    if experiment.uploadType == 'viaSpreadsheet':
+        files_columns.append(File.content)
+    files = File.query.filter_by(experiment_id = experimentId)\
+            .join(FileCaption, FileCaption.file_id == File.id)\
+            .with_entities()\
+            .add_columns(*files_columns)\
+            .all()
+    df = pd.DataFrame(files)
+    df.set_index('id',inplace=True)
+    RESERVED_COL = [RESERVED_LABEL] * len(files)
+    for annotator in annotators_map.values():
+        for level in levels_map.values():
+            df[annotator + " ( Level: " + level + " )"] = RESERVED_COL
+        df['Target Caption of ' + annotator] = df['caption']
+        df['Comments by ' + annotator] = ["No Comments"] * len(files)
+    df.rename(columns={'name': 'Filename', 'caption':'Caption'}, inplace=True)
     
     if experiment.uploadType == 'viaSpreadsheet':
-        column_headers.append('Video Link')
-    
-    csv_data = []
+        df.rename(columns={'content': 'Video Link'}, inplace=True)
 
-    for f in experiment.files:
-        csv_row = []
-        csv_row.append(f.name)
-        for annotator in annotators:
-            for level in annotation_levels:
-                annotation_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=annotator.id, annotationLevel_id=level.id).order_by(AnnotationInfo.annotationLevel_id)
-                if annotation_info.count() == 0:
-                    csv_row.append(RESERVED_LABEL)
-                else:
-                    for info in annotation_info:
-                        label = Label.query.filter_by(id=info.label_id).first()
-                        csv_row.append(str(label.name))
-            cp = AnnotationCaptionInfo.query.filter_by(file_id=f.id, user_id=annotator.id).first()
-            if cp == None:
-                cp_val = FileCaption.query.filter_by(file_id=f.id).first()
-                csv_row.append(cp_val.target_caption)
-            else:
-                csv_row.append(cp.target_caption)
+    annotations = AnnotationInfo.query.filter(AnnotationInfo.annotationLevel_id.in_(levels_map.keys()))
+    for a in annotations:
+        df.loc[a.file_id, [annotators_map[a.user_id] + " ( Level: " + levels_map[a.annotationLevel_id] + " )"]] = labels_map[a.label_id]
+    
+    captions_info = AnnotationCaptionInfo.query.filter(AnnotationCaptionInfo.file_id.in_(df.index.values))
+    for ci in captions_info:
+        df.loc[ci.file_id, ['Target Caption of ' + annotators_map[ci.user_id]]] = ci.target_caption
+    
+    comments_info = AnnotationCommentInfo.query.filter(AnnotationCommentInfo.file_id.in_(df.index.values))
+    for ci in comments_info:
+        df.loc[ci.file_id, ['Comments by ' + annotators_map[ci.user_id]]] = ci.comment
+    
+    filePath = make_file(df, experimentId, format1)
+    return send_file(filePath, as_attachment=True)
 
-            comments_info = AnnotationCommentInfo.query.filter_by(file_id=f.id, user_id=annotator.id).first()
-            if comments_info == None:
-                comment = "No Comments"
-                csv_row.append(comment)
-            else:
-                csv_row.append(comments_info.comment)
-        
-        fileCaption = FileCaption.query.filter_by(file_id=f.id).first()
-        if fileCaption.caption == '':
-            csv_row.append('No Caption Provided')
-        else:
-            csv_row.append(fileCaption.caption)
-        
-        if experiment.uploadType == 'viaSpreadsheet':
-            csv_row.append(f.content)
-        csv_data.append(csv_row)
+@blueprint.route('/_exportResultsWide/<int:experimentId>/<string:format>', methods=['POST','GET'])
+def _exportResultsWide(experimentId, format):
+    """
+    Exporting results at wide format, wide format is as the following:
+    Col for each (label,annotator) pairs:
+    Level[Label] Annotator Username: Cell = 1 in case of this label is selected by the annotator
+    Args:
+        experimentId: The experiment id
+        format: needed format of exported results file (csv or xlsx)
+    Returns:
+        filePath: File in csv/xlsx format (based on sent argument)
+    """
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    levels_map = {}
+    labels_map = {}
+    annotators_map = {}
+
+    annotators_assoc = experiment.annotators
+    for assoc in annotators_assoc:
+        annotators_map[assoc.annotator.id] = assoc.annotator.username
     
-    fd = pandas.DataFrame(csv_data, columns=column_headers)
+    levels = experiment.annotation_levels
+    for level in levels:
+        levels_map[level.id] = level.name
+        for label in level.labels:
+            labels_map[label.id] = label.name
     
-    from rapidannotator import app
-    if format1 == '.xlsx':
+    files = File.query.filter_by(experiment_id = experimentId)\
+            .with_entities(File.id, File.name)\
+            .all()
+    empty_col = len(files) * [0]
+    df = pd.DataFrame(files)
+    df.set_index('id',inplace=True)
+    for annotator in annotators_map.values():
+        for level in levels:
+            for label in level.labels:
+                df[f'{level.name}({label.name}) {annotator}'] = empty_col
+    
+    annotations_info = AnnotationInfo.query.filter(AnnotationInfo.annotationLevel_id.in_(levels_map.keys()))
+    for a in annotations_info:
+        col = f'{levels_map[a.annotationLevel_id]}({labels_map[a.label_id]}) {annotators_map[a.user_id]}'
+        df.loc[a.file_id,[col]] = 1
+    
+    filePath = make_file(df, experimentId, format)
+    return send_file(filePath, as_attachment=True)
+
+@blueprint.route('/_exportResultsLong/<int:experimentId>/<string:format>', methods=['POST','GET'])
+def _exportResultsLong(experimentId, format):
+    """
+    Exporting results at long format, long format is as the following:
+    For each annotation info entry there exist a corresponding record
+    Columns are as the following
+        level_name, label_name, label_other, annotator_username, file_name
+    Args:
+        experimentId: The experiment id
+        format: needed format of exported results file (csv or xlsx)
+    Returns:
+        filePath: File in csv/xlsx format (based on sent argument)
+    """
+    annotation_levels = AnnotationLevel.query.filter_by(experiment_id=experimentId).with_entities(AnnotationLevel.id).all()
+    result = []
+    for annotation_level in annotation_levels:
+        result.extend(AnnotationInfo.query.filter_by(annotationLevel_id=annotation_level)
+        .join(AnnotationLevel, AnnotationInfo.annotationLevel_id == AnnotationLevel.id)
+        .join(Label, Label.id == AnnotationInfo.label_id)
+        .join(File, File.id == AnnotationInfo.file_id)
+        .join(User, User.id == AnnotationInfo.user_id)
+        .with_entities()
+        .add_columns(AnnotationLevel.name, Label.name, AnnotationInfo.label_other, User.username, File.name)
+        .order_by(AnnotationInfo.id)
+        .all()
+        )
+    df = pd.DataFrame(result)
+    df.columns = ["level_name", "label_name", "label_other", "annotator_username", "file_name"]
+    # Annotation selection order column
+    annotation_order = [1] * len(df)
+    for i in range(1, len(df)):
+        if  df.iloc[i]['level_name'] == df.iloc[i-1]['level_name'] and \
+            df.iloc[i]['file_name'] == df.iloc[i-1]['file_name'] and \
+            df.iloc[i]['annotator_username'] == df.iloc[i-1]['annotator_username'] :
+        # if prev. annotation is same as current annotation 
+        # in(level_name, file_name and annotator_username)
+        # it means it is multi-choice level selected so we need to increment.
+            annotation_order[i] =  annotation_order[i-1] + 1
+    df['annotation_order'] = annotation_order
+    filePath = make_file(df, experimentId, format)
+    return send_file(filePath, as_attachment=True)
+
+def make_file(df, experimentId, format):
+    """ Utility function for making results file functions
+    Args:
+        df: DataFrame sheet of the results to be exported
+        experimentId: experiment id, exported file name
+        format: csv or xlsx sheets file format
+    Returns:
+        filePath: path of the exported file to be sent.
+    """
+    if format == '.xlsx':
         filename = str(experimentId) + '.xlsx'
         filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         with pandas.ExcelWriter(filePath, date_format='YYYY-MM-DD', datetime_format='YYYY-MM-DD HH:MM:SS') as writer:
-            fd.to_excel(writer, sheet_name='Sheet1', index=False)
+            df.to_excel(writer, sheet_name='Sheet1', index=False)
     else:
         filename = str(experimentId) + '.csv'
         filePath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        fd.to_csv(filePath, index=False)
-
-    response = {}
-    response['success'] = True
-
-    return send_file(filePath, as_attachment=True)
+        df.to_csv(filePath, index=False)
+    return filePath

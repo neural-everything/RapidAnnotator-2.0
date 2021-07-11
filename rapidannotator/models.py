@@ -350,6 +350,16 @@ class AnnotationLevel(db.Model):
         server_default='0',
     )
 
+    ''' multichoice 
+    ..  decides the level whether is multi-choice level or single level
+    ..  to allow multiple labels selection for that level.
+    '''
+    multichoice = db.Column(
+        db.Boolean(name='multichoice'),
+        nullable=False,
+        server_default='0',
+    )
+
     """ One to Many relation
     ..  For AnnotationLevel:
     ..  list of the labels associated with this annotation level.
@@ -372,14 +382,16 @@ class AnnotationLevel(db.Model):
                 Experiment={0.experiment_id}, \
                 name={0.name}, \
                 description={0.description}, \
-                level_number={0.level_number}>'.format(self)
+                level_number={0.level_number}, \
+                multichoice={0.multichoice}>'.format(self)
 
     def __repr__(self):
         return 'AnnotationLevel <id={0.id}, \
                 Experiment={0.experiment_id}, \
                 name={0.name}, \
                 description={0.description}, \
-                level_number={0.level_number}>'.format(self)
+                level_number={0.level_number}>, \
+                multichoice={0.multichoice}>'.format(self)
 
 """
     Label of an annoatation level.
@@ -653,6 +665,9 @@ class AnnotationInfo(db.Model):
     label_id = db.Column(Integer, db.ForeignKey(
         'Label.id', ondelete='CASCADE')
     )
+    
+    '''the other text field for that label by the annotator.'''
+    label_other = db.Column(db.String(512), nullable=True)
 
     def __str__(self):
         """Representation."""
@@ -660,14 +675,16 @@ class AnnotationInfo(db.Model):
                 annotationLevel_id={0.annotationLevel_id}, \
                 user_id={0.user_id}, \
                 label_id={0.label_id}, \
-                file_id={0.file_id}>'.format(self)
+                file_id={0.file_id}, \
+                label_other={0.label_other}>'.format(self)
 
     def __repr__(self):
         return 'AnnotationInfo <id={0.id}, \
                 annotationLevel_id={0.annotationLevel_id}, \
                 user_id={0.user_id}, \
                 label_id={0.label_id}, \
-                file_id={0.file_id}>'.format(self)
+                file_id={0.file_id}, \
+                label_other={0.label_other}>'.format(self)
 
 
 """
