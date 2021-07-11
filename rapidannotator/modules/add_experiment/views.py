@@ -327,7 +327,7 @@ def _reorderAnnotationLevels():
     for level in experiment.annotation_levels:
         if order.get(str(level.id),None) == None:
             response = {'success' : False, 'message': "Incompelete annotation levels info"}
-        return jsonify(response)
+            return jsonify(response)
     # Updating each level with its new order
     for level in experiment.annotation_levels:
         level.level_number = order[str(level.id)]
