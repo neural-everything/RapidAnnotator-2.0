@@ -220,7 +220,8 @@ def _displayTargetCaption():
 def editLabels(experimentId):
 
     experiment = Experiment.query.filter_by(id=experimentId).first()
-    annotation_levels = experiment.annotation_levels
+    annotation_levels = AnnotationLevel.query.filter_by(experiment_id=\
+                        experimentId).order_by(AnnotationLevel.level_number)
     annotationLevelForm = AnnotationLevelForm(experimentId = experimentId)
     annotationInfo = AnnotatorAssociation.query.filter_by(experiment_id=experimentId, user_id=current_user.id)
     if annotationInfo.count() > 0:
@@ -304,6 +305,23 @@ def _addAnnotationLevel():
         skipLevel = skipLevel,
         errors = errors,
     )
+@blueprint.route('/_reorderAnnotationLevels', methods=['POST'])
+def _reorderAnnotationLevels():
+    data = request.get_json(force=True)
+    order = data.get('order')
+    print(order)
+    experimentId = data.get('experimentId')
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    if not experiment or not isinstance(order,dict):
+        response = {'success' : False, 'message': "Incorrect request parameters"}
+    else:
+        for level in experiment.annotation_levels:
+            level.level_number = order[str(level.id)]
+        db.session.commit()
+    response = {
+        'success' : True,
+    }
+    return jsonify(response)
 
 @blueprint.route('/_addLabels', methods=['POST','GET'])
 def _addLabels():
