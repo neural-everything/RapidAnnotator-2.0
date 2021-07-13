@@ -18,8 +18,11 @@ mail = Mail(app)
 '''
     .. for creating all the required tables
 '''
+
+from flask_migrate import Migrate
 with app.app_context():
     db.create_all()
+    migrate = Migrate(app, db)
 
 from rapidannotator.modifyJsonEncoder import JSONEncoder
 app.json_encoder = JSONEncoder

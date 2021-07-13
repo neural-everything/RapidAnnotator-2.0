@@ -2,6 +2,7 @@ from flask import render_template, flash, redirect, url_for, request, jsonify, \
     current_app, abort, send_from_directory
 from flask_babelex import lazy_gettext as _
 from flask_login import current_user, login_required, login_user, logout_user
+from sqlalchemy.sql.expression import label
 
 from rapidannotator import db
 from rapidannotator import bcrypt
@@ -338,6 +339,7 @@ def _addAnnotationInfo():
 
     fileId = arguments.get('fileId', None)
     annotations = arguments.get('annotations')
+    annotationsOrder = arguments.get('annotationsOrder')
     prevLabelCount = int(arguments.get('labelCount', None))
     userId = int(arguments.get('userId', None))
     hasToIncreaseCurrent = int(arguments.get('hasToIncreaseCurrent', None))
@@ -365,16 +367,17 @@ def _addAnnotationInfo():
     if annotationInfo is not None:
         AnnotationInfo.query.filter(and_(AnnotationInfo.user_id==userId, AnnotationInfo.file_id==fileId)).delete()
         db.session.commit()
-
-    for annotationLevelId in annotations:
-        labelId = annotations[annotationLevelId]
-        annotationInfo = AnnotationInfo(
-            file_id = fileId,
-            annotationLevel_id = annotationLevelId,
-            label_id = labelId,
-            user_id = userId
-        )
-        db.session.add(annotationInfo)
+    for levelId, labels in annotations.items():
+        for labelId in annotationsOrder[levelId]:
+            print(labelId, labels[str(labelId)])
+            annotationInfo = AnnotationInfo(
+                file_id = fileId,
+                annotationLevel_id = levelId,
+                label_id = labelId,
+                user_id = userId,
+                label_other = labels[str(labelId)],
+            )
+            db.session.add(annotationInfo)
 
     if hasToIncreaseCurrent == 1:
         annotatorInfo = AnnotatorAssociation.query.filter_by(user_id=current_user.id).\
@@ -532,7 +535,9 @@ def specificAnnotation(userId, experimentId, fileId):
         displayAlreadyAnnotated = 1
     for info in anno_info:
         label = Label.query.filter_by(id=info.label_id).first()
-        annotationAlreadyDone[info.annotationLevel_id] = [info.label_id, label.name]
+        if not annotationAlreadyDone.get(info.annotationLevel_id, None):
+            annotationAlreadyDone[info.annotationLevel_id] = []
+        annotationAlreadyDone[info.annotationLevel_id].append([info.label_id, label.name, info.label_other])
 
     isExpowner =  int((current_user in  experiment.owners))
 

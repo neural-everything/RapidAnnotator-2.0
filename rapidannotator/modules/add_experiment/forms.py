@@ -10,7 +10,9 @@ from wtforms import FormField, PasswordField, StringField, SubmitField, \
     BooleanField, IntegerField, HiddenField, FieldList, SelectField
 from wtforms.validators import DataRequired, EqualTo, StopValidation, \
     ValidationError, Email, Length
-
+from wtforms.widgets.core import CheckboxInput, Input
+from wtforms.fields import core
+from wtforms.fields import html5
 from rapidannotator.models import User
 
 
@@ -94,7 +96,10 @@ class AnnotationLevelForm(FlaskForm):
         validators=[Length(max=1500 ,message=_("Annotation level instruction can't exceed 1500 chars."))],
         filters =[strip_filter],
     )
-
+    multichoice = core.BooleanField(
+        label='Multichoice annotation level',
+    )
+    
     def reset(self):
         blankData = MultiDict([ ('csrf', self.generate_csrf_token() ) ])
         self.process(blankData)

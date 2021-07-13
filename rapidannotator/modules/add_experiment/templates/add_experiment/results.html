@@ -75,6 +75,12 @@
         {%- set exportResultsUrl1 = url_for('add_experiment._exportResultsXLS', experimentId = experiment.id) %}
         {%- set exportResultsUrl2 = url_for('add_experiment._exportResultsCSV', experimentId = experiment.id, format1 = ".xlsx") %}
         {%- set exportResultsUrl3 = url_for('add_experiment._exportResultsCSV', experimentId = experiment.id, format1 = ".csv") %}
+        {%- set exportWideFormat_xlsx = url_for('add_experiment._exportResultsWide', experimentId = experiment.id, format = ".xlsx") %}
+        {%- set exportWideFormat_csv = url_for('add_experiment._exportResultsWide', experimentId = experiment.id, format = ".csv") %}
+        {%- set exportLongFormat_xlsx = url_for('add_experiment._exportResultsLong', experimentId = experiment.id, format = ".xlsx") %}
+        {%- set exportLongFormat_csv  = url_for('add_experiment._exportResultsLong', experimentId = experiment.id, format = ".csv") %}
+
+
         <div class="dropdown btn-group btn-group-inline btn-space">
             <button class="btn btn-primary dropdown-toggle" type="button" id="addOwners" data-toggle="dropdown">
                 {{ ('Export Results to Sheet') }}
@@ -82,8 +88,14 @@
             <span class="caret"></span></button>
             <ul class="dropdown-menu scrollable-dropdown" id="addOwnersMenu" role="menu" aria-labelledby="addOwners">
                 <!-- <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportResultsUrl1}}"><span>Export as .xls</span></a></li> -->
+                {%- if not multichoice -%}
                 <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportResultsUrl2}}"><span>Export as .xlsx</span></a></li>
                 <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportResultsUrl3}}"><span>Export as .csv</span></a></li>
+                {%- endif -%}
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportWideFormat_xlsx}}"><span>(Wide Format) as .xlsx</span></a></li>
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportWideFormat_csv}}"><span>(Wide Format) as .csv</span></a></li>
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportLongFormat_xlsx}}"><span>(Long Format) as .xlsx</span></a></li>
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportLongFormat_csv}}"><span>(Long Format) as .csv</span></a></li>
             </ul>
         </div>
 
@@ -147,7 +159,9 @@
                          {% for level in experiment.annotation_levels %}
                              <td style="padding-left: {{padLeft}}%">
                                     {%- if annotations[file.id][level.id] -%}
-                                        {{annotations[file.id][level.id]}}
+                                        {% for label in annotations[file.id][level.id] %}
+                                           <div>{{label}}</div>
+                                        {% endfor %}
                                     {%- else -%}
                                         {{('Not Annotated')}}
                                      {%- endif -%}

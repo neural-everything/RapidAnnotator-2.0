@@ -129,7 +129,7 @@
         {% endfor %}
         <div class="annotationLevelArea">
 	        {% for level in experiment.annotation_levels | sort(attribute='id')%}
-	            <div class="col-xs-7 annotationLevel hidden-element" data-index="{{loop.index}}" data-levelid="{{level.id}}">
+	            <div class="col-xs-7 annotationLevel hidden-element" data-index="{{loop.index}}" data-levelid="{{level.id}}" data-multichoice="{{level.multichoice}}">
 	                {%- set levelIndex = loop.index %}
 	                {%- if level.instruction != "" -%}
 	                    <div class="alert alert-info alert-dismissible">
@@ -154,13 +154,13 @@
 	                <ul class="labelKeyBindings">
 	                    {% for label in level.labels %}
 	                    <li data-key="{{label.key_binding}}" data-labelid="{{label.id}}">
-	                        <p> {{keyBindingDict[levelIndex][label.id]}} : {{label.name}}</p>
+	                        <p> {{keyBindingDict[levelIndex][label.id]}} : {{label.name}} <input data-labelid="{{label.id}}" hidden value="" class="label_other inputLevel-{{level.id}}"> </p>
 	                    </li>
 	                    {% endfor %}
 	                </ul>
 
 	                {% for label in level.labels %}
-	                <button type="button" class="labelButton btn btn-primary btn-group btn-group-inline
+	                <button type="button" class="labelButton btn btn-secondary btn-group btn-group-inline labelLevel-{{level.id}}
 	                    btn-space btn-space-top" data-labelid="{{label.id}}">
 	                    {{ label.name }}
 	                </button>
@@ -169,6 +169,11 @@
 	            </div>
 	        {% endfor %}
     	</div>
+        <div class="col-xs-7 flex align-items-xxl-center" style="padding-top:10px;">
+            <button type="button" class="btn btn-success btn-group btn-group-inline col-xs-3 nextButton" style="margin:auto;">
+            Next
+            </button>
+        </div>
     </div>
 
     <div class="fileCaption">
@@ -178,7 +183,7 @@
     <div class="fileComments">
             <form method="POST" id="commentsForm" name="commentsForm">
                 <b>Comments:</b> <br><br>
-                <textarea rows = "1" cols = "185" name = "commentsData" id="commentsData"></textarea>
+                <textarea rows = "1" cols = "100" name = "commentsData" id="commentsData"></textarea>
             </form>
     </div><br>
 
@@ -186,7 +191,7 @@
         {%- if experiment.displayTargetCaption == 1 -%}
             <form method="POST" id="targetCaptionForm" name="targetCaptionForm">
                 <b>Target Caption:</b> <br><br>
-                <textarea rows = "5" cols = "185" name = "targetCaptionData" id="targetCaptionData"></textarea>
+                <textarea rows = "5" cols = "100" name = "targetCaptionData" id="targetCaptionData"></textarea>
             </form>
         {%- endif -%}
     </div><br>
@@ -239,7 +244,7 @@
 
         var undoButton = $('.undoButton');
         var doneButton = $('.doneButton');
-        
+        var nextButton = $('.nextButton');
 
         var file = $('.file');
         loopingButton = $('.toggleLooping');
@@ -385,6 +390,7 @@
         var preLoadedTill = 0;
         var space_pressed = 0;
         var annotations = {};
+        var annotationsOrder = {};
         var already_submitted = {};
         var progress_num = 0;
         var totalAnnotationLevels = {{ totalAnnotationLevels }};
@@ -435,8 +441,7 @@
         $(".annotationLevel[data-index=1]").removeClass('hidden-element');
 
         labelButton.on('click', function() {
-            labelButton.attr("disabled", "disabled");
-            selectedLabel = $(this).data("labelid");
+            updateSelectedLabel($(this));
             if("{{experiment.displayTargetCaption}}" == "True"){
                 var targetCaption = $("#targetCaptionData").val();
                 var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
@@ -445,17 +450,12 @@
                 var commentData = $("#commentsData").val();
                 save_comment(currentFileId, commentData);
             }
-            nextLevel(selectedLabel);
-            window.setTimeout(function() {
-                labelButton.removeAttr("disabled");
-            }, [800]);
         });
         
         
 
         $(document).keyup(function(event) {
-            
-            if(event.target.nodeName == "TEXTAREA"){
+            if(event.target.nodeName == "TEXTAREA" || event.target.nodeName == "INPUT" ){
                 return;
             }
             var x = event.charCode || event.keyCode;
@@ -469,7 +469,6 @@
                 if(tp.readyState == 3 || tp.readyState == 4 || tp.readyState == 2){
                     if(!already_submitted[levelId]){
                         annotationProcess(y);
-
                     }
                 }
             }
@@ -511,28 +510,70 @@
                         var commentData = $("#commentsData").val();
                         save_comment(currentFileId, commentData);
                     }
-                    nextLevel(key);
+                    selectedLabelButton = $(`.labelButton[data-labelid='${key}']`);
+                    updateSelectedLabel(selectedLabelButton);
                 }
             });
         }
-
-        function nextLevel(label) {
-            currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+        function updateSelectedLabel(labelButton){
+            var currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+            var multichoice = currentLevelBody.data("multichoice"); // Used for multichoice labels for the current level
             levelId = currentLevelBody.data("levelid");
-            annotations[levelId] = label;
-            already_submitted[levelId] = 1;
-            currentLevelBody.addClass('hidden-element');
-            if (currentLevel == totalAnnotationLevels) {
-                fileAnnotationCompleted();
+            selectedLabel = labelButton.data("labelid");
+            if (multichoice == "True"){
+                labelButton.toggleClass('btn-secondary');
+                labelButton.toggleClass('btn-primary');
+                textField = $(`input[data-labelid='${selectedLabel}']`);
+                if (!textField.is(":visible")){
+                    textField.show();
+                    if (annotations[levelId] == null){
+                        annotations[levelId] = {}
+                        annotations[levelId][selectedLabel] = textField.val();
+                        annotationsOrder[levelId] = [selectedLabel];
+                    }
+                    else{
+                        annotations[levelId][selectedLabel] = textField.val();
+                        annotationsOrder[levelId].push(selectedLabel)
+                    }
+                }
+                else {
+                    textField.hide();
+                    textField.val("");
+                    delete annotations[levelId][selectedLabel];
+                    const index = annotationsOrder[levelId].indexOf(selectedLabel);
+                    if (index > -1) 
+                        annotationsOrder[levelId].splice(index, 1);
+                }
             }
-            else if(skipLevelDict[levelId][label] == 1){
-                currentLevel = totalAnnotationLevels;
-                fileAnnotationCompleted();
+            else {
+                currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+                levelId = currentLevelBody.data("levelid");
+                $(`.labelLevel-${levelId}`).removeClass('btn-primary');
+                textField = $(`input[data-labelid='${selectedLabel}']`);
+                visible = textField.is(":visible");
+                $(`.inputLevel-${levelId}`).hide();
+                selectedLabel = labelButton.data("labelid");
+                if (!visible){
+                    labelButton.addClass('btn-primary');
+                    labelButton.removeClass('btn-secondary');
+                    textField.show();
+                    selectedLabel = labelButton.data("labelid");
+                    annotations[levelId] = {}
+                    annotations[levelId][selectedLabel] = textField.val();
+                    annotationsOrder[levelId] = [selectedLabel];
+                }
+                else {
+                    labelButton.removeClass('btn-primary');
+                    labelButton.addClass('btn-secondary');
+                    textField.hide();
+                    textField.val("");
+                    delete annotations[levelId][selectedLabel];
+                    annotationsOrder[levelId] = [];
+                }
             }
-            currentLevel = (currentLevel % totalAnnotationLevels) + 1;
-            currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
-            currentLevelBody.removeClass('hidden-element');
+            return
         }
+
 
         function previousLevel() {
             if(last_previous == 1){
@@ -557,6 +598,35 @@
             if(last_previous == 1){
                 last_previous = 0;
             }
+        }
+
+        function nextLevelHandler(){
+            currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+            levelId = currentLevelBody.data("levelid");
+            already_submitted[levelId] = 1;
+            multichoice = currentLevelBody.data("multichoice") == "True";
+            currentLevelBody.addClass('hidden-element');
+            label = selectedLabel;
+            if (annotations[levelId]){
+                labels_ids = Object.keys(annotations[levelId]);
+                labels_ids.forEach(id=>{
+                    annotations[levelId][id] = $(`input.label_other[data-labelid=${id}]`).val()
+                })
+            }
+            if (currentLevel == totalAnnotationLevels) {
+                fileAnnotationCompleted();
+            }
+            else if(!multichoice && skipLevelDict[levelId][label] == 1 ){
+                currentLevel = totalAnnotationLevels;
+                fileAnnotationCompleted();
+            }
+            updateLevelBody();
+        }
+
+        function updateLevelBody(){
+            currentLevel = (currentLevel % totalAnnotationLevels) + 1;
+            currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+            currentLevelBody.removeClass('hidden-element');
         }
 
         function undoProcess(){
@@ -591,6 +661,8 @@
         undoButton.on('click', function() {
             undoProcess();
         });
+
+        nextButton.on('click', nextLevelHandler);
 
         doneButton.on('click', function(){
             
@@ -643,6 +715,7 @@
 
         function loadPreviousFile(load_previous) {
             annotations = {};
+            annotationsOrder = {};
             var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
             // console.log(load_previous, currentFileId);
             var data = {
@@ -684,73 +757,85 @@
             }
         }
 
-        function fileAnnotationCompleted() {
+        function resetButtonsAndLabels(){
+            // reset buttons and labels 
+            $('.labelButton').removeClass('btn-primary');
+            $('.labelButton').addClass('btn-secondary');
+            $('input.label_other').hide();
+            $('input.label_other').val("");
+        }
 
+        function fileAnnotationCompleted() {
             var url = "{{ url_for('annotate_experiment._addAnnotationInfo')}}";
             var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
 
             var data = {
                 'fileId' :          currentFileId,
                 'annotations' :     annotations, 
+                'annotationsOrder': annotationsOrder,
                 'labelCount' :     {{labelCount}},
                 'userId'    : "{{userId}}",
                 'hasToIncreaseCurrent': 1,
             };
 
             data = JSON.stringify(data);
+            resetButtonsAndLabels();
             $.getJSON(url , data, function(response) {
                 if(response.success) {
                     annotations = {};
+                    annotationsOrder = {};
                     already_submitted = {};
-                    if(currentFileIndex == {{lastFile}}) {
-
-                        //  Code for Progress bar
-                        progress_value = 'Progress: ' + (currentFileIndex + 1).toString() + ' / ' + ({{lastFile}}  + 1).toString()
-                        $("#prg").text(progress_value);                        
-                        var prog_width = ((currentFileIndex + 1)/({{lastFile}} + 1))*100
-                        prog_width = prog_width.toFixed(2)
-                        $("#progress-bar").width(prog_width.toString() + '%');
-                        $('#preview').text(prog_width.toString() + '%');
-                        // Code for Progress bar Ends
-
-                        last_previous = 1
-                        doneButton.removeClass('hidden-element');
-                        $('.toggleLooping').addClass('hidden-element');
-                        $('.annotationArea').addClass('hidden-element');
-                        $('.thanksNote').removeClass('hidden-element');
-
-                        if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
-                            if( "{{ experiment.uploadType }}" === "manual" ) {
-                            }
-                                var f = $(".file[data-index='" + currentLoadedFile + "']");
-                                f.find(".clip")[0].pause();
-                                // f.find(".clip")[0].removeAttribute('src');
-                                // f.find(".clip")[0].load();
-                        }
-                    } 
-                    else {
-                        if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
-                            stopThisClip(currentLoadedFile);
-                        }
-                        currentFileIndex += 1;
-                        $(".file[data-index='" + currentLoadedFile + "']").addClass('hidden-element');
-                        currentLoadedFile = (currentLoadedFile + 1) % preLoadLimit;
-                        preLoadFiles();
-                        showCurrentFile(currentLoadedFile);
-
-                        progress_value = 'Progress: ' + (currentFileIndex).toString() + ' / ' + ({{lastFile}} + 1).toString()
-                        $("#prg").text(progress_value);                                                
-                        var prog_width = (currentFileIndex/({{lastFile}} + 1))*100
-                        prog_width = prog_width.toFixed(2)
-                        $("#progress-bar").width(prog_width.toString() + '%');
-                        $('#preview').text(prog_width.toString() + '%');
-                    }
+                    updateProgressbar();
                 }
                 else{
                     $('.labelWarning').removeClass('hidden-element');
-                    
                 }
             });
+        }
+
+        function updateProgressbar(){
+            if(currentFileIndex == {{lastFile}}) {
+                //  Code for Progress bar
+                progress_value = 'Progress: ' + (currentFileIndex + 1).toString() + ' / ' + ({{lastFile}}  + 1).toString()
+                $("#prg").text(progress_value);                        
+                var prog_width = ((currentFileIndex + 1)/({{lastFile}} + 1))*100
+                prog_width = prog_width.toFixed(2)
+                $("#progress-bar").width(prog_width.toString() + '%');
+                $('#preview').text(prog_width.toString() + '%');
+                // Code for Progress bar Ends
+
+                last_previous = 1
+                doneButton.removeClass('hidden-element');
+                $('.toggleLooping').addClass('hidden-element');
+                $('.annotationArea').addClass('hidden-element');
+                $('.thanksNote').removeClass('hidden-element');
+
+                if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
+                    if( "{{ experiment.uploadType }}" === "manual" ) {
+                    }
+                        var f = $(".file[data-index='" + currentLoadedFile + "']");
+                        f.find(".clip")[0].pause();
+                        // f.find(".clip")[0].removeAttribute('src');
+                        // f.find(".clip")[0].load();
+                }
+            } 
+            else {
+                if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
+                    stopThisClip(currentLoadedFile);
+                }
+                currentFileIndex += 1;
+                $(".file[data-index='" + currentLoadedFile + "']").addClass('hidden-element');
+                currentLoadedFile = (currentLoadedFile + 1) % preLoadLimit;
+                preLoadFiles();
+                showCurrentFile(currentLoadedFile);
+
+                progress_value = 'Progress: ' + (currentFileIndex).toString() + ' / ' + ({{lastFile}} + 1).toString()
+                $("#prg").text(progress_value);                                                
+                var prog_width = (currentFileIndex/({{lastFile}} + 1))*100
+                prog_width = prog_width.toFixed(2)
+                $("#progress-bar").width(prog_width.toString() + '%');
+                $('#preview').text(prog_width.toString() + '%');
+            }
         }
 
         function newFile(divIndex, fileIndex, showCurrent) {
