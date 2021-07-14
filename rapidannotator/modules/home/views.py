@@ -16,7 +16,6 @@ from matplotlib import pyplot as plt
 from io import BytesIO
 import base64
 from rapidannotator import app
-import io   
 import pandas as pd
 from rapidannotator.models import File
 
@@ -292,10 +291,10 @@ def _continueExperiment():
         and experiment.category != "text"\
         and not os.path.exists(experimentDir):
         os.makedirs(experimentDir)
-    # parse csv 
+    # parse csv format
     if fileExt == '.csv':
         resultsFile = pd.read_csv(resultsFile, sep=',')
-    # parse excel
+    # parse excel format
     else:
         resultsFile = pd.read_excel(resultsFile)
         pass
@@ -344,4 +343,4 @@ def _continueExperiment():
         concordance = resultsFile[columns[startConcordance:]]
         outfilePath = os.path.join(experimentDir, "concordance.csv")
         concordance.to_csv(outfilePath, index=False)
-    return jsonify({"success": True})
+    return jsonify({"success": True, "message": "Experiment created successfully."})
