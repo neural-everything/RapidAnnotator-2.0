@@ -18,6 +18,9 @@ import base64
 from rapidannotator import app
 import pandas as pd
 from rapidannotator.models import File
+from werkzeug.utils import secure_filename
+
+
 
 @blueprint.before_request
 def before_request():
@@ -286,11 +289,11 @@ def _continueExperiment():
     db.session.commit()
     # check if the directory already exists and experiment type is not text
     # then make a new directory
-    experimentDir = os.path.join(app.config['UPLOAD_FOLDER'],str(newExperiment.id))
+    newExperimentDir = os.path.join(app.config['UPLOAD_FOLDER'],str(newExperiment.id))
     if  experiment.uploadType != "viaSpreadsheet"\
         and experiment.category != "text"\
-        and not os.path.exists(experimentDir):
-        os.makedirs(experimentDir)
+        and not os.path.exists(newExperimentDir):
+        os.makedirs(newExperimentDir)
     # parse csv format
     if fileExt == '.csv':
         resultsFile = pd.read_csv(resultsFile, sep=',')
@@ -323,9 +326,16 @@ def _continueExperiment():
         fileName , fileExt = os.path.splitext(name)
         # copy file from old experiment folder to new experiment folder
         if experiment.uploadType == 'manual' and experiment.category != 'text':
-            path = os.path.join(app.config['UPLOAD_FOLDER'], str(experiment.id), content)
-            newCopyPath =  fileName + '_' + str(fileItr) + fileExt
-            shutil.copy(path, os.path.join(experimentDir, newCopyPath))
+            # original file path
+            filePath = os.path.join(app.config['UPLOAD_FOLDER'],\
+                        str(experiment.id),\
+                        secure_filename(content))
+            # new copy file path
+            content = fileName + '_' + str(fileItr) + fileExt
+            copyPath =  os.path.join(newExperimentDir, content)
+            # if original file exists correctly copy it to new location
+            if os.path.isfile(filePath):
+                shutil.copy(filePath, copyPath)
 
         newFile = File(name=name, content=content,\
                         display_order=display_order,\
@@ -341,6 +351,6 @@ def _continueExperiment():
         columns = list(resultsFile.columns)
         startConcordance = columns.index('Number of hit')
         concordance = resultsFile[columns[startConcordance:]]
-        outfilePath = os.path.join(experimentDir, "concordance.csv")
+        outfilePath = os.path.join(newExperimentDir, "concordance.csv")
         concordance.to_csv(outfilePath, index=False)
     return jsonify({"success": True, "message": "Experiment created successfully."})
