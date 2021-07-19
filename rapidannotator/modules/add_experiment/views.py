@@ -1,4 +1,4 @@
-from flask import render_template, flash, redirect, url_for, request, jsonify, \
+from flask import json, render_template, flash, redirect, url_for, request, jsonify, \
     current_app, g, abort, jsonify, session, send_file
 from flask_babelex import lazy_gettext as _
 from sqlalchemy.sql.functions import user
@@ -70,7 +70,7 @@ def index(experimentId):
     notAnnotators = [x for x in users if x not in annotators]
 
     if len(annotators) == 0:
-        firstID = 3000
+        firstID = None
     else:
         firstID = annotators[0].id
 
@@ -1079,13 +1079,14 @@ def _deleteExperiment():
     return jsonify(response)
 
 
+@blueprint.route('/viewResults/<int:experimentId>', defaults={'userId': None})
 @blueprint.route('/viewResults/<int:experimentId>/<int:userId>')
 @isPerimitted2
 def viewResults(experimentId, userId):
     """ Viewing results of a user/annotator's annotation at an experiment.
     Args:
         experimentId: Id of the experiment requested to be viewed.
-        userId: Id of a specific annotator of that experiment.
+        userId: (optional) Id of a specific annotator of that experiment.
         levelId: (optional) Id of annotation level, filtering option.
         labelId: (optional) Id of annotation level's label, filtering option.
     Returns: 
@@ -1096,6 +1097,9 @@ def viewResults(experimentId, userId):
 
     page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
     experiment = Experiment.query.filter_by(id=experimentId).first()
+
+    if (userId == None):
+        return render_template('add_experiment/noResults.html', experiment = experiment)
     
     expFiles = File.query.filter_by(experiment_id=experiment.id).limit(per_page).offset(offset)
 

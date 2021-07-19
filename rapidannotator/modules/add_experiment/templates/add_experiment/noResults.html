@@ -23,12 +23,18 @@
 
     <div class="pull-right" style="display: inline-block">
 
-         <div class="dropdown btn-group btn-group-inline btn-space">
-            <button class="btn btn-primary dropdown-toggle" type="button" id="annotatorResult" data-toggle="dropdown">
-                No Annotator
-            </button>
+        {%- set addAnnotatorsURL = url_for('add_experiment.viewSettings', experimentId = experiment.id) %}
+        <div class="btn-group btn-group-inline btn-space">
+            <a class="btn btn-primary dropdown-toggle" href="{{addAnnotatorsURL}}">
+                Add Annotators
+            </a>
         </div>
-
+        {%- set backUrl = url_for('add_experiment.index', experimentId = experiment.id) %}
+        <div class="btn-group btn-group-inline btn-space">
+            <a class="btn btn-primary dropdown-toggle" href="{{backUrl}}">
+                Back to the experiment
+            </a>
+        </div>
         <!-- <a id="discardAnnotationsButtonId" href="" data-target="#discardAnnotations"
             data-toggle="modal" class="btn btn-danger btn-group btn-group-inline
             btn-space">
