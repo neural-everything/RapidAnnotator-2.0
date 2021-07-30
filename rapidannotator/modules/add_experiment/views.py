@@ -73,7 +73,7 @@ def index(experimentId):
         firstID = None
     else:
         firstID = annotators[0].id
-
+        
     return render_template('add_experiment/main.html',
         users = users,
         experiment = experiment,
@@ -747,8 +747,10 @@ def addFilesFromConcordance(experimentId, concordance):
                 content = row["Screenshot"]
             else:
                 content = caption
-            edge_link = row["Video URL"]
+            # Only make the edge_link = row["Video Url"] if it is a new scape style
+            edge_link = ""
             if readnamefromattributetext_file:
+                edge_link = row["Video URL"]
                 name_temp = (row["Structure ``text_file''"]).replace(".txt", "")
                 name_match = re.search("([0-9]{4}-[0-9]{2}-[0-9]{2}_.*)$", name_temp)
                 name = name_match.group(1)
@@ -1493,6 +1495,31 @@ def _addOffsetTime(video_snippet, before_time, after_time):
     video_snippet = re.sub(f'start=({float_re})', "start=" + str(start_time), video_snippet)
     return video_snippet
 
+@blueprint.route('/changeDisplayOrder/<int:experimentId>/<string:displayType>', methods=['POST','GET'])
+def changeDisplayOrder(experimentId, displayType):
+    """
+    Change the display order of the experiment files.
+    Args:
+        experimentId: int. The experiment id.
+        order: str. The display order of the experiment files.
+    Returns:
+        response: dict. The response containing success and message keys.
+    """
+
+    experiment = Experiment.query.get(experimentId)
+    if experiment == None:
+        return jsonify({"success": False, "message": "Experiment does not exist"})
+
+    if displayType not in ['fcfs', 'random']:
+        return jsonify({"success": False, "message": "Invalid type"})
+
+    experiment.displayType = displayType
+    db.session.commit()
+
+    return jsonify({"success": True, "message": "Order changed successfully"})
+
+@blueprint.route('/changeDisplayTime/<int:experimentId>', methods=['POST'])
+
 @blueprint.route('/_exportResultsCSV/<int:experimentId>/<string:format1>', methods=['POST','GET'])
 def _exportResultsCSV(experimentId, format1):
 
@@ -1604,8 +1631,13 @@ def _exportResultsWide(experimentId, format):
         experimentDIR = os.path.join(app.config['UPLOAD_FOLDER'], str(experiment.id))
         inputConcordance = os.path.join(experimentDIR, 'concordance.csv')
         data = pandas.read_csv(inputConcordance)
+        if "Structure ``text_file''" in data.columns:
+            df.drop(columns=['edge_link'], inplace=True)
         data.index += 1
         df = pd.merge(df, data, how='inner', left_on=['concordance_lineNumber'], right_index=True)
+    else:
+        # It is included only in case of corcodance uploaded new scape style
+        df.drop(columns=['edge_link'], inplace=True)
     df.drop('concordance_lineNumber', inplace=True, axis=1)
     filePath = make_file(df, experimentId, format)
     return send_file(filePath, as_attachment=True)
