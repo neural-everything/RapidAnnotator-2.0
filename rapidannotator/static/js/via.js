@@ -2,9 +2,14 @@ function _via_load_submodules() {
     _via_basic_demo_load_img();
 }
 
-function _via_basic_demo_load_img(img_url) {
+function _via_basic_demo_load_img(index) {
+    index = index.toString();
+    _via_reg_canvas = document.getElementById(RA_CANVAS_NAME + index);
+    _via_current_image = document.getElementById(RA_IMAGE_NAME + index);
+    _via_current_image.classList.add('visible'); // now show the new image
+
     _via_init();
-    _via_show_img_from_buffer(0);
+    _via_show_img_from_buffer(index);
     _via_init_keyboard_handlers();
     _via_init_mouse_handlers();
 }
@@ -15,8 +20,10 @@ function _via_basic_demo_define_annotations() {
 }
 
 "use strict";
-const RA_IMAGE_WIDTH = 400; //pixels
-const RA_IMAGE_HEIGHT = 480; //pixels
+const RA_IMAGE_WIDTH = 350; //pixels
+const RA_IMAGE_HEIGHT = 420; //pixels
+const RA_CANVAS_NAME = "region-canvas-"
+const RA_IMAGE_NAME = "region-image-"
 
 var VIA_REGION_SHAPE = {
     RECT: 'rect',
@@ -102,7 +109,7 @@ var _via_img_stat_current_img_index = false;
 
 // image canvas
 var _via_display_area = document.getElementById('display_area');
-var _via_reg_canvas = document.getElementById('region_canvas');
+var _via_reg_canvas = document.getElementById(RA_CANVAS_NAME+'0');
 var _via_reg_ctx; // initialized in _via_init()
 var _via_canvas_width, _via_canvas_height;
 
@@ -254,7 +261,6 @@ _via_settings.core.default_filepath = '';
 // UI html elements
 var invisible_file_input = document.getElementById("invisible_file_input");
 var display_area = document.getElementById("display_area");
-var ui_top_panel = document.getElementById("ui_top_panel");
 var image_panel = document.getElementById("image_panel");
 var img_buffer_now = document.getElementById("img_buffer_now");
 
@@ -264,7 +270,6 @@ var annotation_textarea = document.getElementById("annotation_textarea");
 var img_fn_list_panel = document.getElementById('img_fn_list_panel');
 var img_fn_list = document.getElementById('img_fn_list');
 var attributes_panel = document.getElementById('attributes_panel');
-var leftsidebar = document.getElementById('leftsidebar');
 
 var BBOX_LINE_WIDTH = 4;
 var BBOX_SELECTED_OPACITY = 0.3;
@@ -3705,18 +3710,6 @@ function img_fn_list_scroll_to_file(file_index) {
     }
 }
 
-function toggle_img_fn_list_visibility() {
-    leftsidebar_show();
-    document.getElementById('img_fn_list_panel').classList.toggle('show');
-    document.getElementById('project_panel_title').classList.toggle('active');
-}
-
-function toggle_attributes_editor() {
-    leftsidebar_show();
-    //document.getElementById('attributes_editor_panel').classList.toggle('show');
-    //document.getElementById('attributes_editor_panel_title').classList.toggle('active');
-}
-
 // this vertical spacer is needed to allow scrollbar to show
 // items like Keyboard Shortcut hidden under the attributes panel
 function update_vertical_space() {
@@ -4351,10 +4344,7 @@ function _via_buffer_hide_current_image() {
     _via_clear_reg_canvas(); // clear old region shapes
 }
 
-function _via_show_img_from_buffer(img_index) {
-    _via_current_image = document.getElementById("currentImage");
-    _via_current_image.classList.add('visible'); // now show the new image
-
+function _via_show_img_from_buffer() {
     // update the current state of application
     _via_click_x0 = 0;
     _via_click_y0 = 0;
