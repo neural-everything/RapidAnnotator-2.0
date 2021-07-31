@@ -1,8 +1,10 @@
 {% extends "annotate_experiment/base.html" %}
 {% from "macros.html" import render_field %}
+{% from "macros.html" import icons %}
 
 {% block title %} annotate_experiment Page {% endblock title %}
 {% block head %}
+  <link rel="stylesheet" href="{{url_for('static', filename = 'css/via.css')}}">
   {{ super() }}
   <style type="text/css">
     .important { color: #336699; }
@@ -107,7 +109,33 @@
                     <a href="" id="sourceLink" target="_blank" style="margin-left:30%">Source Link</a>
                     {%- endif -%}
                 {%- elif experiment.category == 'image' -%}
-                    <img class="annotationWindow" src="" alt="">
+                {{ icons() }}
+                  <div class="leftsidebar_accordion_panel show">
+                    <ul class="region_shape">
+                      <li id="region_shape_none"  class="selected" onclick="select_region_shape('none')" title="No select"><svg height="20" viewbox="0 0 24 24"><use xlink:href="#icon_pointer"></use></svg></li>
+                      <li id="region_shape_rect" onclick="select_region_shape('rect')" title="Rectangle"><svg height="32" viewbox="0 0 32 32"><use xlink:href="#shape_rectangle"></use></svg></li>
+                      <li id="region_shape_circle" onclick="select_region_shape('circle')" title="Circle"><svg height="32" viewbox="0 0 32 32"><use xlink:href="#shape_circle"></use></svg></li>
+                      <li id="region_shape_ellipse" onclick="select_region_shape('ellipse')" title="Ellipse"><svg height="32" viewbox="0 0 32 32"><use xlink:href="#shape_ellipse"></use></svg></li>
+                      <li id="region_shape_polygon" onclick="select_region_shape('polygon')" title="Polygon"><svg height="32" viewbox="0 0 32 32"><use xlink:href="#shape_polygon"></use></svg></li>
+                      <li id="region_shape_point" onclick="select_region_shape('point')" title="Point"><svg height="32" viewbox="0 0 32 32"><use xlink:href="#shape_point"></use></svg></li>
+                      <li id="region_shape_polyline" onclick="select_region_shape('polyline')" title="Polyline"><svg height="32" viewbox="0 0 32 32"><use xlink:href="#shape_polyline"></use></svg></li>
+                      <li id="region_shape_sel_all_regions" onclick="sel_all_regions()" title="Select All Regions"> <svg height="32" viewbox="0 0 32 32"><use xlink:href="#icon_selectall"></use></svg>
+                      <li id="region_shape_copy_sel_regions" onclick="copy_sel_regions()" title="Copy Regions"> <svg height="32" viewbox="0 0 32 32"><use xlink:href="#icon_copy"></use></svg>
+                      <li id="region_shape_paste_sel_regions_in_current_image" onclick="paste_sel_regions_in_current_image()" title="Paste Regions"> <svg height="32" viewbox="0 0 32 32"><use xlink:href="#icon_paste"></use></svg>
+                      <li id="region_shape_del_sel_regions" onclick="del_sel_regions()"  title="Delete Region"> <svg height="32" viewbox="0 0 32 32"><use xlink:href="#icon_close"></use></svg>
+                    </ul>
+                  </div>
+                  <div id="ui_top_panel">
+                  </div>
+                  <div id="leftsidebar">
+                  </div>
+                  <div id="message_panel" style="display:none;">
+                    <div id="message_panel_content" class="content"></div>
+                  </div>
+                  <div id="image_panel" class="display_area_content display_none">
+                    <img class="annotationWindow" src="" alt="" id="currentImage"> 
+                    <canvas id="region_canvas" width="400" height="480" tabindex="1">Sorry, your browser does not support HTML5 Canvas functionality which is required for this application.</canvas>
+                  </div>
                 {%- elif experiment.category == 'text' -%}
                     <pre>
                     </pre>
@@ -238,7 +266,7 @@
 </div>
 
 
-
+<script src="{{url_for('static', filename = 'js/via.js')}}"></script>
 <script type="text/javascript">
     $(window).on('load', function() {
 
@@ -955,6 +983,7 @@
 
             if( "{{ experiment.category }}" === "image") {
                 loadedDiv.find('img').attr('src', url);
+                _via_basic_demo_load_img(url);
                 loadedDiv.find('img').attr('alt', caption);
             } else if( "{{ experiment.category }}" === "video") {
                 // if( "{{ experiment.uploadType }}" === "manual") {
@@ -1062,7 +1091,5 @@
         }
         return text;
     }
-
 </script>
-
 {% endblock annotate_experiment_body %}
