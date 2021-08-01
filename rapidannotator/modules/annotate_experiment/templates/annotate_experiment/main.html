@@ -427,7 +427,8 @@
         var keyBindingDict = {{keyBindingDict | safe}};
         var skipLevelDict = {{skipLevelDict | safe}}
         currentFileIndex = {{ currentFileIndex }};
-        _ra_via_init(preLoadLimit);
+        if ("{{ experiment.category }}" == "image")
+            _ra_via_init(preLoadLimit);
 
         if(currentFileIndex <= {{lastFile}}) {
             doneButton.addClass('hidden-element');
