@@ -434,6 +434,34 @@
             doneButton.addClass('hidden-element');
         }
 
+        if("{{experiment.displayTargetCaption}}"){
+            if ("{{ experiment.uploadType }}" !== "fromConcordance")
+                thisRespondHightlightText(".file[data-index='" + currentLoadedFile + "'] pre");
+            else 
+                thisRespondHightlightText(".fileCaption h4");
+        }
+
+        function thisRespondHightlightText(thisDiv){
+            $(thisDiv).on("mouseup", function () {
+                var selectedText = getSelectionText();
+                var replacement = $('<span></span>').attr({'class':'hl'}).html(selectedText);
+                var replacementHtml = $('<div>').append(replacement.clone()).remove().html();
+                var text = $(this).text().replace(selectedText, replacementHtml);
+                $(this).html(text);
+                $("#targetCaptionData").val(selectedText);
+            });
+        }
+
+        function getSelectionText() {
+            var text = "";
+            if (window.getSelection) {
+                text = window.getSelection().toString();
+            } else if (document.selection && document.selection.type != "Control") {
+                text = document.selection.createRange().text;
+            }
+            return text;
+        }
+
         if(currentFileIndex > {{lastFile}}){
             if({{is_done}} == 1){
                 displayEnd();
@@ -1078,30 +1106,5 @@
             });
         };
     });
-    
-    if("{{experiment.displayTargetCaption}}"){
-        thisRespondHightlightText(".fileCaption h4");
-    }
-
-    function thisRespondHightlightText(thisDiv){
-        $(thisDiv).on("mouseup", function () {
-            var selectedText = getSelectionText();
-            var replacement = $('<span></span>').attr({'class':'hl'}).html(selectedText);
-            var replacementHtml = $('<div>').append(replacement.clone()).remove().html();
-            var text = $(this).text().replace(selectedText, replacementHtml);
-            $(this).html(text);
-            $("#targetCaptionData").val(selectedText);
-        });
-    }
-
-    function getSelectionText() {
-        var text = "";
-        if (window.getSelection) {
-            text = window.getSelection().toString();
-        } else if (document.selection && document.selection.type != "Control") {
-            text = document.selection.createRange().text;
-        }
-        return text;
-    }
 </script>
 {% endblock annotate_experiment_body %}
