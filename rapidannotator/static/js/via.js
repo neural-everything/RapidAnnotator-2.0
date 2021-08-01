@@ -1,17 +1,26 @@
-function _via_load_submodules() {
-    _via_basic_demo_load_img();
+var _ra_initialized = false;
+function _ra_via_init(preLoadLimit=5){
+    _ra_initialized = true;
+    // bind the preload count files to the event listeners
+    for(index=0; index<preLoadLimit; index++){
+        _via_reg_canvas = document.getElementById(RA_CANVAS_NAME + index);
+        _via_current_image = document.getElementById(RA_IMAGE_NAME + index);
+        _via_init_reg_canvas_context();
+        // initialize user input handlers (for both window and via_reg_canvas)
+        // handles drawing of regions by user over the image
+        _via_init_keyboard_handlers();
+        _via_init_mouse_handlers();
+    }
 }
-
-function _via_basic_demo_load_img(index) {
+function _ra_via_update(index) {
+    if (!_ra_initialized)
+        _ra_via_init();
     index = index.toString();
     _via_reg_canvas = document.getElementById(RA_CANVAS_NAME + index);
     _via_current_image = document.getElementById(RA_IMAGE_NAME + index);
     _via_current_image.classList.add('visible'); // now show the new image
-
-    _via_init();
+    _via_init_reg_canvas_context();
     _via_show_img_from_buffer(index);
-    _via_init_keyboard_handlers();
-    _via_init_mouse_handlers();
 }
 
 function _via_basic_demo_define_annotations() {

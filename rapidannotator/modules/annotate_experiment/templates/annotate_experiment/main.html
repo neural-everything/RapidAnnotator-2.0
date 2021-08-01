@@ -427,7 +427,7 @@
         var keyBindingDict = {{keyBindingDict | safe}};
         var skipLevelDict = {{skipLevelDict | safe}}
         currentFileIndex = {{ currentFileIndex }};
-
+        _ra_via_init(preLoadLimit);
 
         if(currentFileIndex <= {{lastFile}}) {
             doneButton.addClass('hidden-element');
@@ -635,7 +635,7 @@
             _via_canvas_regions = [];
             var excessFiles = (preLoadedTill - currentLoadedFile + preLoadLimit) % preLoadLimit;
             var divIndex = (currentLoadedFile + excessFiles + 1) % preLoadLimit;
-            _via_basic_demo_load_img(divIndex);
+            _ra_via_update(divIndex);
             _via_clear_reg_canvas();
             currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
             levelId = currentLevelBody.data("levelid");
@@ -829,7 +829,7 @@
             });
             var excessFiles = (preLoadedTill - currentLoadedFile + preLoadLimit) % preLoadLimit;
             var divIndex = (currentLoadedFile + excessFiles + 1) % preLoadLimit;
-            _via_basic_demo_load_img(divIndex+1);
+            _ra_via_update(divIndex+1);
         }
 
         function updateProgressbar(){
@@ -995,7 +995,7 @@
             if( "{{ experiment.category }}" === "image") {
                 loadedDiv.find('img').attr('src', url);
                 loadedDiv.find('img').attr('alt', caption);
-                _via_basic_demo_load_img(0);
+                _ra_via_update(0);
             } else if( "{{ experiment.category }}" === "video") {
                 // if( "{{ experiment.uploadType }}" === "manual") {
                     var video = loadedDiv.find('.clip');
