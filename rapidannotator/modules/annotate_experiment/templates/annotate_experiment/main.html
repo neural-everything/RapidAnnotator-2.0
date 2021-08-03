@@ -5,6 +5,9 @@
 {% block title %} annotate_experiment Page {% endblock title %}
 {% block head %}
   <link rel="stylesheet" href="{{url_for('static', filename = 'css/via.css')}}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ion-rangeslider/2.3.1/css/ion.rangeSlider.min.css"/>
+
+
   {{ super() }}
   <style type="text/css">
     .important { color: #336699; }
@@ -16,7 +19,9 @@
     * {
  	 	box-sizing: border-box;
 	}
-
+    .irs--modern .irs-from, .irs--modern .irs-to, .irs--modern .irs-single {
+        font-size:15px; !important
+    }
   </style>  
 {% endblock head %}
 
@@ -105,11 +110,12 @@
         {% for i in range(5) %}
             <div class="file col-xs-5 hidden-element" data-index={{loop.index0}} data-fileid=1>
                 {%- if experiment.category == 'video' -%}
+                <div class="js-range-slider" name="my_range" value=""></div>
                     {%- if experiment.uploadType == 'NOTviaSpreadsheet' -%}
                         <a href="" target="_blank">Click here</a>
                     {%- else -%}
                     	<div class="glass">
-	                        <video class="clip" id= "clip" width="400" controls>
+	                        <video class="clip" id= "clip-{{loop.index0}}" width="400" controls>
 	                            <source src="" type="video/mp4">
 	                            Your browser does not support HTML5 video.
 	                        </video>
@@ -122,6 +128,7 @@
                         {%- endif -%}
                     {%- endif -%}
                 {%- elif experiment.category == 'audio' -%}
+                    <div class="js-range-slider" name="my_range" value=""></div>
                     {%- if experiment.uploadType == 'NOTviaSpreadsheet' -%}
                         <a href="" target="_blank">Click here</a>
                     {%- else -%}
@@ -269,6 +276,8 @@
 
 
 <script src="{{url_for('static', filename = 'js/via.js')}}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ion-rangeslider/2.3.1/js/ion.rangeSlider.min.js"></script>
+
 <script type="text/javascript">
     $(window).on('load', function() {
 
@@ -664,8 +673,10 @@
             _via_canvas_regions = [];
             var excessFiles = (preLoadedTill - currentLoadedFile + preLoadLimit) % preLoadLimit;
             var divIndex = (currentLoadedFile + excessFiles + 1) % preLoadLimit;
-            _ra_via_update(divIndex);
-            _via_clear_reg_canvas();
+            if ("{{ experiment.category }}" == "image") {
+                _ra_via_update(divIndex);
+                _via_clear_reg_canvas();
+            }
             currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
             levelId = currentLevelBody.data("levelid");
             already_submitted[levelId] = 1;
@@ -858,7 +869,8 @@
             });
             var excessFiles = (preLoadedTill - currentLoadedFile + preLoadLimit) % preLoadLimit;
             var divIndex = (currentLoadedFile + excessFiles + 1) % preLoadLimit;
-            _ra_via_update(divIndex+1);
+            if( "{{ experiment.category }}" === "image") 
+                _ra_via_update(divIndex+1);
         }
 
         function updateProgressbar(){
@@ -1106,5 +1118,73 @@
             });
         };
     });
+</script>
+<script>
+    var entryTime = 0
+    if ("{{ experiment.category }}" == "video" || "{{ experiment.category }}" == "audio") 
+        var sliderTimer = setTimeout(initSlider, 1000);
+    function initSlider(){
+        entryTime += 1
+        if ("{{ experiment.category }}" == "video") 
+            var media = document.querySelector('video');
+        else  
+            var media = document.querySelector('audio');
+        if (!isNaN(media.duration)){
+            updateSlider(media);
+            clearTimeout(sliderTimer);
+        }
+        else if(entryTime < 20){
+            sliderTimer = setTimeout(initSlider, 1000);
+        }
+    }
+    function updateSlider(media) {
+        const controls = document.querySelector('.controls');
+
+        const play = document.querySelector('.play');
+        const stop = document.querySelector('.stop');
+        const rwd = document.querySelector('.rwd');
+        const fwd = document.querySelector('.fwd');
+
+        const timerWrapper = document.querySelector('.timer');
+        const timer = document.querySelector('.timer span');
+        const timerBar = document.querySelector('.timer div');
+        $(".js-range-slider").ionRangeSlider({
+        type: "double",
+        skin: "modern",
+        min: 0,
+        max: media.duration,
+        max_interval: media.duration,
+        step: 0.01,
+        from: 0,
+        to: media.duration,
+        drag_interval: true,
+        grid: false,
+        grid_snap: true,
+        prettify: hhmmsss_prettify,
+        onStart: function (data) {
+            media.play();
+        },
+        onChange: function (data) {
+            if (!isNaN(media.duration)){
+                media.pause();
+                media.currentTime = data.from;
+                media.play();
+            }
+        },
+    });
+    }
+    function hhmmsss_prettify (n) {
+        var sec_num = parseInt(n, 10); // don't forget the second param
+        var hours   = Math.floor(sec_num / 3600);
+        var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+        var seconds = sec_num - (hours * 3600) - (minutes * 60);
+        var milisec = n;
+
+        if (hours   < 10) {hours   = "0"+hours;}
+        if (minutes < 10) {minutes = "0"+minutes;}
+        if (seconds < 10) {seconds = "0"+seconds;}
+        if (milisec < 10) {milisec = "0"+milisec;}
+        return hours+':'+minutes+':'+seconds+'.'+(milisec % 1).toFixed(1).substring(2);
+    }
 </script>
 {% endblock annotate_experiment_body %}
