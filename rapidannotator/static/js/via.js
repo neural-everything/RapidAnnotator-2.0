@@ -1,3 +1,53 @@
+/*
+  VGG Image Annotator (via)
+  www.robots.ox.ac.uk/~vgg/software/via/
+
+  Copyright (c) 2016-2019, Abhishek Dutta, Visual Geometry Group, Oxford University and VIA Contributors.
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+  Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  POSSIBILITY OF SUCH DAMAGE.
+*/
+
+/*
+  Links:
+  - https://gitlab.com/vgg/via/blob/master/Contributors.md : list of developers who have contributed code to the VIA project.
+  - https://gitlab.com/vgg/via/blob/master/CodeDoc.md : source code documentation
+  - https://gitlab.com/vgg/via/blob/master/CONTRIBUTING.md : guide for contributors
+
+  This source code can be grouped into the following categories:
+  - Data structure for annotations
+  - Initialization routine
+  - Handlers for top navigation bar
+  - Local file uploaders
+  - Data Importer
+  - Data Exporter
+  - Maintainers of user interface
+  - Image click handlers
+  - Canvas update routines
+  - Region collision routines
+  - Shortcut key handlers
+  - Persistence of annotation data in browser cache (i.e. localStorage)
+  - Handlers for attributes input panel (spreadsheet like user input panel)
+*/
+
 var _ra_initialized = false;
 function _ra_via_init(preLoadLimit=5){
     _ra_initialized = true;
