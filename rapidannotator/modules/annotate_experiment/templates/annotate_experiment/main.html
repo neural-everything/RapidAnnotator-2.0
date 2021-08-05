@@ -25,7 +25,7 @@
     .time-range-slider{
         margin-bottom:30px;
     }
-    .time-control-input{
+    .time-range-control{
         width:49%;
     }
     .time-control-btn{
@@ -35,7 +35,12 @@
         width:98%;
         margin-top:10px;
     }
-    
+    .irs--modern .irs-bar, .irs--modern .irs-line{
+        height: 15px;
+    }
+    .irs--modern .irs-handle > i:nth-child(2) {
+        height: 17px;
+    }
   </style>  
 {% endblock head %}
 
@@ -125,8 +130,8 @@
                     <input class="hidden-element time-range-slider" name="my_range" value=""/>
                 </div>
                 <div>
-                    <input class="time-control-input" placeholder="from" >
-                    <input class="time-control-input" placeholder="to">
+                    <input class="time-range-control" placeholder="from" id="time-control-from">
+                    <input class="time-range-control" placeholder="to" id="time-control-to">
                 </div>
                 <div>
                     <button class="time-control-btn">>></button>
@@ -319,9 +324,11 @@
         loopingButton.on('click', function() {
             var url = "{{ url_for('annotate_experiment._toggleLooping')}}";
             var data = {};
-
+            var looping = loopingButton.val();
+            if ("{{ experiment.category }}" == "audio" || "{{ experiment.category }}" == "video")
+                if (looping == "False")
+                    media.play();
             $.getJSON(url, data, function(response) {
-                var looping = loopingButton.val();
                 var newText = "";
                 var clip = file.find('.clip');
                 if(looping == "True") {
@@ -467,12 +474,14 @@
         
         var startTime, endTime , timerEntryCount= 0;
         var media, sliderTimer;
-        var fromInput = $(".time-range-from" );
-        var toInput = $(".time-range-to" );
+        var fromInput = $("#time-control-from" );
+        var toInput = $("#time-control-to" );
         var rangeSlider =  $(".time-range-slider");
+        rangeSlider.ionRangeSlider({type: "double",skin: "modern"});
         var maxLoadingTime = 20;
         var mediaFileIndex = 0;
-        
+        var mediaSrc = ""
+        var loopingDelay = 500 // in ms
         if ("{{ experiment.category }}" == "image")
             _ra_via_init(preLoadLimit);
         else if ("{{ experiment.category }}" == "audio" || "{{ experiment.category }}" == "video")
@@ -503,9 +512,17 @@
                 media = $(".file[data-index='" + mediaFileIndex + "'] video" )[0];
             else  
                 media = $(".file[data-index='" + mediaFileIndex + "'] audio" )[0];
-            console.log(media, mediaFileIndex);
             if (!isNaN(media.duration)){
-                updateSlider(media);
+                mediaSrc = media.src;
+                updateSlider(media);    
+                media.addEventListener("timeupdate", function(){
+                    if(media.currentTime >= endTime){
+                        media.pause();
+                        var looping = loopingButton.val();
+                        if (looping == "True")
+                            setTimeout(()=>{media.currentTime = startTime;media.play();},loopingDelay)
+                    }
+                }, false);
                 clearTimeout(sliderTimer);
             }
             else if(timerEntryCount < maxLoadingTime){
@@ -514,35 +531,45 @@
             }
         }
         function updateSlider(media) {
-            console.log(rangeSlider);
             var myRange = $(".time-range-slider").data("ionRangeSlider");
             if (myRange){
                 myRange.destroy();
-            }
+            }            
             rangeSlider.ionRangeSlider({
                 type: "double",
                 skin: "modern",
-                min: 0,
+                min: 0.0,
                 max: media.duration,
                 max_interval: media.duration,
-                step: 0.01,
-                from: 0,
+                step: 0.001,
+                from: 0.01,
                 to: media.duration,
                 drag_interval: true,
                 grid: false,
-                grid_snap: true,
                 prettify: hhmmsss_prettify,
-                onStart: function (data) {
-                    media.play();
-                },
                 onChange: function (data) {
                     if (!isNaN(media.duration)){
                         media.pause();
+                        var re = new RegExp('#t=[0-9]+,[0-9]+');
+                        if (mediaSrc.match(re)){
+                            var idx = mediaSrc.lastIndexOf;
+                            mediaSrc = mediaSrc.slice(0,idx);
+                        }
+                        //media.src = mediaSrc+`#t=${data.from},${data.to}`;
                         media.currentTime = data.from;
+                        startTime = data.from;
+                        endTime = data.to;
+                        fromInput.val(hhmmsss_prettify(data.from));
+                        toInput.val(hhmmsss_prettify(data.to));
                         media.play();
                     }
                 },
             });
+            myRange =  $(".time-range-slider").data("ionRangeSlider");
+            myRange.update({
+                from:0.0,
+                to: media.duration,
+            })
         }
         function hhmmsss_prettify (n) {
             var sec_num = parseInt(n, 10); // don't forget the second param
@@ -550,12 +577,12 @@
             var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
             var seconds = sec_num - (hours * 3600) - (minutes * 60);
             var milisec = n;
-
+            seconds = Math.ceil(seconds+Math.ceil(milisec/1000))
             if (hours   < 10) {hours   = "0"+hours;}
             if (minutes < 10) {minutes = "0"+minutes;}
             if (seconds < 10) {seconds = "0"+seconds;}
             if (milisec < 10) {milisec = "0"+milisec;}
-            return hours+':'+minutes+':'+seconds+'.'+(milisec % 1).toFixed(1).substring(2);
+            return hours+':'+minutes+':'+seconds +'.'+(milisec % 1).toFixed(1).substring(2);
         }
 
         function thisRespondHightlightText(thisDiv){
