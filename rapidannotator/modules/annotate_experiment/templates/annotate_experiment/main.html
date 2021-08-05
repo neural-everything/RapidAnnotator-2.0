@@ -471,7 +471,21 @@
         var keyBindingDict = {{keyBindingDict | safe}};
         var skipLevelDict = {{skipLevelDict | safe}}
         currentFileIndex = {{ currentFileIndex }};
-        
+        ////////////////////////////////////////////////////////////////////////////
+        // Rapid annotator annotation level metadata
+        // * VIA integrated [images] (e.g. Boundy boxes)
+        // * Audio/Video Slider 
+        // * Text Highlighting
+        // JSON Object holds the places of the current file selected
+        // If type is image it is an array of shapes as value and key is the level number
+        // else if it is a text, the value is the text itself
+        // else if it is a video or an audio it holds
+        // the level as key and value is {"start":startTime , "end":endTime}
+        // where startTime, endTime are the selected on the slider
+        var currentFileAnnotationsPlace = {}
+        ////////////////////////////////////////////////////////////////////////////
+        // [RAVAs]: Rapid Annotator Video Audio slider
+        // Variables for Audio/Video media time range selection
         var startTime, endTime , timerEntryCount= 0;
         var media, sliderTimer;
         var fromInput = $("#time-control-from" );
@@ -498,14 +512,16 @@
                 thisRespondHightlightText(".fileCaption h4");
         }
 
+        // [RAVAs] Restarting the slider based on the current file times
         function restartTimeSlider(fileIndex){
             mediaFileIndex = fileIndex 
             timerEntryCount = 0;
-            maxLoadingTime = 20
             if ("{{ experiment.category }}" == "video" || "{{ experiment.category }}" == "audio") {
                 sliderTimer = setTimeout(initSlider, 100);
             }
         }
+        
+        // [RAVAs] Setting up the slider 
         function initSlider(){
             timerEntryCount += 1;
             if ("{{ experiment.category }}" == "video") 
@@ -530,6 +546,8 @@
                 sliderTimer = setTimeout(initSlider, 100);
             }
         }
+        
+        // [RAVAs] Updating the slider
         function updateSlider(media) {
             var myRange = $(".time-range-slider").data("ionRangeSlider");
             if (myRange){
@@ -542,7 +560,7 @@
                 max: media.duration,
                 max_interval: media.duration,
                 step: 0.001,
-                from: 0.01,
+                from: 0.0,
                 to: media.duration,
                 drag_interval: true,
                 grid: false,
@@ -570,7 +588,13 @@
                 from:0.0,
                 to: media.duration,
             })
+            startTime = 0.0;
+            endTime = media.duration;
+            fromInput.val(hhmmsss_prettify(0.0));
+            toInput.val(hhmmsss_prettify(media.duration));
         }
+        
+        // [RAVAs] Utility for time representation on the slider
         function hhmmsss_prettify (n) {
             var sec_num = parseInt(n, 10); // don't forget the second param
             var hours   = Math.floor(sec_num / 3600);
@@ -584,10 +608,13 @@
             if (milisec < 10) {milisec = "0"+milisec;}
             return hours+':'+minutes+':'+seconds +'.'+(milisec % 1).toFixed(1).substring(2);
         }
-
+        ////////////////////////////////////////////////////////////////////////////
+        
+        // Text selection/highlighting 
+        var selectedText = "";
         function thisRespondHightlightText(thisDiv){
             $(thisDiv).on("mouseup", function () {
-                var selectedText = getSelectionText();
+                selectedText = getSelectionText();
                 var replacement = $('<span></span>').attr({'class':'hl'}).html(selectedText);
                 var replacementHtml = $('<div>').append(replacement.clone()).remove().html();
                 var text = $(this).text().replace(selectedText, replacementHtml);
@@ -805,6 +832,16 @@
         }
 
         function nextLevelHandler(){
+            if ("{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
+                currentFileAnnotationsPlace[currentLevel] = {"start":startTime, "end":endTime}
+            }
+            else if ("{{ experiment.category }}" === "image") {
+                currentFileAnnotationsPlace[currentLevel] = _ra_regions.map(e=>e.shape_attributes)
+            }
+            else {
+                currentFileAnnotationsPlace[currentLevel] = selectedText
+            }
+            //console.log(currentFileAnnotationsPlace);
             _ra_regions = [];
             _via_canvas_regions = [];
             var excessFiles = (preLoadedTill - currentLoadedFile + preLoadLimit) % preLoadLimit;
@@ -1088,7 +1125,7 @@
             loadedFile = $(".file[data-index='" + divIndex + "']");
             loadedFile.removeClass('hidden-element');
             restartTimeSlider(divIndex);
-
+            currentFileAnnotationsPlace = {}
             if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
                     var clip = loadedFile.find('.clip');
                     cc = clip;
