@@ -787,6 +787,7 @@
             }
             if (currentLevel == 1) {
                 loadPreviousFile(last_previous);
+        
             } else {
                 currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
                 currentLevelBody.addClass('hidden-element');
@@ -826,10 +827,6 @@
             }
             if (currentLevel == totalAnnotationLevels) {
                 fileAnnotationCompleted();
-                if ("{{ experiment.category }}" == "audio" || "{{ experiment.category }}" == "video")
-                {
-                    restartTimeSlider((divIndex+1)%preLoadLimit);
-                }
             }
             else if(!multichoice && skipLevelDict[levelId] &&skipLevelDict[levelId][label] == 1 ){
                 currentLevel = totalAnnotationLevels;
@@ -1090,6 +1087,7 @@
         function showCurrentFile(divIndex) {
             loadedFile = $(".file[data-index='" + divIndex + "']");
             loadedFile.removeClass('hidden-element');
+            restartTimeSlider(divIndex);
 
             if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
                     var clip = loadedFile.find('.clip');
