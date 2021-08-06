@@ -134,11 +134,13 @@
                     <input class="time-range-control" placeholder="to" id="time-control-to">
                 </div>
                 <div>
-                    <button class="time-control-btn">>></button>
-                    <button class="time-control-btn"><<</button>
-                    <button class="time-control-btn">>></button>
-                    <button class="time-control-btn"><<</button>
+                    <button class="time-control-btn" id="from-forward" >>></button>
+                    <button class="time-control-btn" id="from-backward"><<</button>
+                    <button class="time-control-btn" id="to-forward">>></button>
+                    <button class="time-control-btn" id="to-backward"><<</button>
                 </div>
+                <span class='glyphicon glyphicon-info-sign my-tooltip' title="Instruction"> Please follow that structure of time [hh:mm:ss] for the inputs in case of you will modifiy them manually and step size is is in seconds</span>
+                <input placeholder="time step size in seconds i.e default is (1 s)" style="width:99%" type="number" min="0" id="time-step-size">
             </div>
         {% endif %}
         <!-- the following 5 is preLoadLimit @ line 418-->
@@ -491,7 +493,7 @@
         var fromInput = $("#time-control-from" );
         var toInput = $("#time-control-to" );
         var rangeSlider =  $(".time-range-slider");
-        rangeSlider.ionRangeSlider({type: "double",skin: "modern"});
+        rangeSlider.ionRangeSlider({type: "double",skin: "modern", "from":0, "to":0, "min":0, max:0});
         var maxLoadingTime = 20;
         var mediaFileIndex = 0;
         var mediaSrc = ""
@@ -504,14 +506,48 @@
         if(currentFileIndex <= {{lastFile}}) {
             doneButton.addClass('hidden-element');
         }
-
+        
+        // for text highlighting
         if("{{experiment.displayTargetCaption}}"){
-            if ("{{ experiment.uploadType }}" !== "fromConcordance")
+            if ("{{ experiment.uploadType }}" !== "fromConcordance" && "{{ experiment.category }}" !== "text")
                 thisRespondHightlightText(".file[data-index='" + currentLoadedFile + "'] pre");
             else 
                 thisRespondHightlightText(".fileCaption h4");
         }
 
+        // UI controllers for audio/video experiment
+        $("#from-forward").on("click", function(){updateTimeInput("from", 1)});
+        $("#from-backward").on("click", function(){updateTimeInput("from", -1)});
+        $("#to-forward").on("click", function(){updateTimeInput("to", 1)});
+        $("#to-backward").on("click", function(){updateTimeInput("to", -1)});
+
+        function updateTimeInput(name, sign){
+            var stepInputValue = +$("#time-step-size").val();
+            var step = isNaN(stepInputValue)? 1 : stepInputValue;
+            var element = $(`#time-control-${name}`);
+            var oldValue = element.val();
+            var splitted = oldValue.split(":").map(e => +e);
+            var h2s = splitted[0]*3600 // hours to seconds
+            var m2s = splitted[1]*60 // minutes to seconds
+            var s2s = splitted[2] // string seconds to number seconds
+            //console.log(splitted[0], splitted[1], splitted[2])
+            //console.log(+splitted[0], +splitted[1], +splitted[2])
+            //console.log(h2s, m2s, s2s)
+            oldValue = 0;
+            if (!isNaN(h2s))
+                oldValue += h2s;
+            if (!isNaN(m2s))
+                oldValue += m2s;
+            if (!isNaN(s2s))
+                oldValue += s2s;
+
+            var newValue = oldValue + (sign*step);
+            console.log(oldValue + (sign*step));
+            if (newValue < 0) newValue = 0;
+            //var myRange = $(".time-range-slider").data("ionRangeSlider");
+            element.val(hhmmsss_prettify(newValue));
+            //updateSlider();
+        }
         // [RAVAs] Restarting the slider based on the current file times
         function restartTimeSlider(fileIndex){
             mediaFileIndex = fileIndex 
@@ -601,7 +637,7 @@
             var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
             var seconds = sec_num - (hours * 3600) - (minutes * 60);
             var milisec = n;
-            seconds = Math.ceil(seconds+Math.ceil(milisec/1000))
+            seconds = Math.floor(seconds+Math.floor(milisec/1000))
             if (hours   < 10) {hours   = "0"+hours;}
             if (minutes < 10) {minutes = "0"+minutes;}
             if (seconds < 10) {seconds = "0"+seconds;}
