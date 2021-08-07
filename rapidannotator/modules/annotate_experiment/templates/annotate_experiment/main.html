@@ -495,10 +495,11 @@
         var toInput = $("#time-control-to" );
         var rangeSlider =  $(".time-range-slider");
         rangeSlider.ionRangeSlider({type: "double",skin: "modern", "from":0, "to":0, "min":0, max:0});
-        var maxLoadingTime = 20;
         var mediaFileIndex = 0;
         var mediaSrc = ""
-        var loopingDelay = 500 // in ms
+        const loopingDelay = 500 // in ms
+        const maxLoadingTime = 40;
+        const retySliderLoadDelay = 200;
         if ("{{ experiment.category }}" == "image")
             _ra_via_init(preLoadLimit);
         else if ("{{ experiment.category }}" == "audio" || "{{ experiment.category }}" == "video")
@@ -580,18 +581,23 @@
                 mediaSrc = media.src;
                 updateSlider(media);    
                 media.addEventListener("timeupdate", function(){
-                    if(media.currentTime >= endTime || media.currentTime === media.duration){
+                    if(media.currentTime >= endTime || (media.currentTime/media.duration) >= 0.95){
                         media.pause();
                         var looping = loopingButton.val();
                         if (looping == "True")
-                            setTimeout(()=>{media.currentTime = startTime; media.play();},loopingDelay)
+                            setTimeout(()=>{media.currentTime = startTime; media.play();},0)
                     }
                 }, false);                
                 clearTimeout(sliderTimer);
+                media.addEventListener('ended', videoFinish, false);
+                function videoFinish(e) {
+                alert(e.target.id + ' has ended!');
+                }
             }
             else if(timerEntryCount < maxLoadingTime){
+                console.log("newtimeout");
                 clearTimeout(sliderTimer);
-                sliderTimer = setTimeout(initSlider, 100);
+                sliderTimer = setTimeout(initSlider, retySliderLoadDelay);
             }
         }
         
