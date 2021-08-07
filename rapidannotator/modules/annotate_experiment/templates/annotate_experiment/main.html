@@ -30,6 +30,7 @@
     }
     .time-control-btn{
         width:24%;
+        margin:5px 0 5px 0;
     }
     audio, video{
         width:98%;
@@ -134,10 +135,10 @@
                     <input class="time-range-control" placeholder="to" id="time-control-to">
                 </div>
                 <div>
-                    <button class="time-control-btn" id="from-forward" >>></button>
-                    <button class="time-control-btn" id="from-backward"><<</button>
-                    <button class="time-control-btn" id="to-forward">>></button>
-                    <button class="time-control-btn" id="to-backward"><<</button>
+                    <button class="time-control-btn" id="from-forward" > &raquo; </button>
+                    <button class="time-control-btn" id="from-backward"> &laquo;</button>
+                    <button class="time-control-btn" id="to-backward"> &laquo; </button>
+                    <button class="time-control-btn" id="to-forward"> &raquo;</button>
                 </div>
                 <span class='glyphicon glyphicon-info-sign my-tooltip' title="Instruction"> Please follow that structure of time [hh:mm:ss] for the inputs in case of you will modifiy them manually and step size is is in seconds</span>
                 <input placeholder="time step size in seconds i.e default is (1 s)" style="width:99%" type="number" min="0" id="time-step-size">
@@ -540,11 +541,22 @@
                 oldValue += m2s;
             if (!isNaN(s2s))
                 oldValue += s2s;
-
+            
             var newValue = oldValue + (sign*step);
-            console.log(oldValue + (sign*step));
+            if (name == "from" && endTime < newValue){
+                return
+            }
+            else if (name == "to" && startTime > newValue){
+                return
+            }
             if (newValue < 0) newValue = 0;
-            //var myRange = $(".time-range-slider").data("ionRangeSlider");
+            if (name == "to" && newValue > media.duration) newValue = media.duration;
+            var myRange = $(".time-range-slider").data("ionRangeSlider");
+            myRange.update({
+                [name]: newValue
+            })
+            console.log(myRange);
+            onChangeSliderHandler({to:myRange.old_to, from:myRange.old_from});
             element.val(hhmmsss_prettify(newValue));
             //updateSlider();
         }
@@ -568,13 +580,13 @@
                 mediaSrc = media.src;
                 updateSlider(media);    
                 media.addEventListener("timeupdate", function(){
-                    if(media.currentTime >= endTime){
+                    if(media.currentTime >= endTime || media.currentTime === media.duration){
                         media.pause();
                         var looping = loopingButton.val();
                         if (looping == "True")
-                            setTimeout(()=>{media.currentTime = startTime;media.play();},loopingDelay)
+                            setTimeout(()=>{media.currentTime = startTime; media.play();},loopingDelay)
                     }
-                }, false);
+                }, false);                
                 clearTimeout(sliderTimer);
             }
             else if(timerEntryCount < maxLoadingTime){
@@ -601,23 +613,7 @@
                 drag_interval: true,
                 grid: false,
                 prettify: hhmmsss_prettify,
-                onChange: function (data) {
-                    if (!isNaN(media.duration)){
-                        media.pause();
-                        var re = new RegExp('#t=[0-9]+,[0-9]+');
-                        if (mediaSrc.match(re)){
-                            var idx = mediaSrc.lastIndexOf;
-                            mediaSrc = mediaSrc.slice(0,idx);
-                        }
-                        //media.src = mediaSrc+`#t=${data.from},${data.to}`;
-                        media.currentTime = data.from;
-                        startTime = data.from;
-                        endTime = data.to;
-                        fromInput.val(hhmmsss_prettify(data.from));
-                        toInput.val(hhmmsss_prettify(data.to));
-                        media.play();
-                    }
-                },
+                onChange: onChangeSliderHandler
             });
             myRange =  $(".time-range-slider").data("ionRangeSlider");
             myRange.update({
@@ -629,7 +625,16 @@
             fromInput.val(hhmmsss_prettify(0.0));
             toInput.val(hhmmsss_prettify(media.duration));
         }
-        
+        function onChangeSliderHandler(data) {
+            if (!isNaN(media.duration)){
+                media.currentTime = data.from;
+                startTime = data.from;
+                endTime = data.to;
+                fromInput.val(hhmmsss_prettify(data.from));
+                toInput.val(hhmmsss_prettify(data.to));
+                media.play();
+            }
+        }
         // [RAVAs] Utility for time representation on the slider
         function hhmmsss_prettify (n) {
             var sec_num = parseInt(n, 10); // don't forget the second param
