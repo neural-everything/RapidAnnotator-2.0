@@ -1631,7 +1631,8 @@ def _exportResultsWide(experimentId, format):
         experimentDIR = os.path.join(app.config['UPLOAD_FOLDER'], str(experiment.id))
         inputConcordance = os.path.join(experimentDIR, 'concordance.csv')
         data = pandas.read_csv(inputConcordance)
-        if "Structure ``text_file''" in data.columns:
+        print("Structure ``text_file''" in data.columns, "Here we go")
+        if "Structure ``text_file''" not in data.columns:
             df.drop(columns=['edge_link'], inplace=True)
         data.index += 1
         df = pd.merge(df, data, how='inner', left_on=['concordance_lineNumber'], right_index=True)

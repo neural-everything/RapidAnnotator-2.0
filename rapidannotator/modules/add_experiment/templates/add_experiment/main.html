@@ -647,7 +647,7 @@
                     uploadedFeedback();
                     var serverResponse = JSON.parse(response.response);
                     $("tr[value=" + file.id + "]").attr("value", serverResponse.fileId);
-                    if ( experimentUploadType == "viaSpreadsheet") {
+                    if ( experimentUploadType == "viaSpreadsheet" || experimentUploadType=="fromConcordance") {
                         location.reload(true);
                     }
                 },
