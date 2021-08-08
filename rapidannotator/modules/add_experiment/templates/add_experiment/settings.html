@@ -87,12 +87,20 @@
                 {{ ('Change Display Order') }} &nbsp;
             <span class="caret"></span></button>
             <ul class="dropdown-menu scrollable-dropdown" id="changeDisplayOrderMenu" role="menu" aria-labelledby="changeDisplayOrderMenu">
-                <li role="presentation" class="changeOrderType"><a role="menuitem" tabindex="-1" data-order='fcfs'><span>
-                    <span class="glyphicon glyphicon-ok" id="normalOrderSpan"> {{ ('Normal') }} </span>
-                </span></a></li>
-                <li role="presentation" class="changeOrderType"><a role="menuitem" tabindex="-1" data-order='random'><span>
-                    <span class="glyphicon glyphicon-ok" id="randomOrderSpan"> {{ ('Random') }}</span>
-                </span></a></li>
+                <li role="presentation" class="changeOrderType" data-order='fcfs'>
+                    <a role="menuitem" tabindex="-1" data-order='fcfs'>
+                        <span data-order='fcfs'>
+                            <span class="glyphicon glyphicon-ok" id="normalOrderSpan" data-order='fcfs'> {{ ('Normal') }} </span> 
+                        </span>
+                    </a>
+                </li>
+                <li role="presentation" class="changeOrderType" data-order='random'>
+                    <a role="menuitem" tabindex="-1" data-order='random'>
+                        <span data-order='random'>
+                            <span class="glyphicon glyphicon-ok" id="randomOrderSpan" data-order='random'> {{ ('Random') }}</span>
+                        </span>
+                    </a>
+                </li>
             </ul>
         </div>
 
@@ -500,13 +508,8 @@
             }
             var url = "{{ url_for('add_experiment.changeDisplayOrder', experimentId=experiment.id, displayType = newType)}}";
             url += newType
-            console.log(url)
             $.getJSON(url, function(response) {
-                if(response.success) {
-                    
-                } else {
-                    alert(response.msg);
-                }
+                
             });
         });
 
