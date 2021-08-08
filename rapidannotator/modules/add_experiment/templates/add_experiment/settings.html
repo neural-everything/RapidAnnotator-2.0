@@ -507,10 +507,8 @@
                 normalOrder.css('margin-left', '0em');
             }
             var url = "{{ url_for('add_experiment.changeDisplayOrder', experimentId=experiment.id, displayType = newType)}}";
-            url += newType
-            $.getJSON(url, function(response) {
-                
-            });
+            url += newType;
+            $.getJSON(url);
         });
 
         $('.clustering').on('click', function(e) {
