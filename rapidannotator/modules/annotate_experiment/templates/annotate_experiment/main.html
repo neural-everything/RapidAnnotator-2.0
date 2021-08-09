@@ -485,7 +485,7 @@
         // else if it is a video or an audio it holds
         // the level as key and value is {"start":startTime , "end":endTime}
         // where startTime, endTime are the selected on the slider
-        var currentFileAnnotationsPlace = {}
+        var currentFileCoordinates = {}
         ////////////////////////////////////////////////////////////////////////////
         // [RAVAs]: Rapid Annotator Video Audio slider
         // Variables for Audio/Video media time range selection
@@ -505,19 +505,21 @@
             _ra_via_init(preLoadLimit);
         else if ("{{ experiment.category }}" == "audio" || "{{ experiment.category }}" == "video")
             restartTimeSlider(currentLoadedFile);
-            
+        
         if(currentFileIndex <= {{lastFile}}) {
             doneButton.addClass('hidden-element');
         }
         
         // for text highlighting
-        if("{{experiment.displayTargetCaption}}"){
-            if ("{{ experiment.uploadType }}" !== "fromConcordance" && "{{ experiment.category }}" !== "text")
-                thisRespondHightlightText(".file[data-index='" + currentLoadedFile + "'] pre");
-            else 
-                thisRespondHightlightText(".fileCaption h4");
+        function textHighlightingRestart(){
+            if("{{experiment.displayTargetCaption}}"){
+                if ("{{ experiment.uploadType }}" !== "fromConcordance" 
+                && "{{ experiment.category }}" === "text")
+                    thisRespondHightlightText(".file[data-index='" + currentLoadedFile + "'] pre");
+                else if ("{{ experiment.category }}" === "text")
+                    thisRespondHightlightText(".fileCaption h4");
+            }
         }
-
         // UI controllers for audio/video experiment
         $("#from-forward").on("click", function(){updateTimeInput("from", 1)});
         $("#from-backward").on("click", function(){updateTimeInput("from", -1)});
@@ -554,7 +556,6 @@
             myRange.update({
                 [name]: newValue
             })
-            console.log(myRange);
             onChangeSliderHandler({to:myRange.old_to, from:myRange.old_from});
             element.val(hhmmsss_prettify(newValue));
             //updateSlider();
@@ -876,15 +877,15 @@
 
         function nextLevelHandler(){
             if ("{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
-                currentFileAnnotationsPlace[currentLevel] = {"start":startTime, "end":endTime}
+                currentFileCoordinates[currentLevel] = {"start":startTime, "end":endTime}
             }
             else if ("{{ experiment.category }}" === "image") {
-                currentFileAnnotationsPlace[currentLevel] = _ra_regions.map(e=>e.shape_attributes)
+                currentFileCoordinates[currentLevel] = _ra_regions.map(e=>e.shape_attributes)
             }
             else {
-                currentFileAnnotationsPlace[currentLevel] = selectedText
+                currentFileCoordinates[currentLevel] = selectedText
             }
-            //console.log(currentFileAnnotationsPlace);
+            //console.log(currentFileCoordinates);
             _ra_regions = [];
             _via_canvas_regions = [];
             var excessFiles = (preLoadedTill - currentLoadedFile + preLoadLimit) % preLoadLimit;
@@ -1168,7 +1169,8 @@
             loadedFile = $(".file[data-index='" + divIndex + "']");
             loadedFile.removeClass('hidden-element');
             restartTimeSlider(divIndex);
-            currentFileAnnotationsPlace = {}
+            textHighlightingRestart();
+            currentFileCoordinates = {}
             if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
                     var clip = loadedFile.find('.clip');
                     clip[0].play();
