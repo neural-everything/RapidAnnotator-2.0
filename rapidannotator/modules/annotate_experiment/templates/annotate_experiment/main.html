@@ -876,16 +876,18 @@
         }
 
         function nextLevelHandler(){
+            currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
+            levelId = currentLevelBody.data("levelid");
             if ("{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
-                currentFileCoordinates[currentLevel] = {"start":startTime, "end":endTime}
+                currentFileCoordinates[levelId] = {"start":startTime, "end":endTime}
             }
             else if ("{{ experiment.category }}" === "image") {
-                currentFileCoordinates[currentLevel] = _ra_regions.map(e=>e.shape_attributes)
+                currentFileCoordinates[levelId] = _ra_regions.map(e=>e.shape_attributes)
             }
             else {
-                currentFileCoordinates[currentLevel] = selectedText
+                currentFileCoordinates[levelId] = selectedText
             }
-            //console.log(currentFileCoordinates);
+            console.log(currentFileCoordinates);
             _ra_regions = [];
             _via_canvas_regions = [];
             var excessFiles = (preLoadedTill - currentLoadedFile + preLoadLimit) % preLoadLimit;
@@ -894,8 +896,6 @@
                 _ra_via_update(divIndex);
                 _via_clear_reg_canvas();
             }
-            currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
-            levelId = currentLevelBody.data("levelid");
             already_submitted[levelId] = 1;
             multichoice = currentLevelBody.data("multichoice") == "True";
             currentLevelBody.addClass('hidden-element');
@@ -1061,7 +1061,12 @@
         function fileAnnotationCompleted() {
             var url = "{{ url_for('annotate_experiment._addAnnotationInfo')}}";
             var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
-            
+            function* entries(obj) {
+                for (let key in obj)
+                    yield [key, obj[key]];
+            }
+            const coordinates = new Map(entries(currentFileCoordinates));
+            console.log(coordinates,"cords");
             var data = {
                 'fileId' :          currentFileId,
                 'annotations' :     annotations, 
@@ -1069,6 +1074,7 @@
                 'labelCount' :     {{labelCount}},
                 'userId'    : "{{userId}}",
                 'hasToIncreaseCurrent': 1,
+                'coordinates': coordinates,
             };
 
             data = JSON.stringify(data);
