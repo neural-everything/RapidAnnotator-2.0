@@ -490,7 +490,7 @@
         // [RAVAs]: Rapid Annotator Video Audio slider
         // Variables for Audio/Video media time range selection
         var startTime, endTime , timerEntryCount= 0;
-        var media, sliderTimer;
+        var media, sliderTimer, mediaEndedTimer;
         var fromInput = $("#time-control-from" );
         var toInput = $("#time-control-to" );
         var rangeSlider =  $(".time-range-slider");
@@ -500,6 +500,7 @@
         const loopingDelay = 500 // in ms
         const maxLoadingTime = 40;
         const retySliderLoadDelay = 200;
+        
         if ("{{ experiment.category }}" == "image")
             _ra_via_init(preLoadLimit);
         else if ("{{ experiment.category }}" == "audio" || "{{ experiment.category }}" == "video")
@@ -532,9 +533,6 @@
             var h2s = splitted[0]*3600 // hours to seconds
             var m2s = splitted[1]*60 // minutes to seconds
             var s2s = splitted[2] // string seconds to number seconds
-            //console.log(splitted[0], splitted[1], splitted[2])
-            //console.log(+splitted[0], +splitted[1], +splitted[2])
-            //console.log(h2s, m2s, s2s)
             oldValue = 0;
             if (!isNaN(h2s))
                 oldValue += h2s;
@@ -566,10 +564,15 @@
             mediaFileIndex = fileIndex 
             timerEntryCount = 0;
             if ("{{ experiment.category }}" == "video" || "{{ experiment.category }}" == "audio") {
-                sliderTimer = setTimeout(initSlider, 100);
+                sliderTimer = setTimeout(initSlider, retySliderLoadDelay);
             }
         }
-        
+        function replayVideo(){
+            media.pause();
+            var looping = loopingButton.val();
+            if (looping == "True")
+                setTimeout(()=>{media.currentTime = startTime; media.play();},loopingDelay)
+        }
         // [RAVAs] Setting up the slider 
         function initSlider(){
             timerEntryCount += 1;
@@ -581,21 +584,14 @@
                 mediaSrc = media.src;
                 updateSlider(media);    
                 media.addEventListener("timeupdate", function(){
-                    if(media.currentTime >= endTime || (media.currentTime/media.duration) >= 0.95){
-                        media.pause();
-                        var looping = loopingButton.val();
-                        if (looping == "True")
-                            setTimeout(()=>{media.currentTime = startTime; media.play();},0)
+                    if(media.currentTime >= endTime){
+                        replayVideo();
                     }
                 }, false);                
                 clearTimeout(sliderTimer);
-                media.addEventListener('ended', videoFinish, false);
-                function videoFinish(e) {
-                alert(e.target.id + ' has ended!');
-                }
+                media.addEventListener('ended', replayVideo, false);
             }
             else if(timerEntryCount < maxLoadingTime){
-                console.log("newtimeout");
                 clearTimeout(sliderTimer);
                 sliderTimer = setTimeout(initSlider, retySliderLoadDelay);
             }
@@ -1175,11 +1171,6 @@
             currentFileAnnotationsPlace = {}
             if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
                     var clip = loadedFile.find('.clip');
-                    cc = clip;
-                    var looping = loopingButton.val();
-                    if (looping == "True") {
-                        clip.attr('loop','loop');
-                    }
                     clip[0].play();
             /*
                     clip[0].addEventListener("timeupdate", function(){
