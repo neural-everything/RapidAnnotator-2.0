@@ -14,6 +14,7 @@
     .red {
         color: red;
     }
+    .hl { background: yellow; }
     
     span.hl { background: yellow; }
     * {
@@ -673,6 +674,7 @@
                 $(this).html(text);
                 $("#targetCaptionData").val(selectedText);
             });
+            $(thisDiv).mouseup();
         }
         function obtainSelectionCoords(start, end){
             startTextIndex = start;
