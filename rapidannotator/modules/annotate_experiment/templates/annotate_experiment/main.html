@@ -689,7 +689,6 @@
                 text = window.getSelection().toString();
                 var start = window.getSelection().anchorOffset
                 var end = window.getSelection().focusOffset
-                console.log(start,end);
                 obtainSelectionCoords(start, end)
                 if (start == end && text.length>0 || Math.abs(start-end)==1 && text.length>1)
                     text = ""
@@ -1090,8 +1089,6 @@
                 for (let key in obj)
                     yield [key, obj[key]];
             }
-            //const coordinates = new Map(entries(currentFileCoordinates));
-            //console.log(coordinates,"cords");
             var data = {
                 'fileId' :          currentFileId,
                 'annotations' :     annotations, 
