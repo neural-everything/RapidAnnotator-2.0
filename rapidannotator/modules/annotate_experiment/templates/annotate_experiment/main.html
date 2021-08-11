@@ -142,7 +142,7 @@
                     <button class="time-control-btn" id="to-forward"> &raquo;</button>
                 </div>
                 <span class='glyphicon glyphicon-info-sign my-tooltip' title="Instruction"> Please follow that structure of time [hh:mm:ss] for the inputs in case of you will modifiy them manually and step size is is in seconds</span>
-                <input placeholder="time step size in seconds i.e default is (1 s)" style="width:99%" type="number" min="0" id="time-step-size">
+                <input placeholder="time step size in seconds i.e default is (0 s)" style="width:99%" type="number" min="0" id="time-step-size">
             </div>
         {% endif %}
         <!-- the following 5 is preLoadLimit @ line 418-->
@@ -648,17 +648,8 @@
         }
         // [RAVAs] Utility for time representation on the slider
         function hhmmsss_prettify (n) {
-            var sec_num = parseInt(n, 10); // don't forget the second param
-            var hours   = Math.floor(sec_num / 3600);
-            var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
-            var seconds = sec_num - (hours * 3600) - (minutes * 60);
-            var milisec = n;
-            seconds = Math.floor(seconds+Math.floor(milisec/1000))
-            if (hours   < 10) {hours   = "0"+hours;}
-            if (minutes < 10) {minutes = "0"+minutes;}
-            if (seconds < 10) {seconds = "0"+seconds;}
-            if (milisec < 10) {milisec = "0"+milisec;}
-            return hours+':'+minutes+':'+seconds +'.'+(milisec % 1).toFixed(1).substring(2);
+            var time = parseFloat(n) * 1000.0;
+            return new Date(time).toISOString().substr(11, 11)
         }
         ////////////////////////////////////////////////////////////////////////////
         
@@ -817,11 +808,18 @@
                 }
             });
         }
+        $("#time-control-from").keyup(function(event) {
+         updateTimeInput("from",0);
+        });
+        $("#time-control-to").keyup(function(event) {
+         updateTimeInput("to",0);
+        });
         function updateSelectedLabel(labelButton){
             var currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
             var multichoice = currentLevelBody.data("multichoice"); // Used for multichoice labels for the current level
             levelId = currentLevelBody.data("levelid");
             selectedLabel = labelButton.data("labelid");
+            if (annotations==null||annotations==undefined) annotations = {};
             if (multichoice == "True"){
                 labelButton.toggleClass('btn-secondary');
                 labelButton.toggleClass('btn-primary');
@@ -915,6 +913,7 @@
             else {
                 currentFileCoordinates[levelId] = {"start":startTextIndex, "end":endTextIndex}
             }
+            //console.log(currentFileCoordinates)
             _ra_regions = [];
             _via_canvas_regions = [];
             var excessFiles = (preLoadedTill - currentLoadedFile + preLoadLimit) % preLoadLimit;
