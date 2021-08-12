@@ -1,0 +1,20 @@
+/* layers of canvas */
+#image_panel        { position:relative; outline:none; }
+#image_panel img    { position:absolute; top:0px; left:0px; width:350px; height:420px; outline:none; }
+#image_panel canvas { position:absolute; top:0px; left:0px; outline:none;}
+#image_panel .visible { visibility:visible !important; opacity:1 !important; }
+#image_panel label>img { visibility:visible; opacity:1; position:relative; width:auto; height:4em; outline:none; }
+
+/* Region shape selection panel inside leftsidebar */
+ul.region_shape          { font-size:x-large; list-style-type:none; overflow:hidden; padding:0.4em 0; margin:0; }
+ul.region_shape li       { float:left; padding:0 0.2em; fill:#ffffff; stroke:#000000; }
+ul.region_shape li:hover { cursor:pointer; fill:#ffffff; stroke:#ff0000; }
+ul.region_shape .selected { fill:#ffffff; stroke:#ff0000; }
+
+/* cursor coordinates inside region shape selection panel in leftsidebar */
+#region_info { font-size:0.8em; margin-bottom:0.4em; }
+
+#message_panel         { display:block; width:100%; position:fixed; bottom:0px; z-index:9999; text-align:center; }
+#message_panel .content { display:inline; margin:auto; background-color:#000000; color:#ffff00; font-size:small; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:2rem; padding: 0.5rem 2rem;}
+
+.svg_button:hover { cursor:pointer; }

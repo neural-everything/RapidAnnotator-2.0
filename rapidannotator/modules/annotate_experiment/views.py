@@ -343,6 +343,12 @@ def _addAnnotationInfo():
     prevLabelCount = int(arguments.get('labelCount', None))
     userId = int(arguments.get('userId', None))
     hasToIncreaseCurrent = int(arguments.get('hasToIncreaseCurrent', None))
+    coordinates = arguments.get('coordinates')
+    print("---------------------------------")
+    print(type(coordinates))
+    print(coordinates)
+    print("---------------------------------")
+    
     # targetCaptionData = arguments.get('targetCaptionData', None)
 
     ''' For displaying a warning if the labels got changed at any time'''
@@ -376,6 +382,7 @@ def _addAnnotationInfo():
                 label_id = labelId,
                 user_id = userId,
                 label_other = labels[str(labelId)],
+                coordinates = coordinates.get(str(levelId))
             )
             db.session.add(annotationInfo)
 

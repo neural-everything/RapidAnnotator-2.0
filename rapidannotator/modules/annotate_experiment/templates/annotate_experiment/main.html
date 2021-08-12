@@ -1,20 +1,48 @@
 {% extends "annotate_experiment/base.html" %}
 {% from "macros.html" import render_field %}
+{% from "macros.html" import icons %}
 
 {% block title %} annotate_experiment Page {% endblock title %}
 {% block head %}
+  <link rel="stylesheet" href="{{url_for('static', filename = 'css/via.css')}}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ion-rangeslider/2.3.1/css/ion.rangeSlider.min.css"/>
+
+
   {{ super() }}
   <style type="text/css">
     .important { color: #336699; }
     .red {
         color: red;
     }
+    .hl { background: yellow; }
     
     span.hl { background: yellow; }
     * {
  	 	box-sizing: border-box;
 	}
-
+    .irs--modern .irs-from, .irs--modern .irs-to, .irs--modern .irs-single {
+        font-size:15px; !important
+    }
+    .time-range-slider{
+        margin-bottom:30px;
+    }
+    .time-range-control{
+        width:49%;
+    }
+    .time-control-btn{
+        width:24%;
+        margin:5px 0 5px 0;
+    }
+    audio, video{
+        width:98%;
+        margin-top:10px;
+    }
+    .irs--modern .irs-bar, .irs--modern .irs-line{
+        height: 15px;
+    }
+    .irs--modern .irs-handle > i:nth-child(2) {
+        height: 17px;
+    }
   </style>  
 {% endblock head %}
 
@@ -76,7 +104,48 @@
 
 <div class="container annotationArea">
     <div class="row">
-
+        {%- if experiment.category == 'image' -%}
+        {{ icons() }}
+          <span>
+            <div class="leftsidebar_accordion_panel show">
+              <ul class="region_shape">
+                <li id="region_shape_none"  class="selected" onclick="select_region_shape('none')" title="No select"><svg height="20" viewbox="0 0 24 24"><use xlink:href="#icon_pointer"></use></svg></li>
+                <li id="region_shape_rect" onclick="select_region_shape('rect')" title="Rectangle"><svg height="32" viewbox="0 0 32 32"><use xlink:href="#shape_rectangle"></use></svg></li>
+                <li id="region_shape_circle" onclick="select_region_shape('circle')" title="Circle"><svg height="32" viewbox="0 0 32 32"><use xlink:href="#shape_circle"></use></svg></li>
+                <li id="region_shape_ellipse" onclick="select_region_shape('ellipse')" title="Ellipse"><svg height="32" viewbox="0 0 32 32"><use xlink:href="#shape_ellipse"></use></svg></li>
+                <li id="region_shape_polygon" onclick="select_region_shape('polygon')" title="Polygon"><svg height="32" viewbox="0 0 32 32"><use xlink:href="#shape_polygon"></use></svg></li>
+                <li id="region_shape_point" onclick="select_region_shape('point')" title="Point"><svg height="32" viewbox="0 0 32 32"><use xlink:href="#shape_point"></use></svg></li>
+                <li id="region_shape_polyline" onclick="select_region_shape('polyline')" title="Polyline"><svg height="32" viewbox="0 0 32 32"><use xlink:href="#shape_polyline"></use></svg></li>
+                <li id="region_shape_sel_all_regions" onclick="sel_all_regions()" title="Select All Regions"> <svg height="32" viewbox="0 0 32 32"><use xlink:href="#icon_selectall"></use></svg>
+                <li id="region_shape_copy_sel_regions" onclick="copy_sel_regions()" title="Copy Regions"> <svg height="32" viewbox="0 0 32 32"><use xlink:href="#icon_copy"></use></svg>
+                <li id="region_shape_paste_sel_regions_in_current_image" onclick="paste_sel_regions_in_current_image()" title="Paste Regions"> <svg height="32" viewbox="0 0 32 32"><use xlink:href="#icon_paste"></use></svg>
+                <li id="region_shape_del_sel_regions" onclick="del_sel_regions()"  title="Delete Region"> <svg height="32" viewbox="0 0 32 32"><use xlink:href="#icon_close"></use></svg>
+              </ul>
+            </div>
+            <div id="message_panel" style="display:none;">
+              <div id="message_panel_content" class="content"></div>
+            </div>
+          </span>
+        {%elif experiment.category == 'audio' or experiment.category == 'video' %}
+            <div style="width:40%">
+                <div>
+                    <input class="hidden-element time-range-slider" name="my_range" value=""/>
+                </div>
+                <div>
+                    <input class="time-range-control" placeholder="from" id="time-control-from">
+                    <input class="time-range-control" placeholder="to" id="time-control-to">
+                </div>
+                <div>
+                    <button class="time-control-btn" id="from-forward" > &raquo; </button>
+                    <button class="time-control-btn" id="from-backward"> &laquo;</button>
+                    <button class="time-control-btn" id="to-backward"> &laquo; </button>
+                    <button class="time-control-btn" id="to-forward"> &raquo;</button>
+                </div>
+                <span class='glyphicon glyphicon-info-sign my-tooltip' title="Instruction"> Please follow that structure of time [hh:mm:ss] for the inputs in case of you will modifiy them manually and step size is is in seconds</span>
+                <input placeholder="time step size in seconds i.e default is (0 s)" style="width:99%" type="number" min="0" id="time-step-size">
+            </div>
+        {% endif %}
+        <!-- the following 5 is preLoadLimit @ line 418-->
         {% for i in range(5) %}
             <div class="file col-xs-5 hidden-element" data-index={{loop.index0}} data-fileid=1>
                 {%- if experiment.category == 'video' -%}
@@ -84,7 +153,7 @@
                         <a href="" target="_blank">Click here</a>
                     {%- else -%}
                     	<div class="glass">
-	                        <video class="clip" id= "clip" width="400" controls>
+	                        <video class="clip" id= "clip-{{loop.index0}}" width="400" controls>
 	                            <source src="" type="video/mp4">
 	                            Your browser does not support HTML5 video.
 	                        </video>
@@ -107,7 +176,12 @@
                     <a href="" id="sourceLink" target="_blank" style="margin-left:30%">Source Link</a>
                     {%- endif -%}
                 {%- elif experiment.category == 'image' -%}
-                    <img class="annotationWindow" src="" alt="">
+                <div style="width=400px; height:450px;">
+                  <div id="image_panel" class="display_area_content">
+                    <img class="annotationWindow" src="" alt="" id="region-image-{{loop.index0}}"> 
+                    <canvas id="region-canvas-{{loop.index0}}" width="350" height="420" tabindex="1">Sorry, your browser does not support HTML5 Canvas functionality which is required for this application.</canvas>
+                  </div>
+                </div>
                 {%- elif experiment.category == 'text' -%}
                     <pre>
                     </pre>
@@ -238,6 +312,8 @@
 </div>
 
 
+<script src="{{url_for('static', filename = 'js/via.js')}}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ion-rangeslider/2.3.1/js/ion.rangeSlider.min.js"></script>
 
 <script type="text/javascript">
     $(window).on('load', function() {
@@ -252,9 +328,11 @@
         loopingButton.on('click', function() {
             var url = "{{ url_for('annotate_experiment._toggleLooping')}}";
             var data = {};
-
+            var looping = loopingButton.val();
+            if ("{{ experiment.category }}" == "audio" || "{{ experiment.category }}" == "video")
+                if (looping == "False")
+                    media.play();
             $.getJSON(url, data, function(response) {
-                var looping = loopingButton.val();
                 var newText = "";
                 var clip = file.find('.clip');
                 if(looping == "True") {
@@ -397,10 +475,225 @@
         var keyBindingDict = {{keyBindingDict | safe}};
         var skipLevelDict = {{skipLevelDict | safe}}
         currentFileIndex = {{ currentFileIndex }};
+        ////////////////////////////////////////////////////////////////////////////
+        // Rapid annotator annotation level metadata
+        // * VIA integrated [images] (e.g. Boundy boxes)
+        // * Audio/Video Slider 
+        // * Text Highlighting
+        // JSON Object holds the places of the current file selected
+        // If type is image it is an array of shapes as value and key is the level number
+        // else if it is a text, the value is the start and end indices
+        // else if it is a video or an audio it holds
+        // the level as key and value is {"start":startTime , "end":endTime}
+        // where startTime, endTime are the selected on the slider
+        var currentFileCoordinates = {}
+        ////////////////////////////////////////////////////////////////////////////
+        // [RAVAs]: Rapid Annotator Text highlighting 
+        // Variables for text highlighting for text selection
+        var startTextIndex = 0;
+        var endTextIndex = 0;
+        var selectedText = "";
 
-
+        ////////////////////////////////////////////////////////////////////////////
+        // [RAVAs]: Rapid Annotator Video Audio slider
+        // Variables for Audio/Video media time range selection
+        var startTime, endTime , timerEntryCount= 0;
+        var media, sliderTimer, mediaEndedTimer;
+        var fromInput = $("#time-control-from" );
+        var toInput = $("#time-control-to" );
+        var rangeSlider =  $(".time-range-slider");
+        rangeSlider.ionRangeSlider({type: "double",skin: "modern", "from":0, "to":0, "min":0, max:0});
+        var mediaFileIndex = 0;
+        var mediaSrc = ""
+        const loopingDelay = 500 // in ms
+        const maxLoadingTime = 40;
+        const retySliderLoadDelay = 200;
+        
+        if ("{{ experiment.category }}" == "image")
+            _ra_via_init(preLoadLimit);
+        else if ("{{ experiment.category }}" == "audio" || "{{ experiment.category }}" == "video")
+            restartTimeSlider(currentLoadedFile);
+        
         if(currentFileIndex <= {{lastFile}}) {
             doneButton.addClass('hidden-element');
+        }
+        
+        // for text highlighting
+        function textHighlightingRestart(){
+            if("{{experiment.displayTargetCaption}}"){
+                if ("{{ experiment.uploadType }}" !== "fromConcordance" 
+                && "{{ experiment.category }}" === "text")
+                    thisRespondHightlightText(".file[data-index='" + currentLoadedFile + "'] pre");
+                else if ("{{ experiment.category }}" === "text")
+                    thisRespondHightlightText(".fileCaption h4");
+            }
+        }
+        // UI controllers for audio/video experiment
+        $("#from-forward").on("click", function(){updateTimeInput("from", 1)});
+        $("#from-backward").on("click", function(){updateTimeInput("from", -1)});
+        $("#to-forward").on("click", function(){updateTimeInput("to", 1)});
+        $("#to-backward").on("click", function(){updateTimeInput("to", -1)});
+
+        function updateTimeInput(name, sign){
+            var stepInputValue = +$("#time-step-size").val();
+            var step = isNaN(stepInputValue)? 1 : stepInputValue;
+            var element = $(`#time-control-${name}`);
+            var oldValue = element.val();
+            var splitted = oldValue.split(":").map(e => +e);
+            var h2s = splitted[0]*3600 // hours to seconds
+            var m2s = splitted[1]*60 // minutes to seconds
+            var s2s = splitted[2] // string seconds to number seconds
+            oldValue = 0;
+            if (!isNaN(h2s))
+                oldValue += h2s;
+            if (!isNaN(m2s))
+                oldValue += m2s;
+            if (!isNaN(s2s))
+                oldValue += s2s;
+            
+            var newValue = oldValue + (sign*step);
+            if (name == "from" && endTime < newValue){
+                return
+            }
+            else if (name == "to" && startTime > newValue){
+                return
+            }
+            if (newValue < 0) newValue = 0;
+            if (name == "to" && newValue > media.duration) newValue = media.duration;
+            var myRange = $(".time-range-slider").data("ionRangeSlider");
+            myRange.update({
+                [name]: newValue
+            })
+            onChangeSliderHandler({to:myRange.old_to, from:myRange.old_from});
+            element.val(hhmmsss_prettify(newValue));
+            //updateSlider();
+        }
+        // [RAVAs] Restarting the slider based on the current file times
+        function restartTimeSlider(fileIndex){
+            mediaFileIndex = fileIndex 
+            timerEntryCount = 0;
+            if ("{{ experiment.category }}" == "video" || "{{ experiment.category }}" == "audio") {
+                sliderTimer = setTimeout(initSlider, retySliderLoadDelay);
+            }
+        }
+        function replayVideo(){
+            media.pause();
+            var looping = loopingButton.val();
+            if (looping == "True")
+                setTimeout(()=>{media.currentTime = startTime; media.play();},loopingDelay)
+        }
+        // [RAVAs] Setting up the slider 
+        function initSlider(){
+            timerEntryCount += 1;
+            if ("{{ experiment.category }}" == "video") 
+                media = $(".file[data-index='" + mediaFileIndex + "'] video" )[0];
+            else  
+                media = $(".file[data-index='" + mediaFileIndex + "'] audio" )[0];
+            if (!isNaN(media.duration)){
+                mediaSrc = media.src;
+                updateSlider(media);    
+                media.addEventListener("timeupdate", function(){
+                    if(media.currentTime >= endTime){
+                        replayVideo();
+                    }
+                }, false);                
+                clearTimeout(sliderTimer);
+                media.addEventListener('ended', replayVideo, false);
+            }
+            else if(timerEntryCount < maxLoadingTime){
+                clearTimeout(sliderTimer);
+                sliderTimer = setTimeout(initSlider, retySliderLoadDelay);
+            }
+        }
+        
+        // [RAVAs] Updating the slider
+        function updateSlider(media) {
+            var myRange = $(".time-range-slider").data("ionRangeSlider");
+            if (myRange){
+                myRange.destroy();
+            }            
+            rangeSlider.ionRangeSlider({
+                type: "double",
+                skin: "modern",
+                min: 0.0,
+                max: media.duration,
+                max_interval: media.duration,
+                step: 0.001,
+                from: 0.0,
+                to: media.duration,
+                drag_interval: true,
+                grid: false,
+                prettify: hhmmsss_prettify,
+                onChange: onChangeSliderHandler
+            });
+            myRange =  $(".time-range-slider").data("ionRangeSlider");
+            myRange.update({
+                from:0.0,
+                to: media.duration,
+            })
+            startTime = 0.0;
+            endTime = media.duration;
+            fromInput.val(hhmmsss_prettify(0.0));
+            toInput.val(hhmmsss_prettify(media.duration));
+        }
+        function onChangeSliderHandler(data) {
+            if (!isNaN(media.duration)){
+                media.currentTime = data.from;
+                startTime = data.from;
+                endTime = data.to;
+                fromInput.val(hhmmsss_prettify(data.from));
+                toInput.val(hhmmsss_prettify(data.to));
+                media.play();
+            }
+        }
+        // [RAVAs] Utility for time representation on the slider
+        function hhmmsss_prettify (n) {
+            var time = parseFloat(n) * 1000.0;
+            return new Date(time).toISOString().substr(11, 11)
+        }
+        ////////////////////////////////////////////////////////////////////////////
+        
+        // Text selection/highlighting 
+        function thisRespondHightlightText(thisDiv){
+            if ($(thisDiv).attr('listener')) return;
+            $(thisDiv).attr('listener', 'true');
+            $(thisDiv).on("mouseup", function () {
+                selectedText = getSelectionText();
+                var replacement = $('<span></span>').attr({'class':'hl'}).html(selectedText);
+                var replacementHtml = $('<div>').append(replacement.clone()).remove().html();
+                var text = $(this).text().replace(selectedText, replacementHtml);
+                $(this).html(text);
+                $("#targetCaptionData").val(selectedText);
+            });
+            $(thisDiv).mouseup();
+        }
+        function obtainSelectionCoords(start, end){
+            startTextIndex = start;
+            endTextIndex = end;
+            if (startTextIndex > endTextIndex){
+                var temp = startTextIndex;
+                startTextIndex = endTextIndex;
+                endTextIndex = temp;
+            }
+        }
+        function getSelectionText() {
+            var text = "";
+            if (window.getSelection) {
+                text = window.getSelection().toString();
+                var start = window.getSelection().anchorOffset
+                var end = window.getSelection().focusOffset
+                obtainSelectionCoords(start, end)
+                if (start == end && text.length>0 || Math.abs(start-end)==1 && text.length>1)
+                    text = ""
+            } else if (document.selection && document.selection.type != "Control") {
+                text = document.selection.createRange().text;
+                var start = document.selection().anchorOffset
+                var end = document.selection().focusOffset
+                obtainSelectionCoords(start, end)
+                if (start == end && text.length>0 || Math.abs(start-end)==1 && text.length>1)
+                    text = ""
+            }
+            return text;
         }
 
         if(currentFileIndex > {{lastFile}}){
@@ -515,11 +808,18 @@
                 }
             });
         }
+        $("#time-control-from").keyup(function(event) {
+         updateTimeInput("from",0);
+        });
+        $("#time-control-to").keyup(function(event) {
+         updateTimeInput("to",0);
+        });
         function updateSelectedLabel(labelButton){
             var currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
             var multichoice = currentLevelBody.data("multichoice"); // Used for multichoice labels for the current level
             levelId = currentLevelBody.data("levelid");
             selectedLabel = labelButton.data("labelid");
+            if (annotations==null||annotations==undefined) annotations = {};
             if (multichoice == "True"){
                 labelButton.toggleClass('btn-secondary');
                 labelButton.toggleClass('btn-primary');
@@ -584,6 +884,7 @@
             }
             if (currentLevel == 1) {
                 loadPreviousFile(last_previous);
+        
             } else {
                 currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
                 currentLevelBody.addClass('hidden-element');
@@ -603,6 +904,24 @@
         function nextLevelHandler(){
             currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
             levelId = currentLevelBody.data("levelid");
+            if ("{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
+                currentFileCoordinates[levelId] = {"start":startTime, "end":endTime}
+            }
+            else if ("{{ experiment.category }}" === "image") {
+                currentFileCoordinates[levelId] = _ra_regions.map(e=>e.shape_attributes)
+            }
+            else {
+                currentFileCoordinates[levelId] = {"start":startTextIndex, "end":endTextIndex}
+            }
+            //console.log(currentFileCoordinates)
+            _ra_regions = [];
+            _via_canvas_regions = [];
+            var excessFiles = (preLoadedTill - currentLoadedFile + preLoadLimit) % preLoadLimit;
+            var divIndex = (currentLoadedFile + excessFiles + 1) % preLoadLimit;
+            if ("{{ experiment.category }}" == "image") {
+                _ra_via_update(divIndex);
+                _via_clear_reg_canvas();
+            }
             already_submitted[levelId] = 1;
             multichoice = currentLevelBody.data("multichoice") == "True";
             currentLevelBody.addClass('hidden-element');
@@ -616,7 +935,7 @@
             if (currentLevel == totalAnnotationLevels) {
                 fileAnnotationCompleted();
             }
-            else if(!multichoice && skipLevelDict[levelId][label] == 1 ){
+            else if(!multichoice && skipLevelDict[levelId] &&skipLevelDict[levelId][label] == 1 ){
                 currentLevel = totalAnnotationLevels;
                 fileAnnotationCompleted();
             }
@@ -651,7 +970,6 @@
             prog_width = prog_width.toFixed(2)
             $("#progress-bar").width(prog_width.toString() + '%');
             $('#preview').text(prog_width.toString() + '%');
-            
             undoAnnotation();
             window.setTimeout(function() {
                 undoButton.removeAttr("disabled");
@@ -768,7 +1086,10 @@
         function fileAnnotationCompleted() {
             var url = "{{ url_for('annotate_experiment._addAnnotationInfo')}}";
             var currentFileId = $(".file[data-index='" + currentLoadedFile + "']").data('fileid');
-
+            function* entries(obj) {
+                for (let key in obj)
+                    yield [key, obj[key]];
+            }
             var data = {
                 'fileId' :          currentFileId,
                 'annotations' :     annotations, 
@@ -776,6 +1097,7 @@
                 'labelCount' :     {{labelCount}},
                 'userId'    : "{{userId}}",
                 'hasToIncreaseCurrent': 1,
+                'coordinates': currentFileCoordinates,
             };
 
             data = JSON.stringify(data);
@@ -791,6 +1113,10 @@
                     $('.labelWarning').removeClass('hidden-element');
                 }
             });
+            var excessFiles = (preLoadedTill - currentLoadedFile + preLoadLimit) % preLoadLimit;
+            var divIndex = (currentLoadedFile + excessFiles + 1) % preLoadLimit;
+            if( "{{ experiment.category }}" === "image") 
+                _ra_via_update(divIndex+1);
         }
 
         function updateProgressbar(){
@@ -871,14 +1197,11 @@
         function showCurrentFile(divIndex) {
             loadedFile = $(".file[data-index='" + divIndex + "']");
             loadedFile.removeClass('hidden-element');
-
+            restartTimeSlider(divIndex);
+            textHighlightingRestart();
+            currentFileCoordinates = {}
             if( "{{ experiment.category }}" === "video" || "{{ experiment.category }}" === "audio") {
                     var clip = loadedFile.find('.clip');
-                    cc = clip;
-                    var looping = loopingButton.val();
-                    if (looping == "True") {
-                        clip.attr('loop','loop');
-                    }
                     clip[0].play();
             /*
                     clip[0].addEventListener("timeupdate", function(){
@@ -956,6 +1279,7 @@
             if( "{{ experiment.category }}" === "image") {
                 loadedDiv.find('img').attr('src', url);
                 loadedDiv.find('img').attr('alt', caption);
+                _ra_via_update(0);
             } else if( "{{ experiment.category }}" === "video") {
                 // if( "{{ experiment.uploadType }}" === "manual") {
                     var video = loadedDiv.find('.clip');
@@ -1037,32 +1361,5 @@
             });
         };
     });
-    
-    if("{{experiment.displayTargetCaption}}"){
-        thisRespondHightlightText(".fileCaption h4");
-    }
-
-    function thisRespondHightlightText(thisDiv){
-        $(thisDiv).on("mouseup", function () {
-            var selectedText = getSelectionText();
-            var replacement = $('<span></span>').attr({'class':'hl'}).html(selectedText);
-            var replacementHtml = $('<div>').append(replacement.clone()).remove().html();
-            var text = $(this).text().replace(selectedText, replacementHtml);
-            $(this).html(text);
-            $("#targetCaptionData").val(selectedText);
-        });
-    }
-
-    function getSelectionText() {
-        var text = "";
-        if (window.getSelection) {
-            text = window.getSelection().toString();
-        } else if (document.selection && document.selection.type != "Control") {
-            text = document.selection.createRange().text;
-        }
-        return text;
-    }
-
 </script>
-
 {% endblock annotate_experiment_body %}
