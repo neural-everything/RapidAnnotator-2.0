@@ -1,4 +1,4 @@
-from flask import render_template, flash, redirect, url_for, request, jsonify, \
+from flask import json, render_template, flash, redirect, url_for, request, jsonify, \
     current_app, g, abort, jsonify, session, send_file
 from flask_babelex import lazy_gettext as _
 from sqlalchemy.sql.functions import user
@@ -70,10 +70,10 @@ def index(experimentId):
     notAnnotators = [x for x in users if x not in annotators]
 
     if len(annotators) == 0:
-        firstID = 3000
+        firstID = None
     else:
         firstID = annotators[0].id
-
+        
     return render_template('add_experiment/main.html',
         users = users,
         experiment = experiment,
@@ -747,8 +747,10 @@ def addFilesFromConcordance(experimentId, concordance):
                 content = row["Screenshot"]
             else:
                 content = caption
-            edge_link = row["Video URL"]
+            # Only make the edge_link = row["Video Url"] if it is a new scape style
+            edge_link = ""
             if readnamefromattributetext_file:
+                edge_link = row["Video URL"]
                 name_temp = (row["Structure ``text_file''"]).replace(".txt", "")
                 name_match = re.search("([0-9]{4}-[0-9]{2}-[0-9]{2}_.*)$", name_temp)
                 name = name_match.group(1)
@@ -1079,13 +1081,14 @@ def _deleteExperiment():
     return jsonify(response)
 
 
+@blueprint.route('/viewResults/<int:experimentId>', defaults={'userId': None})
 @blueprint.route('/viewResults/<int:experimentId>/<int:userId>')
 @isPerimitted2
 def viewResults(experimentId, userId):
     """ Viewing results of a user/annotator's annotation at an experiment.
     Args:
         experimentId: Id of the experiment requested to be viewed.
-        userId: Id of a specific annotator of that experiment.
+        userId: (optional) Id of a specific annotator of that experiment.
         levelId: (optional) Id of annotation level, filtering option.
         labelId: (optional) Id of annotation level's label, filtering option.
     Returns: 
@@ -1096,6 +1099,9 @@ def viewResults(experimentId, userId):
 
     page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
     experiment = Experiment.query.filter_by(id=experimentId).first()
+
+    if (userId == None):
+        return render_template('add_experiment/noResults.html', experiment = experiment)
     
     expFiles = File.query.filter_by(experiment_id=experiment.id).limit(per_page).offset(offset)
 
@@ -1489,6 +1495,31 @@ def _addOffsetTime(video_snippet, before_time, after_time):
     video_snippet = re.sub(f'start=({float_re})', "start=" + str(start_time), video_snippet)
     return video_snippet
 
+@blueprint.route('/changeDisplayOrder/<int:experimentId>/<string:displayType>', methods=['POST','GET'])
+def changeDisplayOrder(experimentId, displayType):
+    """
+    Change the display order of the experiment files.
+    Args:
+        experimentId: int. The experiment id.
+        order: str. The display order of the experiment files.
+    Returns:
+        response: dict. The response containing success and message keys.
+    """
+
+    experiment = Experiment.query.get(experimentId)
+    if experiment == None:
+        return jsonify({"success": False, "message": "Experiment does not exist"})
+
+    if displayType not in ['fcfs', 'random']:
+        return jsonify({"success": False, "message": "Invalid type"})
+
+    experiment.displayType = displayType
+    db.session.commit()
+
+    return jsonify({"success": True, "message": "Order changed successfully"})
+
+@blueprint.route('/changeDisplayTime/<int:experimentId>', methods=['POST'])
+
 @blueprint.route('/_exportResultsCSV/<int:experimentId>/<string:format1>', methods=['POST','GET'])
 def _exportResultsCSV(experimentId, format1):
 
@@ -1600,8 +1631,14 @@ def _exportResultsWide(experimentId, format):
         experimentDIR = os.path.join(app.config['UPLOAD_FOLDER'], str(experiment.id))
         inputConcordance = os.path.join(experimentDIR, 'concordance.csv')
         data = pandas.read_csv(inputConcordance)
+        print("Structure ``text_file''" in data.columns, "Here we go")
+        if "Structure ``text_file''" not in data.columns:
+            df.drop(columns=['edge_link'], inplace=True)
         data.index += 1
         df = pd.merge(df, data, how='inner', left_on=['concordance_lineNumber'], right_index=True)
+    else:
+        # It is included only in case of corcodance uploaded new scape style
+        df.drop(columns=['edge_link'], inplace=True)
     df.drop('concordance_lineNumber', inplace=True, axis=1)
     filePath = make_file(df, experimentId, format)
     return send_file(filePath, as_attachment=True)

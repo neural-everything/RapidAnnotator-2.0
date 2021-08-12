@@ -82,6 +82,28 @@
             </ul>
         </div>
 
+        <div class="dropdown btn-group btn-group-inline btn-space">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="changeDisplayOrder" data-toggle="dropdown">
+                {{ ('Change Display Order') }} &nbsp;
+            <span class="caret"></span></button>
+            <ul class="dropdown-menu scrollable-dropdown" id="changeDisplayOrderMenu" role="menu" aria-labelledby="changeDisplayOrderMenu">
+                <li role="presentation" class="changeOrderType" data-order='fcfs'>
+                    <a role="menuitem" tabindex="-1" data-order='fcfs'>
+                        <span data-order='fcfs'>
+                            <span class="glyphicon glyphicon-ok" id="normalOrderSpan" data-order='fcfs'> {{ ('Normal') }} </span> 
+                        </span>
+                    </a>
+                </li>
+                <li role="presentation" class="changeOrderType" data-order='random'>
+                    <a role="menuitem" tabindex="-1" data-order='random'>
+                        <span data-order='random'>
+                            <span class="glyphicon glyphicon-ok" id="randomOrderSpan" data-order='random'> {{ ('Random') }}</span>
+                        </span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
         {%- if (experiment.category == 'audio' or experiment.category == 'video') -%}
             <a data-toggle="modal" data-target="#displayTimeModalId"
                 class="changeDisplayTime btn btn-primary btn-group btn-group-inline btn-space">{{ ('Display Time') }}
@@ -465,6 +487,29 @@
         };
 
         var clustering_status = "{{clustering_status}}";
+        $('.changeOrderType').on('click', function(e){
+            e.preventDefault();
+            newType = e.target.getAttribute('data-order');
+            if (newType == 'random') {
+                removeNormalOrderOkIcon();
+                // add Random Order Ok Icon
+                var randomOrder = $("#randomOrderSpan");
+                randomOrder.addClass('glyphicon');
+                randomOrder.addClass('glyphicon-ok');
+                randomOrder.css('margin-left', '0em');
+            }
+            else {
+                removeRandomOrderOkIcon();
+                // add Normal Order Ok Icon
+                var normalOrder = $("#normalOrderSpan");
+                normalOrder.addClass('glyphicon');
+                normalOrder.addClass('glyphicon-ok');
+                normalOrder.css('margin-left', '0em');
+            }
+            var url = "{{ url_for('add_experiment.changeDisplayOrder', experimentId=experiment.id, displayType = newType)}}";
+            url += newType;
+            $.getJSON(url);
+        });
 
         $('.clustering').on('click', function(e) {
             if(clustering_status != 2){
@@ -520,6 +565,24 @@
             noTag.removeClass('glyphicon-ok');
             noTag.css('margin-left', '2em');
 
+        }
+        if("{{experiment.displayType}}" == "fcfs"){
+            removeRandomOrderOkIcon();
+        }
+        else{
+            removeNormalOrderOkIcon();
+        }
+        function removeRandomOrderOkIcon(){
+            var randomOrder = $("#randomOrderSpan");
+            randomOrder.removeClass('glyphicon');
+            randomOrder.removeClass('glyphicon-ok');
+            randomOrder.css('margin-left', '2em');
+        }
+        function removeNormalOrderOkIcon(){
+            var normalOrder = $("#normalOrderSpan");
+            normalOrder.removeClass('glyphicon');
+            normalOrder.removeClass('glyphicon-ok');
+            normalOrder.css('margin-left', '2em');
         }
 
         if(displayCluster == "0"){

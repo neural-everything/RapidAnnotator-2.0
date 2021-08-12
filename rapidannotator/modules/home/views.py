@@ -305,7 +305,6 @@ def _continueExperiment():
     if  'file_name' not in resultsFile.columns or \
         'caption' not in resultsFile.columns or \
         'content' not in resultsFile.columns or \
-        'edge_link' not in resultsFile.columns or \
         'display_order' not in resultsFile.columns or\
         (experiment.uploadType == "fromConcordance" and \
         'Number of hit' not in resultsFile.columns):

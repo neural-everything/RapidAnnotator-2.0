@@ -101,7 +101,7 @@
         <div id="filelist">Your browser doesn't have Flash, Silverlight or HTML5 support.</div>
 
     </div>
-{%- elif experiment.uploadType == 'fromConcordance' -%}
+{%- elif experiment.uploadType == 'fromConcordance' and exp_files|count == 0 %}
     <div class="container">
         <div>
             <div style="display: inline-block">
@@ -128,6 +128,7 @@
         </div>
         <div id="filelist">Your browser doesn't have Flash, Silverlight or HTML5 support.</div>
     </div>
+{%- elif experiment.uploadType == 'fromConcordance' and exp_files|count != 0 %}
 
 {%- else -%}
     <div class="container">
@@ -646,7 +647,7 @@
                     uploadedFeedback();
                     var serverResponse = JSON.parse(response.response);
                     $("tr[value=" + file.id + "]").attr("value", serverResponse.fileId);
-                    if ( experimentUploadType == "viaSpreadsheet") {
+                    if ( experimentUploadType == "viaSpreadsheet" || experimentUploadType=="fromConcordance") {
                         location.reload(true);
                     }
                 },
