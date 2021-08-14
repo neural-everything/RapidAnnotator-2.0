@@ -1410,15 +1410,19 @@ def _exportResultsConcordance(experiment, format1):
     for annotator in annotators:
         for level in annotation_levels:
             data_headers = ["File Deleted" for itr in range(len(data))]
+            data_coordinates = ["File Deleted" for itr in range(len(data))]
             for f in experiment.files:           
                 annotation_info = AnnotationInfo.query.filter_by(file_id=f.id, user_id=annotator.id, annotationLevel_id=level.id).order_by(AnnotationInfo.annotationLevel_id)
                 if annotation_info.count() == 0:
                     data_headers[f.concordance_lineNumber - 1] = RESERVED_LABEL
+                    data_coordinates[f.concordance_lineNumber - 1] = ""
                 else:
                     for info in annotation_info:
                         label = Label.query.filter_by(id=info.label_id).first()
                         data_headers[f.concordance_lineNumber - 1] = str(label.name)
+                        data_coordinates[f.concordance_lineNumber - 1] = json.dumps(info.coordinates)
             data.insert(col_num, annotator.username + " ( Level: " + str(level.name) + " )" , data_headers)
+            data.insert(col_num, annotator.username + " coordinates of ( Level: " + str(level.name) + " )" , data_coordinates)
             col_num += 1
 
         target_caption = ["No Caption Provided" for itr in range(len(data))]
@@ -1555,9 +1559,11 @@ def _exportResultsCSV(experimentId, format1):
     df = pd.DataFrame(files)
     df.set_index('id',inplace=True)
     RESERVED_COL = [RESERVED_LABEL] * len(files)
+    EMPTY_COL = [""] * len(files)
     for annotator in annotators_map.values():
         for level in levels_map.values():
             df[annotator + " ( Level: " + level + " )"] = RESERVED_COL
+            df[annotator + " coordinates of ( Level: " + level + " )"] = EMPTY_COL
         df['Target Caption of ' + annotator] = df['caption']
         df['Comments by ' + annotator] = ["No Comments"] * len(files)
     df.rename(columns={'name': 'Filename', 'caption':'Caption'}, inplace=True)
@@ -1568,6 +1574,9 @@ def _exportResultsCSV(experimentId, format1):
     annotations = AnnotationInfo.query.filter(AnnotationInfo.annotationLevel_id.in_(levels_map.keys()))
     for a in annotations:
         df.loc[a.file_id, [annotators_map[a.user_id] + " ( Level: " + levels_map[a.annotationLevel_id] + " )"]] = labels_map[a.label_id]
+        if a.coordinates:
+            df.loc[a.file_id, [annotators_map[a.user_id] + " coordinates of ( Level: " + levels_map[a.annotationLevel_id] + " )"]] = json.dumps(a.coordinates)
+        
     
     captions_info = AnnotationCaptionInfo.query.filter(AnnotationCaptionInfo.file_id.in_(df.index.values))
     for ci in captions_info:
@@ -1613,18 +1622,23 @@ def _exportResultsWide(experimentId, format):
             File.edge_link, File.concordance_lineNumber, File.display_order,\
             FileCaption.caption, FileCaption.target_caption,)\
             .all()
-    empty_col = len(files) * [0]
+    ZERO_COL = len(files) * [0]
+    EMPTY_COL = len(files) * [""]
     df = pd.DataFrame(files)
     df.set_index('id',inplace=True)
     for annotator in annotators_map.values():
         for level in levels:
             for label in level.labels:
-                df[f'{level.name}({label.name}) {annotator}'] = empty_col
+                df[f'{level.name}({label.name}) {annotator}'] = ZERO_COL
+                df[f'coordinates of {level.name}({label.name}) {annotator}'] = EMPTY_COL
     
     annotations_info = AnnotationInfo.query.filter(AnnotationInfo.annotationLevel_id.in_(levels_map.keys()))
     for a in annotations_info:
-        col = f'{levels_map[a.annotationLevel_id]}({labels_map[a.label_id]}) {annotators_map[a.user_id]}'
-        df.loc[a.file_id,[col]] = 1
+        labelcol = f'{levels_map[a.annotationLevel_id]}({labels_map[a.label_id]}) {annotators_map[a.user_id]}'
+        coordcol = f'coordinates of {levels_map[a.annotationLevel_id]}({labels_map[a.label_id]}) {annotators_map[a.user_id]}'
+        df.loc[a.file_id,[labelcol]] = 1
+        if a.coordinates:
+            df.loc[a.file_id,[coordcol]] = json.dumps(a.coordinates)
     df.rename(columns={'name': 'file_name'}, inplace=True)
     
     if experiment.uploadType == 'fromConcordance':
@@ -1665,12 +1679,12 @@ def _exportResultsLong(experimentId, format):
         .join(File, File.id == AnnotationInfo.file_id)
         .join(User, User.id == AnnotationInfo.user_id)
         .with_entities()
-        .add_columns(AnnotationLevel.name, Label.name, AnnotationInfo.label_other, User.username, File.name)
+        .add_columns(AnnotationLevel.name, Label.name, AnnotationInfo.label_other, AnnotationInfo.coordinates, User.username, File.name)
         .order_by(AnnotationInfo.id)
         .all()
         )
     df = pd.DataFrame(result)
-    df.columns = ["level_name", "label_name", "label_other", "annotator_username", "file_name"]
+    df.columns = ["level_name", "label_name", "label_other", "coordinates" ,"annotator_username", "file_name"]
     # Annotation selection order column
     annotation_order = [1] * len(df)
     for i in range(1, len(df)):

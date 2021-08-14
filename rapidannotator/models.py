@@ -668,7 +668,13 @@ class AnnotationInfo(db.Model):
     
     '''the other text field for that label by the annotator.'''
     label_other = db.Column(db.String(512), nullable=True)
-
+    
+    '''the coordinates of the annotations json object column.'''
+    ''' array of shapes for image exp. '''
+    ''' start and end time for audio/video exp. '''
+    ''' string for the text exp. '''
+    coordinates = db.Column(db.JSON, nullable=True)
+    
     def __str__(self):
         """Representation."""
         return 'AnnotationInfo <id={0.id}, \
