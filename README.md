@@ -1,4 +1,19 @@
 # Rapidannotator - 2.0
+<br />
+<p align="center">
+  <a href="https://sites.google.com/case.edu/techne-public-site/red-hen-rapid-annotator">
+    <img src="https://user-images.githubusercontent.com/39674365/129477873-8c9b2191-8261-4ef9-a67f-94e5b57169bd.png" alt="Logo" >
+  </a>
+
+  <h3 align="center">Rapid Annotator</h3>
+  <p align="center">
+    Red Hen Lab's Rapid Annotator v2.0
+    <br />
+    <a href="./docs"><strong>Explore the docs »</strong></a>
+    <br />
+  </p>
+</p>
+
 
 ## About
 Red Hen’s Rapid Annotator provides a platform to users to annotate large chunks of data in a short span of time and with least possible efforts. It provides the features of annotating images/videos/audios/text during collaborative situation also. With Red Hen Lab’s we will try to enable users to visualize the progress of each annotator separately and annotators can notify experimenter when the annotation is finished to make the annotation work more efficient.
@@ -14,31 +29,22 @@ Please refer the following links to install the Rapid Annotator-2.0 .
 * For installation guide refer [here](https://github.com/RedHenLab/RapidAnnotator-2.0/blob/master/docs/installation_guide.md).
 * For user guide refer [here](https://github.com/RedHenLab/RapidAnnotator-2.0/blob/master/docs/user_guide.md).
 
+## Contributers from Google Summer of Code
+- [Vaibhav Gupta](https://github.com/damnOblivious) @ [18]()
+- [Gulshan Kumar](https://github.com/gulshan-mittal) @ [2019](https://gulshan-mittal.github.io/GSoC19-Blog/) and [2020](https://gulshan-mittal.github.io/GSoC20-Blog/)
+- [Mohamed Mokhtar](https://github.com/rrrokhtar) @ [2021](https://rrrokhtar.hashnode.dev/series/gsoc-21-redhenlab)
+
+## Contributing
+
+Contributions are what make the open source community such an amazing place to be learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 
-### Google Summer of Code 2020
-
-This is the my Google summer of code project 2020 which is an extension of what I had developed in Google summer of Code 2019. Please find the following blog links for my GSoC work.
-
-#### Blog Link
-* https://gulshan-mittal.github.io/GSoC19-Blog/
-* https://gulshan-mittal.github.io/GSoC20-Blog/
-
-#### Documentation (New in Latest Version 2020)
+## Documentation and new built functionalites on Google Summer of Code
 * https://sites.google.com/case.edu/techne-public-site/red-hen-rapid-annotator/new-in-the-latest-version-2020
-
-The work which I have done during this summer can be found in the following merge request.![img](https://github.com/gulshan-mittal/GSoC20-Blog/blob/master/assets/images/merge.png)
-
-* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/22
-* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/25
-* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/26
-* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/27
-* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/28
-* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/29
-* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/30
-* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/31
-* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/32
-* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/33
-* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/34
-* https://github.com/RedHenLab/RapidAnnotator-2.0/pull/35
-
+* https://rrrokhtar.github.io/rapid-annotator-21/
