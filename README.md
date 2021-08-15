@@ -30,7 +30,7 @@ Please refer the following links to install the Rapid Annotator-2.0 .
 * For user guide refer [here](https://github.com/RedHenLab/RapidAnnotator-2.0/blob/master/docs/user_guide.md).
 
 ## Contributers from Google Summer of Code
-- [Vaibhav Gupta](https://github.com/damnOblivious) @ [18]()
+- [Vaibhav Gupta](https://github.com/damnOblivious) @ [2018](https://damnoblivious.github.io/GSoC-Blog/)
 - [Gulshan Kumar](https://github.com/gulshan-mittal) @ [2019](https://gulshan-mittal.github.io/GSoC19-Blog/) and [2020](https://gulshan-mittal.github.io/GSoC20-Blog/)
 - [Mohamed Mokhtar](https://github.com/rrrokhtar) @ [2021](https://rrrokhtar.hashnode.dev/series/gsoc-21-redhenlab)
 
@@ -45,6 +45,6 @@ Contributions are what make the open source community such an amazing place to b
 5. Open a Pull Request
 
 
-## Documentation and new built functionalites on Google Summer of Code
-* https://sites.google.com/case.edu/techne-public-site/red-hen-rapid-annotator/new-in-the-latest-version-2020
-* https://rrrokhtar.github.io/rapid-annotator-21/
+## Links
+* https://sites.google.com/case.edu/techne-public-site/red-hen-rapid-annotator
+* https://beta.rapidannotator.org/
