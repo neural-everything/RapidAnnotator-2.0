@@ -1359,7 +1359,6 @@ def _exportResultsXLS(experimentId):
                     sheet.write(row, col, RESERVED_LABEL)
                 else:
                     for info in annotation_info:
-                        print(info)
                         label = Label.query.filter_by(id=info.label_id).first()
                         sheet.write(row, col, str(label.name))
                 col += 1
@@ -1645,7 +1644,6 @@ def _exportResultsWide(experimentId, format):
         experimentDIR = os.path.join(app.config['UPLOAD_FOLDER'], str(experiment.id))
         inputConcordance = os.path.join(experimentDIR, 'concordance.csv')
         data = pandas.read_csv(inputConcordance)
-        print("Structure ``text_file''" in data.columns, "Here we go")
         if "Structure ``text_file''" not in data.columns:
             df.drop(columns=['edge_link'], inplace=True)
         data.index += 1
