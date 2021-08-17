@@ -344,10 +344,8 @@ def _addAnnotationInfo():
     userId = int(arguments.get('userId', None))
     hasToIncreaseCurrent = int(arguments.get('hasToIncreaseCurrent', None))
     coordinates = arguments.get('coordinates')
-    print("---------------------------------")
-    print(type(coordinates))
-    print(coordinates)
-    print("---------------------------------")
+    if coordinates == None:
+        coordinates = {}
     
     # targetCaptionData = arguments.get('targetCaptionData', None)
 
@@ -375,7 +373,6 @@ def _addAnnotationInfo():
         db.session.commit()
     for levelId, labels in annotations.items():
         for labelId in annotationsOrder[levelId]:
-            print(labelId, labels[str(labelId)])
             annotationInfo = AnnotationInfo(
                 file_id = fileId,
                 annotationLevel_id = levelId,
