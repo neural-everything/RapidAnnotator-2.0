@@ -22,7 +22,7 @@ Install [**virtualenv**](https://virtualenv.pypa.io/en/latest/) using the below 
 
 Run
 
-`git clone https://github.com/guptavaibhav18197/rapidannotator.git`
+`git clone https://github.com/RedHenLab/RapidAnnotator-2.0 rapidannotator`
 
 `cd rapidannotator`
 
@@ -122,8 +122,10 @@ Finally in _rapidannotator/config.py_ update the database uri :
 `SQLALCHEMY_DATABASE_URI = 'mysql://username:password@localhost/[Database_name]'`
 
 ```SHELL
+# Run the following commands on terminal inside the project folder 
+# You are supposed to be in the parent directory of the repository and venv is active (the virtual environment is active)
 # Run the following commands after setting up the db at config file
-# Initalize the flask-migrate files.
+# Initialize the flask-migrate files.
 flask db init  
 # Make a migration, it is like commit it and a comment beside.
 flask db migrate -m "Initial migration." # OR just add your comment right there  

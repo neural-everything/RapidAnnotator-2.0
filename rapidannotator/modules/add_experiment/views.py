@@ -1556,6 +1556,10 @@ def _exportResultsCSV(experimentId, format1):
             .add_columns(*files_columns)\
             .all()
     df = pd.DataFrame(files)
+    if experiment.uploadType == 'viaSpreadsheet':
+        df.columns = ['id', 'name', 'caption', 'content']
+    else :
+        df.columns = ['id', 'name', 'caption']
     df.set_index('id',inplace=True)
     RESERVED_COL = [RESERVED_LABEL] * len(files)
     EMPTY_COL = [""] * len(files)
@@ -1624,6 +1628,7 @@ def _exportResultsWide(experimentId, format):
     ZERO_COL = len(files) * [0]
     EMPTY_COL = len(files) * [""]
     df = pd.DataFrame(files)
+    df.columns = ["id", "name", "content","edge_link", "concordance_lineNumber", "display_order", "caption","target_caption"]
     df.set_index('id',inplace=True)
     for annotator in annotators_map.values():
         for level in levels:
@@ -1671,6 +1676,7 @@ def _exportResultsLong(experimentId, format):
     annotation_levels = AnnotationLevel.query.filter_by(experiment_id=experimentId).with_entities(AnnotationLevel.id).all()
     result = []
     for annotation_level in annotation_levels:
+        annotation_level = annotation_level[0]
         result.extend(AnnotationInfo.query.filter_by(annotationLevel_id=annotation_level)
         .join(AnnotationLevel, AnnotationInfo.annotationLevel_id == AnnotationLevel.id)
         .join(Label, Label.id == AnnotationInfo.label_id)
