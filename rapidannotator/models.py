@@ -1,3 +1,4 @@
+
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.types import Enum, String, Integer, Boolean, DateTime
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
@@ -360,6 +361,18 @@ class AnnotationLevel(db.Model):
         server_default='0',
     )
 
+    # Configuration for labels' other text-fields
+    ''' labels_others
+    ..  decides the level whether the labels of that annotation level will have
+    ..  the other text field for each of them.
+    '''
+    labels_others = db.Column(
+        db.Boolean(name='multichoice'),
+        nullable=False,
+        server_default='0',
+    )
+
+
     """ One to Many relation
     ..  For AnnotationLevel:
     ..  list of the labels associated with this annotation level.
@@ -383,7 +396,8 @@ class AnnotationLevel(db.Model):
                 name={0.name}, \
                 description={0.description}, \
                 level_number={0.level_number}, \
-                multichoice={0.multichoice}>'.format(self)
+                multichoice={0.multichoice}, \
+                labels_others={0.labels_others}>'.format(self)
 
     def __repr__(self):
         return 'AnnotationLevel <id={0.id}, \
@@ -391,7 +405,8 @@ class AnnotationLevel(db.Model):
                 name={0.name}, \
                 description={0.description}, \
                 level_number={0.level_number}>, \
-                multichoice={0.multichoice}>'.format(self)
+                multichoice={0.multichoice}, \
+                labels_others={0.labels_others}>'.format(self)
 
 """
     Label of an annoatation level.

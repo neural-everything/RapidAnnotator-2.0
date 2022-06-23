@@ -100,6 +100,10 @@ class AnnotationLevelForm(FlaskForm):
         label='Multichoice annotation level',
     )
     
+    labels_others = core.BooleanField(
+        label='Allow text field (comment) related to each label',
+    )
+    
     def reset(self):
         blankData = MultiDict([ ('csrf', self.generate_csrf_token() ) ])
         self.process(blankData)

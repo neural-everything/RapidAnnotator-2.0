@@ -423,6 +423,7 @@ def _editAnnotationLevel():
     annotationLevel.level_number = request.args.get('annotationLevelNumber', None)
     annotationLevel.instruction = request.args.get('annotationLevelInstruction', None)
     annotationLevel.multichoice = request.args.get('multichoice', None) == 'true'
+    annotationLevel.labels_others = request.args.get('labels_others', None) == 'true'
 
     db.session.commit()
     response = {}
