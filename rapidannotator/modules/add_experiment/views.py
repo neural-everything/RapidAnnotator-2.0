@@ -278,6 +278,7 @@ def _addAnnotationLevel():
                 description = annotationLevelForm.description.data,
                 instruction = annotationLevelForm.instruction.data,
                 multichoice = annotationLevelForm.multichoice.data,
+                labels_others = annotationLevelForm.labels_others.data,
             )
             if levelNumber:
                 annotationLevel.level_number = annotationLevelForm.levelNumber.data
