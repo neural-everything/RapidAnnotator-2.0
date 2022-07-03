@@ -278,7 +278,6 @@ def _addAnnotationLevel():
                 description = annotationLevelForm.description.data,
                 instruction = annotationLevelForm.instruction.data,
                 multichoice = annotationLevelForm.multichoice.data,
-                labels_others = annotationLevelForm.labels_others.data,
             )
             if levelNumber:
                 annotationLevel.level_number = annotationLevelForm.levelNumber.data
@@ -424,7 +423,6 @@ def _editAnnotationLevel():
     annotationLevel.level_number = request.args.get('annotationLevelNumber', None)
     annotationLevel.instruction = request.args.get('annotationLevelInstruction', None)
     annotationLevel.multichoice = request.args.get('multichoice', None) == 'true'
-    annotationLevel.labels_others = request.args.get('labels_others', None) == 'true'
 
     db.session.commit()
     response = {}
