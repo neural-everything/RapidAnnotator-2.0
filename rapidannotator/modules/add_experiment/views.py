@@ -504,10 +504,12 @@ def _importAnnotationtLevel(experimentId):
     myExperiments = Experiment.query.all()
 
     for experiment in myExperiments:
-        if experiment.is_global:
+        experiment_owners = experiment.owners.all()
+        current_user_is_owner = [owner for owner in experiment_owners if owner.id == current_user.id]
+        if experiment.is_global or current_user_is_owner :
             annotation_levels = experiment.annotation_levels
             global_annotation_level.append(annotation_levels)
-            owners.append(experiment.owners)
+            owners.append(experiment_owners)
             experiment_disp.append(experiment)
             import_id.append(experiment.id)
             global_names.append(experiment.globalName)
