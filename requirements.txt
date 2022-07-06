@@ -16,7 +16,7 @@ WTForms
 requests
 SQLAlchemy
 speaklater
-werkzeug==2.0.0
+werkzeug
 xlrd
 xlwt
 matplotlib

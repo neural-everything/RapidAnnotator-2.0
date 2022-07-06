@@ -7,12 +7,13 @@ from flask_security.forms import email_required, email_validator, \
 from flask_wtf import FlaskForm
 from sqlalchemy.orm.exc import NoResultFound
 from wtforms import FormField, PasswordField, StringField, SubmitField, \
-    BooleanField, IntegerField, HiddenField, FieldList, SelectField
+    IntegerField, HiddenField, FieldList, SelectField
+from wtforms import BooleanField
+
 from wtforms.validators import DataRequired, EqualTo, StopValidation, \
     ValidationError, Email, Length
 from wtforms.widgets.core import CheckboxInput, Input
 from wtforms.fields import core
-from wtforms.fields import html5
 from rapidannotator.models import User
 
 
@@ -96,12 +97,8 @@ class AnnotationLevelForm(FlaskForm):
         validators=[Length(max=1500 ,message=_("Annotation level instruction can't exceed 1500 chars."))],
         filters =[strip_filter],
     )
-    multichoice = core.BooleanField(
+    multichoice = BooleanField(
         label='Multichoice annotation level',
-    )
-    
-    labels_others = core.BooleanField(
-        label='Allow text field (comment) related to each label',
     )
     
     def reset(self):
