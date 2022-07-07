@@ -203,7 +203,7 @@
         {% endfor %}
         <div class="annotationLevelArea">
 	        {% for level in experiment.annotation_levels | sort(attribute='id')%}
-	            <div class="col-xs-7 annotationLevel hidden-element" data-index="{{loop.index}}" data-levelid="{{level.id}}" data-multichoice="{{level.multichoice}}">
+	            <div class="col-xs-7 annotationLevel hidden-element" data-index="{{loop.index}}" data-levelid="{{level.id}}" data-multichoice="{{level.multichoice}}" data-labels_others="{{level.labels_others}}">
 	                {%- set levelIndex = loop.index %}
 	                {%- if level.instruction != "" -%}
 	                    <div class="alert alert-info alert-dismissible">
@@ -817,6 +817,7 @@
         function updateSelectedLabel(labelButton){
             var currentLevelBody = $(".annotationLevel[data-index='" + currentLevel +"']");
             var multichoice = currentLevelBody.data("multichoice"); // Used for multichoice labels for the current level
+            var labels_others_enabled = currentLevelBody.data("labels_others") === "True";
             levelId = currentLevelBody.data("levelid");
             selectedLabel = labelButton.data("labelid");
             if (annotations==null||annotations==undefined) annotations = {};
@@ -825,7 +826,9 @@
                 labelButton.toggleClass('btn-primary');
                 textField = $(`input[data-labelid='${selectedLabel}']`);
                 if (!textField.is(":visible")){
-                    textField.show();
+                    // display the text-field next to the label in case of enabling it on the experiment settings
+                    if (labels_others_enabled)
+                        textField.show();
                     if (annotations[levelId] == null){
                         annotations[levelId] = {}
                         annotations[levelId][selectedLabel] = textField.val();
@@ -856,7 +859,9 @@
                 if (!visible){
                     labelButton.addClass('btn-primary');
                     labelButton.removeClass('btn-secondary');
-                    textField.show();
+                    // display the text-field next to the label in case of enabling it on the experiment settings
+                    if (labels_others_enabled)
+                        textField.show();
                     selectedLabel = labelButton.data("labelid");
                     annotations[levelId] = {}
                     annotations[levelId][selectedLabel] = textField.val();
