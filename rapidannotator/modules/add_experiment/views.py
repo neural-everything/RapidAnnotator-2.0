@@ -936,7 +936,7 @@ def viewSettings(experimentId):
 
     notOwners = [x for x in users if x not in owners]
     notAnnotators = [x for x in users if x not in annotators]
-    notLevelsSharedUsers = [x for x in users if x not in levelsSharedUsers]
+    notLevelsSharedUsers = [x for x in users if x not in levelsSharedUsers and x not in owners]
 
     totalFiles = experiment.files.count()
 
