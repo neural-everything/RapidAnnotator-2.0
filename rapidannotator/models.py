@@ -113,7 +113,7 @@ class User(UserMixin, db.Model):
     )
 
     '''List of the experiments that a user is sharing access to its annotation levels to let him able to import them.'''
-    my_experiments_levels_access = db.relationship("Experiment", secondary=ExperimentLevelsShare,
+    accessible_levels_experiments = db.relationship("Experiment", secondary=ExperimentLevelsShare,
                 lazy='dynamic', backref=db.backref('sharing_levels_users',
                 lazy='dynamic')
     )

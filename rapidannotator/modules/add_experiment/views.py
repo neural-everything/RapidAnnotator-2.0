@@ -126,10 +126,8 @@ def _addOwner():
 
 @blueprint.route('/_addLevelsShareUser', methods=['GET','POST'])
 def _addLevelsShareUser():
-
     username = request.args.get('userName', None)
     experimentId = request.args.get('experimentId', None)
-
     experiment = Experiment.query.filter_by(id=experimentId).first()
     user = User.query.filter_by(username=username).first()
     experiment.sharing_levels_users.append(user)
@@ -139,7 +137,6 @@ def _addLevelsShareUser():
         'userId' : user.id,
         'username' : user.username,
     }
-
     return jsonify(response)
 
 def _annotatorsPlot(experiment):

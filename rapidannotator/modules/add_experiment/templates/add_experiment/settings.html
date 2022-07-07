@@ -730,29 +730,23 @@
                 'userId' : currentLevelsShareUser,
                 'experimentId' : "{{ experiment.id }}",
             };
-            /* (TODO) break into functions */
             $.getJSON(url , data, function(response) {
                 if(response.success) {
                     $('#deleteLevelsShareModal').modal('hide');
-
                     var liAttributeDict = {
                         "role" :           "presentation",
                     };
                     var liToAdd = $("<li/>", liAttributeDict);
-
                     var name = $('#levels_shared_users').find('a[value=' + currentLevelsShareUser + ']').find('span').text();
-
                     var nameSpan = $("<span/>", {
                         "text" :           name,
                     });
-
                     var aAttributeDict = {
                         "role" :           "menuitem",
                         "tabindex" :       "-1",
                         "href" :           "#",
                     };
                     var aToAdd = $("<a/>", aAttributeDict);
-
                     nameSpan.appendTo(aToAdd);
                     aToAdd.appendTo(liToAdd);
                     liToAdd.appendTo('#addLevelsShareMenu');
@@ -1086,14 +1080,10 @@
                 'userName' : userName,
                 'experimentId' : "{{ experiment.id }}",
             };
-
             $.getJSON(url , data, function(response) {
                 if(response.success) {
                     currentSelected.remove();
                     addLevelsShareUserToList(response.userId, response.username);
-                }
-                else {
-                    /*do something here*/
                 }
             });
             _feedback('Successfully shared the levels of the experiment to user: ' + userName);
@@ -1179,18 +1169,15 @@
             var nameSpan = $("<span/>", {
                 "text" :           name,
             });
-
             var trashIconSpan = $("<span/>", {
                 "class":        "deleteLevelsShareUserButton pull-right glyphicon glyphicon-trash btn-space",
                 "data-toggle":  "modal",
                 "data-target":  "#deleteLevelsShareModal",
             });
-
             var aAttributeDict = {
                 "class" :          "list-group-item levels_shared_user",
                 "value" :           id,
             };
-
             var aToAdd = $("<a/>", aAttributeDict);
             nameSpan.appendTo(aToAdd);
             trashIconSpan.appendTo(aToAdd);
@@ -1221,7 +1208,8 @@
             x.className = "show";
             setTimeout(function(){ x.className = x.className.replace("show", ""); }, 2500);
         };
-
+        
+        // Function to display generic feedback message
         function _feedback(message){
             var snackbar = $('#snackbar3');
             snackbar.text(message)
