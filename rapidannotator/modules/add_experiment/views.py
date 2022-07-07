@@ -522,6 +522,8 @@ def _importAnnotationtLevel(experimentId):
     myExperiments = Experiment.query.all()
 
     for experiment in myExperiments:
+        if experiment.id == experimentId:
+            continue
         experiment_owners = experiment.owners.all()
         experiment_sharing_levels_users = experiment.sharing_levels_users.all()
         current_user_is_owner = [owner for owner in experiment_owners if owner.id == current_user.id]
