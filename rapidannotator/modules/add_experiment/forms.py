@@ -102,7 +102,7 @@ class AnnotationLevelForm(FlaskForm):
     )
     
     labels_others = BooleanField(
-        label='Label others text fields Annotation level?',
+        label='Add additional text fields? next to selected labels',
     )
     
     def reset(self):
