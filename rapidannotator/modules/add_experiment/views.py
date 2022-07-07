@@ -123,6 +123,25 @@ def _addOwner():
 
     return jsonify(response)
 
+
+@blueprint.route('/_addLevelsShareUser', methods=['GET','POST'])
+def _addLevelsShareUser():
+
+    username = request.args.get('userName', None)
+    experimentId = request.args.get('experimentId', None)
+
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    user = User.query.filter_by(username=username).first()
+    experiment.sharing_levels_users.append(user)
+    db.session.commit()
+    response = {
+        'success' : True,
+        'userId' : user.id,
+        'username' : user.username,
+    }
+
+    return jsonify(response)
+
 def _annotatorsPlot(experiment):
     """Description:
         Utility function to making the annotators progress plot
@@ -505,8 +524,10 @@ def _importAnnotationtLevel(experimentId):
 
     for experiment in myExperiments:
         experiment_owners = experiment.owners.all()
+        experiment_sharing_levels_users = experiment.sharing_levels_users.all()
         current_user_is_owner = [owner for owner in experiment_owners if owner.id == current_user.id]
-        if experiment.is_global or current_user_is_owner :
+        current_user_sharing = [sharing for sharing in experiment_sharing_levels_users if sharing.id == current_user.id]
+        if experiment.is_global or current_user_is_owner or current_user_sharing:
             annotation_levels = experiment.annotation_levels
             global_annotation_level.append(annotation_levels)
             owners.append(experiment_owners)
@@ -907,12 +928,14 @@ def viewSettings(experimentId):
     users = User.query.all()
     experiment = Experiment.query.filter_by(id=experimentId).first()
     owners = experiment.owners
+    levelsSharedUsers = experiment.sharing_levels_users
     ''' send all the details of each annotator. '''
     annotatorDetails = experiment.annotators
     annotators = [assoc.annotator for assoc in annotatorDetails]
 
     notOwners = [x for x in users if x not in owners]
     notAnnotators = [x for x in users if x not in annotators]
+    notLevelsSharedUsers = [x for x in users if x not in levelsSharedUsers]
 
     totalFiles = experiment.files.count()
 
@@ -967,9 +990,11 @@ def viewSettings(experimentId):
         users = users,
         experiment = experiment,
         owners = owners,
+        levelsSharedUsers = levelsSharedUsers,
         notOwners = notOwners,
         notAnnotators = notAnnotators,
         annotatorDetails = annotatorDetails,
+        notLevelsSharedUsers = notLevelsSharedUsers,
         totalFiles = totalFiles,
         displayImg = displayImg,
         html = pngImageB64String,
@@ -1058,6 +1083,18 @@ def _deleteOwner():
     response = {}
     response['success'] = True
 
+    return jsonify(response)
+
+@blueprint.route('/_deleteLevelsShareUser', methods=['POST','GET'])
+def _deleteLevelsShareUser():
+    userId = request.args.get('userId', None)
+    experimentId = request.args.get('experimentId', None)
+    user = User.query.filter_by(id=userId).first()
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    experiment.sharing_levels_users.remove(user)
+    db.session.commit()
+    response = {}
+    response['success'] = True
     return jsonify(response)
 
 
