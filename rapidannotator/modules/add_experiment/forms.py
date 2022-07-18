@@ -7,8 +7,7 @@ from flask_security.forms import email_required, email_validator, \
 from flask_wtf import FlaskForm
 from sqlalchemy.orm.exc import NoResultFound
 from wtforms import FormField, PasswordField, StringField, SubmitField, \
-    IntegerField, HiddenField, FieldList, SelectField
-from wtforms import BooleanField
+    IntegerField, HiddenField, FieldList, SelectField, BooleanField
 
 from wtforms.validators import DataRequired, EqualTo, StopValidation, \
     ValidationError, Email, Length
