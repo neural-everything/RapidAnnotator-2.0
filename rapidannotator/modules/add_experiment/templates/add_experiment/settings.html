@@ -136,6 +136,17 @@
                 </ul>
             </div>
 
+            <div class="dropdown btn-group btn-group-inline btn-space">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="addLevelsShare" data-toggle="dropdown">
+                    Share Levels with
+                <span class="caret"></span></button>
+                <ul class="dropdown-menu scrollable-dropdown" id="addLevelsShareMenu" role="menu" aria-labelledby="addLevelsShare">
+                    {% for user in notLevelsSharedUsers %}
+                        <li role="presentation"><a role="menuitem" tabindex="-1" href="#"><span>{{user.username}}</span></a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+
             <a href="{{ url_for('add_experiment.index', experimentId = experiment.id, page= '1') }}"
                 class="btn btn-success btn-group btn-group-inline btn-space">{{ ('Done') }}
             </a>
@@ -180,6 +191,18 @@
                             <span>{{ user.username }}</span>
                             <span class="deleteOwnerButton pull-right glyphicon glyphicon-trash btn-space"
                                 data-toggle="modal" data-target="#deleteOwnerModal"></span>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-xs-3">
+                <h3>Levels shared with</h3>
+                <div class="list-group col-6" id="levels_shared_users">
+                    {% for user in levelsSharedUsers %}
+                        <a class="list-group-item levels_shared_user" value="{{ user.id }}">
+                            <span>{{ user.username }}</span>
+                            <span class="deleteLevelsShareUserButton pull-right glyphicon glyphicon-trash btn-space"
+                                data-toggle="modal" data-target="#deleteLevelsShareModal"></span>
                         </a>
                     {% endfor %}
                 </div>
@@ -391,6 +414,29 @@
   </div>
 </div>
 
+<!-- Delete-LevelsSharedUser-Modal -->
+<div class="modal fade" id="deleteLevelsShareModal" role="dialog" tabindex="-1"
+    aria-labelledby="deleteLevelsShareModal" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Are you sure you want to remove this user from levels sharing?</h4>
+      </div>
+        <div class="modal-body">
+            <form name="deleteLevelsShareForm" id="deleteLevelsShareForm">
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary"> {{ ('Delete') }}</button>
+                    <button type="button" class="btn btn-default pull-right" data-dismiss="modal">Close</button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+        </div>
+    </div>
+  </div>
+</div>
+
 <!-- Edit-Annotator-Modal -->
 <div class="modal fade" id="editAnnotatorModal" role="dialog" tabindex="-1"
     aria-labelledby="editAnnotatorModal" aria-hidden="true">
@@ -547,8 +593,10 @@
         var editAnnotatorForm = $('#editAnnotatorForm');
         var dataPartitionForm = $('#dataPartitionForm');
         var selectedOwnerButton = '.deleteOwnerButton';
+        var selectedLevelsShareUser = '.deleteLevelsShareUserButton';
         var currentAnnotator = -1;
         var currentOwner = -1;
+        var currentLevelsShareUser = -1;
         var displayCluster = "{{displayCluster}}";
         
         if("{{experiment.displayTargetCaption}}" != "True"){
@@ -608,6 +656,10 @@
             currentOwner = $(this).parent().attr('value');
         });
 
+        $("body").on("click", selectedLevelsShareUser, function() {
+            currentLevelsShareUser = $(this).parent().attr('value');
+        });
+
         $('#deleteProjectForm').on('submit', function(e) {
 
             e.stopImmediatePropagation();
@@ -665,6 +717,39 @@
                 }
                 else {
                     /*do something here*/
+                }
+            });
+        })
+
+        $('#deleteLevelsShareForm').on('submit', function(e) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            var url = "{{ url_for('add_experiment._deleteLevelsShareUser')}}";
+            var data = {
+                'userId' : currentLevelsShareUser,
+                'experimentId' : "{{ experiment.id }}",
+            };
+            $.getJSON(url , data, function(response) {
+                if(response.success) {
+                    $('#deleteLevelsShareModal').modal('hide');
+                    var liAttributeDict = {
+                        "role" :           "presentation",
+                    };
+                    var liToAdd = $("<li/>", liAttributeDict);
+                    var name = $('#levels_shared_users').find('a[value=' + currentLevelsShareUser + ']').find('span').text();
+                    var nameSpan = $("<span/>", {
+                        "text" :           name,
+                    });
+                    var aAttributeDict = {
+                        "role" :           "menuitem",
+                        "tabindex" :       "-1",
+                        "href" :           "#",
+                    };
+                    var aToAdd = $("<a/>", aAttributeDict);
+                    nameSpan.appendTo(aToAdd);
+                    aToAdd.appendTo(liToAdd);
+                    liToAdd.appendTo('#addLevelsShareMenu');
+                    $('#levels_shared_users').find('a[value=' + currentLevelsShareUser + ']').remove();
                 }
             });
         })
@@ -887,6 +972,7 @@
 
         var selectedAnnotator = '#addAnnotatorsMenu li a';
         var selectedOwner = '#addOwnersMenu li a';
+        var selectedLevelsShareUser = '#addLevelsShareMenu li a';
         var displayTimeForm = $('#displayTimeForm');
         var displayWordsForm = $('#displayWordsForm');
         var submitLater = $('#submitLater');
@@ -984,6 +1070,24 @@
             //location.reload();
         });
 
+        $("body").on("click", selectedLevelsShareUser, function() {
+            var currentSelected = $(this);
+            xyz = this;
+            var userName = currentSelected.find('span').text();
+            var url = "{{ url_for('add_experiment._addLevelsShareUser')}}";
+            var data = {
+                'userName' : userName,
+                'experimentId' : "{{ experiment.id }}",
+            };
+            $.getJSON(url , data, function(response) {
+                if(response.success) {
+                    currentSelected.remove();
+                    addLevelsShareUserToList(response.userId, response.username);
+                }
+            });
+            _feedback('Successfully shared the levels of the experiment to user: ' + userName);
+        });
+
         function addOwnerToList(id, name) {
 
             var nameSpan = $("<span/>", {
@@ -1060,6 +1164,25 @@
             });
         });
 
+        function addLevelsShareUserToList(id, name) {
+            var nameSpan = $("<span/>", {
+                "text" :           name,
+            });
+            var trashIconSpan = $("<span/>", {
+                "class":        "deleteLevelsShareUserButton pull-right glyphicon glyphicon-trash btn-space",
+                "data-toggle":  "modal",
+                "data-target":  "#deleteLevelsShareModal",
+            });
+            var aAttributeDict = {
+                "class" :          "list-group-item levels_shared_user",
+                "value" :           id,
+            };
+            var aToAdd = $("<a/>", aAttributeDict);
+            nameSpan.appendTo(aToAdd);
+            trashIconSpan.appendTo(aToAdd);
+            aToAdd.appendTo('#levels_shared_users');
+        }
+
         function displayMessage(message){
             var snackbar = $('#snackbar3');
             snackbar.text(message)
@@ -1080,6 +1203,15 @@
         function addOwnerFeedback(userName){
             var snackbar = $('#snackbar3');
             snackbar.text(userName + ' added successfully as an owner of the experiment.')
+            var x = document.getElementById("snackbar3");
+            x.className = "show";
+            setTimeout(function(){ x.className = x.className.replace("show", ""); }, 2500);
+        };
+        
+        // Function to display generic feedback message
+        function _feedback(message){
+            var snackbar = $('#snackbar3');
+            snackbar.text(message)
             var x = document.getElementById("snackbar3");
             x.className = "show";
             setTimeout(function(){ x.className = x.className.replace("show", ""); }, 2500);

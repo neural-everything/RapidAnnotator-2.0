@@ -26,7 +26,7 @@
           <th>Serial No.</th>
           <th>Experiment Name</th>
           <th>Global Name</th>
-          <th>Owner</th>
+          <th>Owners</th>
           <th>Import</th>
         </tr>
       </thead>
@@ -46,14 +46,11 @@
               {{global_names[loop.index -1 ]}}
             </td>
             <td>
-                <select>
-                  <option>Owners</option>
-                  <optgroup label="" disabled>
-                    {% for owner in owners[loop.index - 1]%}
-                      <option value="1">{{owner.username}}</option>
-                    {% endfor %}
-                  </optgroup>
-                </select>
+              <ul>
+                {% for owner in owners[loop.index - 1]%}
+                  <li>{{owner.username}}</li>
+                {% endfor %}
+              </ul>
             </td>
 			<td > <button type="button" class="btn btn-primary btn-group btn-group-inline btn-space" onclick="importLevels({{import_id[loop.index-1]}})"> Import </button></td>
           </tr>
