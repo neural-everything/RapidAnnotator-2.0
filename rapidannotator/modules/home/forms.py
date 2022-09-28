@@ -46,7 +46,8 @@ class AddExperimentForm(FlaskForm):
         choices=[   ('video', 'Video'),
                     ('image', 'Image'),
                     ('text', 'Text'),
-                    ('audio', 'Audio')],
+                    ('audio', 'Audio'),
+                    ('elan', 'Elan')],
     )
 
     uploadType = SelectField(

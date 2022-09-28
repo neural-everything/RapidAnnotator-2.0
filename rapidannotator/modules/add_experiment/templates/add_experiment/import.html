@@ -17,7 +17,13 @@
           class="btn btn-danger btn-group btn-group-inline btn-space">{{ ('Go to Label Page') }}
         </a>
       </div>
-      <h2 style="text-align:center"> Import Annotation Levels</h2>
+      <h2 style="text-align:center">       
+        {%if import_experiment.category == 'elan'%}
+            {{ ('Import Annotation Tiers') }}
+        {%else%}
+            {{ ('Import Annotation Levels') }}
+        {%endif%}
+      </h2>
     </div>
     <hr>
     <table class="table table-hover">

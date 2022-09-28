@@ -109,8 +109,11 @@
               </thead>
               <tbody>
                   {% for experiment in experimentsToAnnotate %}
+                      {% if experiment.category != 'elan'%}
                       {%- set experiment_url = url_for('annotate_experiment.index', experimentId = experiment.id) %}
-
+                      {% else %}
+                      {%- set experiment_url = url_for('elan.index', experimentId = experiment.id) %}
+                      {% endif %}
                       <tr class='clickable-row'
                           data-href="{{ experiment_url }}">
                           <td>{{experiment.name}}</td>

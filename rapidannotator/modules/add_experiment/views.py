@@ -8,7 +8,8 @@ from rapidannotator import db
 from rapidannotator.models import User, Experiment, AnnotatorAssociation, AnnotationCommentInfo, \
     DisplayTime, AnnotationLevel, Label, File, AnnotationInfo, FileCaption, AnnotationCaptionInfo, Clustering
 from rapidannotator.modules.add_experiment import blueprint
-from rapidannotator.modules.add_experiment.forms import AnnotationLevelForm
+from rapidannotator.modules.add_experiment.forms import AnnotationLevelForm, AnnotationTierForm
+from rapidannotator.modules.elan.views import viewResults as elanViewResults
 from rapidannotator import bcrypt
 from math import ceil
 
@@ -242,7 +243,11 @@ def editLabels(experimentId):
     experiment = Experiment.query.filter_by(id=experimentId).first()
     annotation_levels = AnnotationLevel.query.filter_by(experiment_id=\
                         experimentId).order_by(AnnotationLevel.level_number)
-    annotationLevelForm = AnnotationLevelForm(experimentId = experimentId)
+    annotationLevelForm = None
+    if experiment.category != 'elan': 
+        annotationLevelForm = AnnotationLevelForm(experimentId = experimentId)
+    else:
+        annotationLevelForm = AnnotationTierForm(experimentId = experimentId)
     annotationInfo = AnnotatorAssociation.query.filter_by(experiment_id=experimentId, user_id=current_user.id)
     if annotationInfo.count() > 0:
         annotationInfo = AnnotatorAssociation.query.filter_by(experiment_id=experimentId, user_id=current_user.id).first()
@@ -274,7 +279,8 @@ def _addAnnotationLevel():
     experimentId = annotationLevelForm.experimentId.data
     experiment = Experiment.query.filter_by(id=experimentId).first()
     annotation_levels = experiment.annotation_levels
-
+    if experiment.category == 'elan': 
+        annotationLevelForm = AnnotationTierForm()
 
     if annotationLevelForm.validate_on_submit():
         levelNumberValidated = True
@@ -1143,6 +1149,9 @@ def viewResults(experimentId, userId):
     if (userId == None):
         return render_template('add_experiment/noResults.html', experiment = experiment)
     
+    if experiment.category == 'elan':
+        return elanViewResults(experimentId, userId, page, per_page, offset)
+        
     expFiles = File.query.filter_by(experiment_id=experiment.id).limit(per_page).offset(offset)
 
     selected_level = None

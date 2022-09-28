@@ -205,7 +205,7 @@ class Experiment(db.Model):
     ..  texts
     """
     category = db.Column(
-        db.Enum('audio', 'video', 'image', 'text',
+        db.Enum('audio', 'video', 'image', 'text', 'elan',
         name='category'),
         nullable=False
     )
@@ -946,3 +946,34 @@ class Clustering(db.Model):
                 User={0.user_id},\
                 status={0.status},\
                 display={0.display}>'.format(self)
+
+
+class ElanAnnotation(db.Model):
+    __tablename__ = 'ElanAnnotation'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    user_id = db.Column(Integer, db.ForeignKey(
+        'User.id', ondelete='CASCADE')
+    )
+
+    file_id = db.Column(Integer, db.ForeignKey(
+        'File.id', ondelete='CASCADE')
+    )
+
+    data = db.Column(db.JSON, nullable=True)
+
+    def __str__(self):
+        """Representation."""
+        return 'ElanAnnotation <id={0.id}, \
+                User={0.user_id}, \
+                File={0.file_id}, \
+                data={0.data}>'.format(self)
+    
+    def __repr__(self):
+        return 'ElanAnnotation <id={0.id}, \
+                User={0.user_id}, \
+                File={0.file_id}, \
+                data={0.data}>'.format(self)
+    
+    

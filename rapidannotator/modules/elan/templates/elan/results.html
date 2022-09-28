@@ -1,0 +1,267 @@
+{% extends "elan/base.html" %}
+{% block title %} {{experiment.name}} Results {% endblock title %}
+{% block head %}
+  {{ super() }}
+    <style type="text/css">
+    .important { color: #336699; }
+  </style>
+{% endblock %}
+
+{% block page_body %}
+
+{% block elan_body %}
+
+<div class="container">
+    <div style="display: inline-block">
+        <h3 style="display: inline"><b>{{experiment.name}} {{ ('Annotation Results') }}</b></h3>
+    </div>
+
+
+    <div class="pull-right" style="display: inline-block">
+        <!-- Annotators selection box -->
+        <div class="dropdown btn-group btn-group-inline btn-space">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="annotatorResult" data-toggle="dropdown">
+                {{user.username}}
+            <span class="caret"></span></button>
+            <ul class="dropdown-menu scrollable-dropdown" id="annotatorResultMenu" role="menu" aria-labelledby="annotatorResult">
+                {% for user in annotators %}
+                    {%- set viewResults = url_for('add_experiment.viewResults', experimentId = experiment.id, userId = user.id) %}
+                    <li role="presentation"><a role="menuitem" tabindex="-1" href="{{viewResults}}"><span>{{user.username}}</span></a></li>
+                {% endfor %}
+                
+            </ul>
+        </div>
+        <a id="discardAnnotationsButtonId" href="" data-target="#discardAnnotations"
+            data-toggle="modal" class="btn btn-danger btn-group btn-group-inline
+            btn-space">
+            {{ ('Discard All Annotations') }}
+            <span class="glyphicon glyphicon-trash"></span>
+        </a>
+        {%- set exportResultsUrlCSV = url_for('elan.exportResults', experimentId = experiment.id, exportType="csv") %}
+        {%- set exportResultsUrlXLSX = url_for('elan.exportResults', experimentId = experiment.id, exportType="xlsx") %}
+
+
+        <div class="dropdown btn-group btn-group-inline btn-space">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="addOwners" data-toggle="dropdown">
+                {{ ('Download Results') }}
+            <span class="glyphicon glyphicon-download-alt"></span> &nbsp;
+            <span class="caret"></span></button>
+            <ul class="dropdown-menu scrollable-dropdown" id="addOwnersMenu" role="menu" aria-labelledby="addOwners">
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportResultsUrlCSV}}"><span>Download as csv</span></a></li>
+                <li role="presentation"><a role="menuitem" tabindex="-1" href="{{exportResultsUrlXLSX}}"><span>Download as xlsx</span></a></li>
+            </ul>
+        </div>
+
+    </div>
+
+
+    <hr class="horizontal-line">
+</div>
+
+<div class="container">
+    {% set levelCount = experiment.annotation_levels | count %}
+    {%- if levelCount != 0 -%}
+    <div>
+        <table class="table table-hover table-striped">
+            <thead>
+                <tr>
+                    <th style="width: 10%"> {{( 'File' )}} </th>
+
+                    {% set width = 70 / levelCount %}
+                    {% set padLeft = 5 / levelCount %}
+                    {% for level in experiment.annotation_levels %}
+                        <th style="width: {{ width }}%; padding-left: {{padLeft}}%">{{ level.name }}</th>
+                    {% endfor %}
+                    <th style="width: 10%">{{( 'Elan file' )}}</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for file in exp_files %}
+                    <tr>
+                        {% set annotationUrl = url_for('elan.specificAnnotation', userId = user.id, experimentId = experiment.id, fileId = file.id) %}
+                        <td onClick="document.location.href='{{annotationUrl}}';">
+                            {%- if experiment.uploadType == 'manual' or experiment.uploadType == 'viaSpreadsheet' -%}
+                                  <video class="clip" id="{{file.id}}" width="170" height="90" controls>
+                                      <source src="" type="video/mp4">
+                                      Your browser does not support HTML5 video.
+                                  </video>
+                                  &nbsp;&nbsp;&nbsp;&nbsp; <a>{{ file.name }}</a>
+                            {%- else -%}
+                                <a>{{ file.name }}</a>
+                            {%- endif -%}
+                         </td>
+                         {% set i = loop.index %}
+                         {% for level in experiment.annotation_levels %}
+                             <td style="padding-left: {{padLeft}}%">
+                                {%set annotation_i = annotations[i-1]%}
+                                {%if (annotation_i[level.id|string])|count != 0 %}
+                                    {% for a in annotation_i[level.id|string] %}
+                                        <span class="label label-default">{{ a.text }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    {{('Not Annotated')|default('')}}
+                                {% endif %}
+                               </td>
+                         {% endfor %}
+                         <td>
+                         {%set eafFileDownloadUrl = url_for('elan.downloadEafFile', experimentId = experiment.id, fileId = file.id, userId = user.id) %}
+                            <a href="{{eafFileDownloadUrl}}"><span class="glyphicon glyphicon-download-alt"></span></a>
+                         </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <ul class="pager">
+            {{ pagination.links }}
+        </ul>
+    </div>
+    {%- else -%}
+    <div>
+        <h3> You haven't added any annotation levels to the experiment yet. </h3>
+    </div>
+    {%- endif -%}
+</div>
+
+<!--Delete Single Annotation Model -->
+<div class="modal fade" id="deleteAnnotationModal" role="dialog" tabindex="-1"
+    aria-labelledby="deleteAnnotationModal" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Delete this Annotation?</h4>
+      </div>
+        <div class="modal-body">
+            <form method="POST" id="deleteAnnotationForm" name="deleteAnnotationForm">
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary"> {{ ('Delete') }}</button>
+                    <button type="button" class="btn btn-default pull-right" data-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+        </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Delete-Annotations-Modal -->
+<div class="modal fade" id="discardAnnotations" role="dialog" tabindex="-1"
+    aria-labelledby="discardAnnotations" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Are you sure you want to delete all annotations?</h4>
+      </div>
+        <div class="modal-body">
+            <form method="POST" id="discardAnnotationsForm" name="discardAnnotationsForm">
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary"> {{ ('Delete') }} </button>
+                    <button type="button" class="btn btn-default pull-right" data-dismiss="modal"> {{ ('Cancel') }} </button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+        </div>
+    </div>
+  </div>
+</div>
+
+
+<script charset="utf-8" type="text/javascript">
+
+    $(document).ready(function(){
+        
+        var url = "{{ url_for('add_experiment._showResultImages')}}";
+        var data = {
+            'experimentId' : "{{ experiment.id }}",
+        };
+        $.getJSON(url , data, function(response) {
+            if(response.success) {
+                var files = response.files;
+                var arrayLength = files.length;
+                for (var i = 0; i < arrayLength; i++) {
+                    file_content = files[i][0]
+                    file_id = files[i][1]
+                    if(response.category != 'text'){
+                        if(response.uploadType == 'manual'){
+                            var url = "/annotate_experiment/uploads/" + "{{experiment.id}}" + "/" + file_content;
+                            $('#' + file_id).attr("src", url);
+                        }
+                        else{
+                            var url = file_content;
+                            $('#' + file_id).attr("src", url);
+                        }
+                    }
+
+                }
+            } else {
+            }
+        });
+    });
+    
+    var fileId = -1;
+    function passFile(val) {
+        fileId = val;
+        e.stopImmediatePropagation();
+        e.preventDefault();
+    };
+
+    $(function() {
+        deleteAnnotationForm = $('#deleteAnnotationForm');
+        discardAnnotationsForm = $('#discardAnnotationsForm');
+
+        var selectedAnnotator = '#annotatorResultMenu li a';
+
+        discardAnnotationsForm.on('submit', function(e) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            var url = "{{ url_for('elan._discardAnnotations')}}";
+            var data = {
+                'experimentId' : "{{ experiment.id }}",
+            };
+
+            $.getJSON(url , data, function(response) {
+                if(response.success) {
+                    $('#discardAnnotations').modal('hide');
+                    location.reload();
+                } else {
+                }
+            });
+
+        });
+
+        deleteAnnotationForm.on('submit', function(e) {
+            
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            
+            var url = "{{ url_for('elan._discardSingleAnnotation')}}";
+            var data = {
+                'experimentId' : "{{ experiment.id }}",
+                'fileId' : fileId, 
+            };
+
+            $.getJSON(url , data, function(response) {
+                if(response.success) {
+                    $('deleteAnnotationModal').modal('hide');
+                    location.reload();
+                } else {
+                }
+            }); 
+        });
+
+        $("body").on("click", selectedAnnotator, function() {
+            var currentSelected = $(this);
+            var userName = currentSelected.find('span').text();
+        });
+
+    });
+</script>
+
+{% endblock elan_body %}
+
+{% endblock page_body %}

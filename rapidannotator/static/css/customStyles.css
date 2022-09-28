@@ -230,3 +230,17 @@
     from {bottom: 30px; opacity: 1;}
     to {bottom: 0; opacity: 0;}
   }
+
+  @media screen and (max-width: 700px) {
+    #content>.container>div{
+        display: block !important;
+    }
+    div.progress{
+        width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        display: flex !important;
+        justify-content: center;
+        margin-top: 10%;
+    }
+  }
