@@ -13,6 +13,7 @@ Text : txt, html
 Image : jpg, png, gif
 Audio : mp3, wma, mp2, wav
 Video : mov, mp4, wmv, webm
+Elan : same as types of Video
 
 Data can be added either _manually_ or _viaSpreadsheet_.
 
@@ -38,7 +39,7 @@ You can see results in the Results page by clicking on Results Page button in th
 
 Below is the database schema for Rapid Annotator/
 
-![image](https://raw.githubusercontent.com/guptavaibhav18197/rapidannotator/master/docs/images/rapid_annotator_database_schema.png)
+![image](../images/rapid_annotator_database_schema_22.png)
 
 ## Annotator section
 
