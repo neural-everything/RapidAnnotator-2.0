@@ -435,9 +435,9 @@ Timeline.prototype.contextMenuToggleSelectionMode = function () {
   this.contextMenuHide();
   this.hideTracksOnSelection = !this.hideTracksOnSelection;
   if (this.hideTracksOnSelection) {
-    document.getElementById('cm-selection').innerHTML = "Show all tracks";
+    document.getElementById('cm-selection').innerHTML = "Show all annotations";
   } else {
-    document.getElementById('cm-selection').innerHTML = "Hide tracks on selection";
+    document.getElementById('cm-selection').innerHTML = "Hide annotations on selection";
   }
 }
 
