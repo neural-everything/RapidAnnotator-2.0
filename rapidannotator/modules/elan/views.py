@@ -1,9 +1,6 @@
-from cgitb import text
-from dataclasses import field
-from email import header
-import nntplib
-from flask import json, render_template, flash, redirect, url_for, request, jsonify, \
-    current_app, g, abort, jsonify, session, send_file, Response
+from flask import json, render_template, redirect, url_for, request, jsonify, \
+    current_app, g, abort, jsonify, send_file
+from flask.wrappers import Response
 from flask_babelex import lazy_gettext as _
 
 from rapidannotator import db
@@ -16,9 +13,7 @@ from rapidannotator.modules.annotate_experiment.views import _getFile, _getSpeci
 from flask_login import current_user
 from sqlalchemy import and_
 from rapidannotator.modules.common import isAnnotator
-from flask_paginate import Pagination, get_page_args
-import os
-import zipfile
+from flask_paginate import Pagination
 import pandas as pd
 from io import BytesIO
 import xml.etree.ElementTree as etree
@@ -321,6 +316,7 @@ def exportResults(experimentId, exportType, userId=None, fileId=None):
                      "attachment; filename={}-results.xlsx".format(experiment.name)})
     else:
         abort(404)
+        
 @blueprint.route('/downloadEafFile/<int:userId>/<int:experimentId>/<int:fileId>', methods=['GET'])
 def downloadEafFile(experimentId, userId, fileId):
     experiment = Experiment.query.filter_by(id=experimentId).first()
@@ -475,7 +471,7 @@ def _discardSingleAnnotation():
     is_annotated = 0
     
     for level in annotationLevels:
-        is_annotated = AnnotationInfo.query.filter_by(user_id=current_user.id,\
+        is_annotated = ElanAnnotation.query.filter_by(user_id=current_user.id,\
             annotationLevel_id=level.id, file_id = fileId).delete()
     
     if is_annotated == 1:
