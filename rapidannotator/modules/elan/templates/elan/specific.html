@@ -128,7 +128,7 @@
           <ul>
             <li class="context-menu-item" id="cm-delete">Delete annotation</li>
             <li class="context-menu-item" id="cm-mode">Scroll on mousewheel</li>
-            <li class="context-menu-item" id="cm-selection">Hide tracks on selection</li>
+            <li class="context-menu-item" id="cm-selection">Hide others on selection</li>
             <li class="context-menu-item" id="cm-zoomin">Zoom-in</li>
             <li class="context-menu-item" id="cm-zoomout">Zoom-out</li>
           </ul>
@@ -147,10 +147,10 @@
                 Add Annotation
               </legend>
               <div class="annotationForm">
-                <label>Track:</label>
-                <select id="af-tracks-select" title="Choose track">
+                <label>Tier:</label>
+                <select id="af-tracks-select" title="Choose a tier">
                   <option value=-1>
-                    Choose track…
+                    Choose a tier..
                   </option>
                 </select>
                 <label>Annotation:</label>
@@ -181,7 +181,7 @@
                 <label>Seek mode:</label>
                 <button id="seek-mode-btn"
                         title="Current stepping mode; click to toggle between frames and seconds">Frames</button>
-                <div class="gridTwpSpan">
+                <div class="gridTwoSpan">
                   <button title="Backward" class="nav-button" id="backward-btn">
                     <i class="fa fa-backward"></i>
                   </button>
