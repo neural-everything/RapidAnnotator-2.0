@@ -20,6 +20,9 @@
   .wideTitle{
     width: 10%;
   }
+  .blueviolet {
+    color:blueviolet;
+  }
   </style>
 {% endblock head %}
 {% block page_body %}
@@ -129,7 +132,9 @@
                   {% endfor %}
                   <td>
                     {% set eafFileDownloadUrl = url_for('elan.downloadEafFile', experimentId = experiment.id, fileId = file.id, userId = user.id) %}
-                    <a href="{{ eafFileDownloadUrl }}"><span class="glyphicon glyphicon-download-alt"></span></a>
+                    <a title="Selected user annotations" href="{{ eafFileDownloadUrl }}"><span class="glyphicon glyphicon-download-alt"></span></a>
+                    {% set eafGroupedFileDownloadUrl = url_for('elan.downloadEafGroupedFile', experimentId = experiment.id, fileId = file.id) %}
+                    <a title="Grouped annotations" href="{{ eafGroupedFileDownloadUrl }}"><span class="glyphicon glyphicon-download blueviolet"></span></a>
                   </td>
                 </tr>
               {% endfor %}

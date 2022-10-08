@@ -484,3 +484,120 @@ def _discardSingleAnnotation():
     response['success'] = True
 
     return jsonify(response)
+
+
+
+@blueprint.route('/downloadEafGroupedFile/<int:experimentId>/<int:fileId>', methods=['GET'])
+def downloadEafGroupedFile(experimentId, fileId):
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    if experiment is None:
+        abort(404)
+    file = File.query.filter_by(id=fileId).first()
+    if file is None:
+        abort(404)
+    annotators = [assoc.annotator for assoc in experiment.annotators]
+    annotations = ElanAnnotation.query.filter_by(file_id=fileId).all()
+    eafXML = createEafGroupedXML(experiment, file, annotations, annotators)
+    eafBytes = BytesIO(eafXML)
+    return send_file(eafBytes, as_attachment=True, attachment_filename='{}.eaf'.format(file.name))
+
+def createEafGroupedXML(experiment, file, annotations, annotators):
+    """
+    Create EAF XML from annotations
+    :param annotations: list of annotations
+    :return: EAF XML
+    """
+    # Configuration
+    FORMAT = '3.0'
+    VERSION = '3.0'
+    DATE = datetime.datetime.now().strftime("%Y-%m-%d")
+    TIME_UNITS = 'milliseconds'
+    MEDIA_FILE = file.name
+    VERSION = '1.0'
+    MEDIA_TYPE = 'video'
+    MIME_TYPE = 'video/mp4'
+    RELATIVE_MEDIA_URL = "file://./{}".format(file.content)
+    # Root element
+    eaf = etree.Element('ANNOTATION_DOCUMENT', FORMAT=FORMAT, VERSION=VERSION, DATE=DATE)
+    # Header element
+    header = etree.Element('HEADER', TIME_UNITS=TIME_UNITS, MEDIA_FILE=MEDIA_FILE, MEDIA_TYPE=MEDIA_TYPE, MIME_TYPE=MIME_TYPE, RELATIVE_MEDIA_URL=RELATIVE_MEDIA_URL)
+    mediaDiscriptor = etree.Element('MEDIA_DESCRIPTOR')
+    mediaDiscriptor.set('MEDIA_URL', RELATIVE_MEDIA_URL)
+    mediaDiscriptor.set('MIME_TYPE', MIME_TYPE)
+    header.append(mediaDiscriptor)
+    # Time order element
+    timeSlots = etree.Element('TIME_ORDER')
+    timeSlotId = 1
+    # Helper mapping for time slot ids
+    timeSlotDict = {}
+    # Helper mapping for tier ids
+    tiersDict = {}
+    # Tier ids counter
+    annotationItr = 1
+    linguisticTypesElements = []
+    annotatorsDict = {}
+    # Create linguistic types and tiers containers
+    for annotator in annotators:
+        annotatorsDict[annotator.id] = annotator
+        for level in experiment.annotation_levels:
+            tier = etree.Element('TIER')
+            tier.set('LINGUISTIC_TYPE_REF', level.name + "("+annotator.username+")")
+            tier.set('TIER_ID', level.name + "("+annotator.username+")")
+            tiersDict[str(level.id)+ "("+annotator.username+")"] = tier
+            linguisticType = etree.Element('LINGUISTIC_TYPE')
+            linguisticType.set('LINGUISTIC_TYPE_ID', level.name + "("+annotator.username+")")
+            linguisticType.set('TIME_ALIGNABLE', 'true')
+            linguisticType.set('GRAPHIC_REFERENCES', 'false')
+            linguisticTypesElements.append(linguisticType)
+    for annotation in annotations:
+        annotatorUsername = annotatorsDict[annotation.user_id].username
+        for tierId, tierAnnotations in annotation.data.items():
+            for annotation in tierAnnotations:
+                # Convert time to milliseconds
+                startTime = str(int(annotation['startTime'] * 1000))
+                endTime = str(int(annotation['endTime'] * 1000))
+                # Check if time slot exists or not (create if not)
+                # Start time
+                if startTime not in timeSlotDict:
+                    timeSlot = etree.Element('TIME_SLOT')
+                    tId =  _timeSlotID(timeSlotId)
+                    timeSlot.set('TIME_SLOT_ID', tId)
+                    timeSlot.set('TIME_VALUE', startTime)
+                    timeSlotDict[startTime] = tId
+                    timeSlotId += 1
+                    timeSlots.append(timeSlot)
+                # End time
+                if endTime not in timeSlotDict:
+                    timeSlot = etree.Element('TIME_SLOT')
+                    tId = _timeSlotID(timeSlotId)
+                    timeSlot.set('TIME_SLOT_ID', tId)
+                    timeSlot.set('TIME_VALUE', endTime)
+                    timeSlotDict[endTime] = tId
+                    timeSlotId += 1
+                    timeSlots.append(timeSlot)
+                # Create annotation element
+                annotationElement = etree.Element('ANNOTATION')
+                alignableAnnotation = etree.Element('ALIGNABLE_ANNOTATION')
+                alignableAnnotation.set('ANNOTATION_ID', _annotationID(annotationItr))
+                alignableAnnotation.set('TIME_SLOT_REF1',timeSlotDict[startTime])
+                alignableAnnotation.set('TIME_SLOT_REF2', timeSlotDict[endTime])
+                annotationValue = etree.Element('ANNOTATION_VALUE')
+                annotationValue.text = annotation['text']
+                alignableAnnotation.append(annotationValue)
+                annotationElement.append(alignableAnnotation)
+                # Add annotation to tier
+                tiersDict[tierId + "("+annotatorUsername+")"].append(annotationElement)
+                # Increment annotation id
+                annotationItr += 1
+    # Add header to the root element
+    eaf.append(header)
+    # Add time order to the root element
+    eaf.append(timeSlots)
+    # Add tiers to the root element
+    for tier in tiersDict.values():
+        eaf.append(tier)
+    # Add linguistic types to the root element
+    for linguisticType in linguisticTypesElements:
+        eaf.append(linguisticType)
+    # Return the XML as string
+    return etree.tostring(eaf, encoding='utf-8')
