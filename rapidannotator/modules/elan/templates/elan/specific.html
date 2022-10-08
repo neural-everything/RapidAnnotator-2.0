@@ -242,7 +242,11 @@
                 error: function(error) {}
             }); 
         });
-      
+      var tiersBindingKeys = {};
+      {% for level in experiment.annotation_levels%}
+          tiersBindingKeys[{{loop.index}}] = {{level.id}};
+      {%- endfor %}
+
       var keyBindingDict = {{ keyBindingDict|safe}};
       $(document).keyup(function(event) {
             if(event.target.nodeName == "TEXTAREA" || event.target.nodeName == "INPUT" ){
@@ -250,6 +254,11 @@
             }
             var x = event.charCode || event.keyCode;
             var y = String.fromCharCode(x).toLowerCase();
+
+            if (tiersBindingKeys[+y]) {
+              document.getElementById("af-tracks-select").value = +y-1;
+            }
+
             var tierIndex = $('#af-tracks-select').val();
             if (tierIndex == -1) {
                 return;
