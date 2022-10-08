@@ -374,16 +374,29 @@
             }); 
         });
 
+        // Create key binding keys for the experiment's annotation tiers
+        var tiersBindingKeys = {};
+        {% for level in experiment.annotation_levels%}
+            tiersBindingKeys[{{loop.index}}] = {{level.id}};
+        {%- endfor %}
+        
+
         $(document).keyup(function(event) {
             if(event.target.nodeName == "TEXTAREA" || event.target.nodeName == "INPUT" ){
                 return;
             }
             var x = event.charCode || event.keyCode;
             var y = String.fromCharCode(x).toLowerCase();
+
+            if (tiersBindingKeys[+y]) {
+              document.getElementById("af-tracks-select").value = +y-1;
+            }
+            
             var tierIndex = $('#af-tracks-select').val();
             if (tierIndex == -1) {
                 return;
             }
+            
             $.each(keyBindingDict[+tierIndex+1], function( key, value ) {
                 if( y == value ) {
                     const label = $(`option[data-label-id='${key}']`).val();
