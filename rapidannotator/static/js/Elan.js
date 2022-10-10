@@ -94,7 +94,7 @@ Timeline.prototype.addTrack = function (id, name = "track", annotations = [], la
     annotations: annotations,
   }
   this.tracks.push(track);
-  document.getElementById("af-tracks-select").innerHTML += "<option value='" + track.index + "'>" + track.name + "</option>";
+  document.getElementById("af-tracks-select").innerHTML += `<option value='${track.index}'> ${track.name} </option>`;
   if (labels.length > 0) {
     this.addTrackDataListOptions(this.tracks.length - 1, labels);
   }
@@ -657,7 +657,7 @@ Timeline.prototype.updateGUI = function () {
     var scrollY = this.tracksScrollY * ((this.tracks.length + 1) * this.trackLabelHeight - this.canvas.height + this.headerHeight);
     totalTracksHeightLimit -= scrollY;
     if (totalTracksHeightLimit < this.headerHeight) continue;
-    this.drawTrack(this.tracks[i], totalTracksHeightLimit);
+    this.drawTrack(this.tracks[i], totalTracksHeightLimit, i + 1);
   }
 
   //timeline
@@ -1048,12 +1048,10 @@ Timeline.prototype.onDoubleMouseClick = function (event) {
 //                                                        
 //                                                        
 
-Timeline.prototype.drawTrack = function (track, y) {
+Timeline.prototype.drawTrack = function (track, y, shortcutKey) {
 
   //bottom track line
   this.drawLine(0, y, this.canvas.width, y, "#FFFFFF");
-
-  var onTopAnnotation = undefined;
 
   // draw annotations (texts) on the track
   for (var i = 0; i < track?.annotations?.length; i++) {
@@ -1078,12 +1076,12 @@ Timeline.prototype.drawTrack = function (track, y) {
   this.c.fillStyle = "black";
   this.c.font = "12px Arial";
   //draw track label
-  this.c.fillText(track.name, xshift, y - this.trackLabelHeight / 4);
+  this.c.fillText(`${track.name} (${shortcutKey})`, xshift, y - this.trackLabelHeight / 4);
 
 }
 
 Timeline.prototype.drawAnnotaion = function (track, annotation, y, i) {
-  if (!annotation){
+  if (!annotation) {
     return;
   }
   var startX = this.timeToX(annotation.startTime);
