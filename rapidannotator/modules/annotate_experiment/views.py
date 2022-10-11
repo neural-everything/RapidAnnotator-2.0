@@ -26,6 +26,8 @@ def before_request():
 def index(experimentId):
 
     experiment = Experiment.query.filter_by(id=experimentId).first()
+    if experiment.category == 'elan':
+        return redirect(url_for('elan.index', experimentId = experimentId))
     annotatorInfo = AnnotatorAssociation.query.filter_by(user_id=current_user.id).\
                     filter_by(experiment_id=experimentId).first()
     keyBindingDict, skipLevelDict = makeKeyBindingDict(experimentId)

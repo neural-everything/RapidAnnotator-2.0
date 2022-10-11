@@ -58,6 +58,9 @@ app.register_blueprint(notification, url_prefix='/notification')
 from rapidannotator.modules.clustering import blueprint as clustering
 app.register_blueprint(clustering, url_prefix='/clustering')
 
+from rapidannotator.modules.elan import blueprint as elan
+app.register_blueprint(elan, url_prefix='/elan')
+
 @app.errorhandler(404)
 def page_not_found(e):
     # note that we set the 404 status explicitly

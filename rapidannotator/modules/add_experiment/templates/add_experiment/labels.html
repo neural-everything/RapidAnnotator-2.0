@@ -52,13 +52,28 @@
         <!-- </button> -->
         <button type="button"
                 class="btn btn-primary btn-group btn-group-inline btn-space" id="showReorderModal">
-                {{ ('Reorder Annotation Levels') }}
+                {%if experiment.category == 'elan'%}
+                    {{ ('Reorder Annotation Tiers') }}
+                {%else%}
+                    {{ ('Reorder Annotation Levels') }}
+                {%endif%}
         </button>
         <a href="{{ url_for('add_experiment._importAnnotationtLevel', experimentId = experiment.id) }}" 
-            class="btn btn-primary btn-group btn-group-inline btn-space">{{ ('Import Existing Levels') }}
+            class="btn btn-primary btn-group btn-group-inline btn-space">
+            {%if experiment.category == 'elan'%}
+                {{ ('Import Existing Tiers') }}
+            {%else%}
+                {{ ('Import Existing Levels') }}
+            {%endif%}
         </a>
         <button type="button" data-toggle="modal" data-target="#addAnnotationLevelModal"
-            class="btn btn-primary btn-group btn-group-inline btn-space">{{ ('Add Annotation Level') }}</button>
+            class="btn btn-primary btn-group btn-group-inline btn-space">
+            {%if experiment.category == 'elan'%}
+                {{ ('Add Annotation Tier') }}
+            {%else%}
+                {{ ('Add Annotation Level') }}
+            {%endif%}
+            </button>
         <a href="{{ url_for('add_experiment.index', experimentId = experiment.id, page='1') }}" 
             class="btn btn-success btn-group btn-group-inline btn-space">{{ ('Done') }}
         </a>
@@ -73,8 +88,10 @@
                 data-level={{annotation_level.level_number}}>
                 <div class="col-xs-12">
                     <div class="annotationDescriptionGrp">
-                        <span class="col-xs-4 h5 wrapWord annotationName"><b>Annotation Level Name</b>: <span>{{ annotation_level.name }}</span></span>
-                        <span class="col-xs-4 h5 wrapWord annotationNumber"><b>Annotation Level Number</b>: <span id="levelnumber-{{annotation_level.id}}">{{ annotation_level.level_number }}</span></span>
+                        <span class="col-xs-4 h5 wrapWord annotationName"><b>
+                        Annotation {%if experiment.category == 'elan'%} Tier {%else%} Level {%endif%}  Name
+                        </b>: <span>{{ annotation_level.name }}</span></span>
+                        <span class="col-xs-4 h5 wrapWord annotationNumber"><b>Annotation {%if experiment.category == 'elan'%} Tier {%else%} Level {%endif%}  Number</b>: <span id="levelnumber-{{annotation_level.id}}">{{ annotation_level.level_number }}</span></span>
                         <span class="col-xs-7 h5 annotationDescription"><b>Description</b>:<span>{{ annotation_level.description }}</span></span>
                         <span class="annotationLevelInstruction hidden-element">{{annotation_level.instruction }}</span>
                         <span class="multichoice hidden-element">{{annotation_level.multichoice }}</span>
@@ -218,42 +235,43 @@
         <div class="modal-body">
             <form id="editAnnotationLevelForm" name="editAnnotationLevelForm">
 
-                <b>Annotation Level Name</b>
+                <b>Annotation {%if experiment.category == 'elan'%} Tier {%else%} Level {%endif%}  Name</b>
                 <input type="text" name="annotationName" maxlength="32" minlength="1"
-                    class="form-control validate" placeholder="Annotation Level Name">
+                    class="form-control validate" placeholder="Annotation{%if experiment.category == 'elan'%} Tier {%else%} Level {%endif%} Name">
                 <span class="help-block"><small><div style="line-height:135%">Name of the annotation level: Example Gender, Age. Can't exceed 32 chars.
                 </div></small></span>
 
-                <b>Annotation level description</b>
+                <b>Annotation {%if experiment.category == 'elan'%} Tier {%else%} Level {%endif%} Description</b>
                 <input type="text" name="annotationDescription"
-                    class="form-control validate" placeholder="Annotation level description" maxlength="640">
+                    class="form-control validate" placeholder="Annotation{%if experiment.category == 'elan'%} Tier {%else%} Level {%endif%} Description" maxlength="640">
                 <span class="help-block"><small><div style="line-height:135%">A short description : guidelines for the annotator. Can't exceed 850 chars.
                 </div></small></span>
 
-                <b>Annotation level Number</b>
+                <b>Annotation {%if experiment.category == 'elan'%} Tier {%else%} Level {%endif%}  Number</b>
                 <input type="number" name="annotationLevel"
-                    class="form-control validate" placeholder="Annotation level Number">
+                    class="form-control validate" placeholder="Annotation {%if experiment.category == 'elan'%} Tier {%else%} Level {%endif%}  Number">
                 <span class="help-block"><small><div style="line-height:135%">It decides the order in which an annotator is asked to annotate the data-items.
                 </div></small></span>
 
-                <b>Annotation level Instruction</b>
+                <b>Annotation {%if experiment.category == 'elan'%} Tier {%else%} Level {%endif%}  Instruction</b>
                 <input type="text" name="annotationLevelInstruction"
                     class="form-control validate" placeholder="Annotation level Instruction">
                 <span class="help-block"><small><div style="line-height:135%">A short instruction : guidelines for the annotator. Can't exceed 1500 chars.
                 </div></small></span>
-                
-                <b>Multichoice Annotation level?</b>
-                <input type="checkbox" name="multichoice" class="form-control">
-                <span class="help-block"><small><div style="line-height:135%">(Take care in case of changing multi-choice option will effect the results export)</div></small></span>
-                <b>Label others text fields Annotation level?</b>
-                <input type="checkbox" name="labels_others" class="form-control">
-                <span class="help-block"><small><div style="line-height:135%">Add textfield (comment) related to each label on that level</div></small></span>
-                <div class="form-actions">
-                    <button type="submit" name="submit" value="" class="btn btn-primary"> {{ ('Save') }}</button>
-                    <button type="button" class="btn btn-danger pull-right" data-toggle="modal"
-                        data-target="#deleteAnnotationLevel" data-dismiss="modal">{{ ('Delete') }}</button>
-                    <button type="button" id="submitLater1" class="btn btn-default pull-right" data-dismiss="modal" style="margin-right: 0.7em;">{{ ('Cancel') }}</button>
-                </div>
+                {% if experiment.category != 'elan'%}
+                    <b>Multichoice Annotation level?</b>
+                    <input type="checkbox" name="multichoice" class="form-control">
+                    <span class="help-block"><small><div style="line-height:135%">(Take care in case of changing multi-choice option will effect the results export)</div></small></span>
+                    <b>Label others text fields Annotation level?</b>
+                    <input type="checkbox" name="labels_others" class="form-control">
+                    <span class="help-block"><small><div style="line-height:135%">Add textfield (comment) related to each label on that level</div></small></span>
+                    <div class="form-actions">
+                        <button type="submit" name="submit" value="" class="btn btn-primary"> {{ ('Save') }}</button>
+                        <button type="button" class="btn btn-danger pull-right" data-toggle="modal"
+                            data-target="#deleteAnnotationLevel" data-dismiss="modal">{{ ('Delete') }}</button>
+                        <button type="button" id="submitLater1" class="btn btn-default pull-right" data-dismiss="modal" style="margin-right: 0.7em;">{{ ('Cancel') }}</button>
+                    </div>
+                {% endif %}
             </form>
         </div>
         <div class="modal-footer">
@@ -301,7 +319,9 @@
     <div class="modal-content">
       <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal">&times;</button>
-        <h4 class="modal-title">Enter Label Details</h4>
+        <h4 class="modal-title">
+        Enter Label Details
+        </h4>
         {%- if annotationCount > 0 -%}
             <div style="line-height:70%">&nbsp;</div>
             <div class="alert alert-danger alert-dismissible labelWarning" 
@@ -349,7 +369,13 @@
     <div class="modal-content" style="width: 100%">
       <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal">&times;</button>
-        <h4 class="modal-title">Enter Level Details</h4>
+        <h4 class="modal-title">
+        {%if experiment.category == 'elan'%}
+            Enter Tier Details
+        {%else%}
+            Enter Level Details
+        {%endif%}
+        </h4>
       </div>
         <div class="modal-body">
             <form method="POST" id="addLabelLevelForm" name="addLabelLevelForm" action = "{{ url_for('add_experiment._addAnnotationLevel') }}">
@@ -411,7 +437,13 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
-        <h4 class="modal-title">Reoder Annotation Levels</h4>
+        <h4 class="modal-title">                
+            {%if experiment.category == 'elan'%}
+                {{ ('Reorder Annotation Tiers') }}
+            {%else%}
+                {{ ('Reorder Annotation Levels') }}
+            {%endif%}
+        </h4>
       </div>
         <div class="modal-body">
             <span class="help-block">

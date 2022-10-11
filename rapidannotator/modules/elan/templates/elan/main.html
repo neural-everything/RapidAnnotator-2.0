@@ -1,0 +1,556 @@
+{% extends "elan/base.html" %}
+{% block title %}
+  {{ experiment.name }}
+{% endblock title %}
+{% block head %}
+  {{ super() }}
+  <style type="text/css">
+    * {
+ 	 	box-sizing: border-box;
+	  }
+   .modal{
+      background-color: white;
+      width: 50%;
+      height: fit-content;
+      text-align: center;
+      margin: 0 auto;
+      padding: 10px;
+      margin-top: 10%;
+      border-radius: 10px;
+      border: 1px solid black;
+   }
+   .expName{
+      font-size: 20px;
+      font-weight: bold;
+      margin: 0 !important;
+      display: block;
+   }
+   .pullright {
+      display: inline-block;
+   }
+   .progressBar {
+      display: inline; margin-left: 27%; margin-right: 15%;
+   }
+   #prg{
+      font-size: 18px;
+   }
+   .progress{
+      width:40%; margin-left: 20%; margin-right: 80%;
+   }
+   #preview{
+      color:black;
+   }
+   .gridTwoSpan{
+      grid-column: span 2 !important;
+   }
+   .gridFourSpan{
+      grid-column: span 4 !important;
+   }
+   #notify{
+      width:35%;
+   }
+   .labelWarning{
+      width: 38%; position: fixed; z-index: 1; margin-left: 60%; margin-top: 2%;
+   }
+   .completeExp{
+      width: 40%; z-index: 1; margin-left: 1%; margin-top: 2%;
+   }
+
+  </style>
+  <link rel="stylesheet"
+        href="{{ url_for('static', filename='css/Elan.css') }}"/>
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"/>
+{% endblock head %}
+{% block elan_body %}
+  {%- set totalAnnotationLevels = experiment.annotation_levels | count %}
+  <div class="container">
+    <div class="expName">
+        {{ experiment.name }}
+    </div>
+    <div class="progressBar">
+      <b id="prg"> Progress: {{ currentFileIndex }} / {{ lastFile + 1 }}</b>
+    </div>
+    <div class="pull-right">
+      <button type="button"
+              id="undoButton"
+              class="btn btn-warning btn-group btn-group-inline btn-space">Undo</button>
+    </div>
+    <div class="pull-right">
+      <button type="button"
+              id="doneButton"
+              class="btn btn-success btn-group btn-group-inline btn-space"
+              title="if clicked cannot undo!">
+        Done
+      </button>
+    </div>
+    <div class="pull-right">
+      <button id="loopingButton" class="toggleLooping btn btn-primary btn-group btn-group-inline btn-space" type="button" value={{ current_user.looping }}>
+        {%- if current_user.looping -%}
+          {{ ('Turn off looping') }}
+        {%- else -%}
+          {{ ('Turn on looping') }}
+        {%- endif -%}
+      </button>
+    </div>
+    <div class="pull-right">
+      <button id="keybindingsModalButton"
+              class="btn btn-primary btn-group btn-group-inline btn-space"
+              type="button"
+              data-toggle="modal"
+              data-target="#keybindingsModal">
+        {{ ('Key bindings') }}
+      </button>
+    </div>
+    <div class="modal fade"
+         id="keybindingsModal"
+         tabindex="-1"
+         role="dialog"
+         aria-labelledby="keybindingsModalLabel">
+      <div class="row">
+        <div class="col-md-4">
+          <b>Tier id/shortcut key</b>
+        </div>
+        <div class="col-md-4">
+          <b>Label name</b>
+        </div>
+        <div class="col-md-4">
+          <b>Shoutcut key</b>
+        </div>
+      </div>
+      <hr/>
+      {% for level in experiment.annotation_levels %}
+        {%- set loop0 = loop.index -%}
+        {% for label in level.labels %}
+          <div class="row">
+            <div class="col-md-4">{{ loop0 }}</div>
+            <div class="col-md-4">{{ label.name }}</div>
+            <div class="col-md-4">
+              <b> {{ keyBindingDict[loop0][label.id] }} </b>
+            </div>
+          </div>
+        {%- endfor -%}
+        <hr/>
+      {%- endfor -%}
+      <div class="row">
+        You can only use the shortcut keys to select a label <b>when its level is selected first.</b>
+      </div>
+      <div class="row">
+        <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+    <div class="progress">
+      <div class="progress-bar progress-bar-info progress-bar-striped  active"
+           id="progress-bar"
+           role="progressbar"
+           aria-valuenow="80"
+           aria-valuemin="0"
+           aria-valuemax="100"
+           style="width: {{ progress_width }}%">
+        <div id="preview">{{ progress_width }}%</div>
+      </div>
+    </div>
+    <hr class="horizontal-line"/>
+    <div class="container annotationArea">
+      <div class="context-menu" id="timeline-cm">
+        <ul>
+          <li class="context-menu-item" id="cm-delete">Delete annotation</li>
+          <li class="context-menu-item" id="cm-mode">Scroll on mousewheel</li>
+          <li class="context-menu-item" id="cm-selection">Hide annotations on selection</li>
+          <li class="context-menu-item" id="cm-zoomin">Zoom-in</li>
+          <li class="context-menu-item" id="cm-zoomout">Zoom-out</li>
+        </ul>
+      </div>
+      <div id="annotationContent">
+        <div id="player" class="content-entry">
+          <video class="clip" id="video" width="400" controls>
+            {% set videoUrl = "/annotate_experiment/uploads/" + experiment.id|string + "/" + currentFile.get('content', '')%}
+            <source src={{ videoUrl }} type="video/mp4"/>
+            Your browser does not support HTML5 video.
+          </video>
+        </div>
+        <div class="content-entry">
+          <fieldset>
+            <legend id="af-title">
+              Add Annotation
+            </legend>
+            <div class="annotationForm">
+              <label>Tier:</label>
+              <select id="af-tracks-select" title="Choose a tier">
+                <option value=-1>
+                  Choose a tier…
+                </option>
+              </select>
+              <label>Annotation:</label>
+              <input type="text" id="af-text" placeholder="Write annotation text" />
+              <label>
+                Start:
+                <button id="af-link-start" title="Set current time as start time">
+                  <i class="fa fa-link"></i>
+                </button>
+              </label>
+              <input id="af-start-time" value=0 />
+              <label>
+                End:
+                <button id="af-link-end" title="Set current time as end time">
+                  <i class="fa fa-link"></i>
+                </button>
+              </label>
+              <input id="af-end-time" value=0 />
+              <label>Play:</label>
+              <button id="play-mode-btn"
+                      title="Current playing mode; click to toggle between all video and from start to end time range only">
+                All
+              </button>
+              <label>Loop:</label>
+              <button id="loop-mode-btn"
+                      title="Loop mode; click to toggle between once and always">Off</button>
+              <hr />
+              <label>Seek mode:</label>
+              <button id="seek-mode-btn"
+                      title="Current stepping mode; click to toggle between frames and seconds">Frames</button>
+              <div class="gridTwoSpan">
+                <button title="Backward" class="nav-button" id="backward-btn">
+                  <i class="fa fa-backward"></i>
+                </button>
+                <input title="Seek steps"
+                       placeholder="Step"
+                       type="number"
+                       min="0"
+                       id="step-size"
+                       value="10"/>
+                <button title="Forward" class="nav-button" id="forward-btn">
+                  <i class="fa fa-forward"></i>
+                </button>
+              </div>
+              <hr />
+              <div class="gridFourSpan">
+                <button title="Reset all fields" class="action-btn" id="af-cancel">Cancel</button>
+                <button title="Save annotation" class="action-btn" id="af-save">Save</button>
+                <button title="Delete annotation" class="action-btn" id="af-delete">Delete</button>
+              </div>
+            </div>
+          </fieldset>
+          <div>
+            <button id="nextButton"
+                    title="Move to the annotation of the next file"
+                    class="action-btn btn btn-success btn-group btn-group-inline btn-space">
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="container hidden-element thanksNote">
+    {%- if (lastFile + 1 == 0) or (isExpowner == 1) -%}
+      <h3>No files to annotate. Thanks</h3>
+    {%- else -%}
+      <div class="alert alert-success hidden-element notify" id="notify">
+        <strong>Success!</strong> Notification has been sent !
+      </div>
+      <h3>
+        No more files to annotate. Thanks
+      </h3>
+      <br />
+      <button type="button"
+              class="btn btn-warning btn-group btn-group-inline btn-space send_notification"
+              title="click here">
+        <span class="glyphicon glyphicon-envelope"></span>
+        <b id="msg2"> Send Notification to Experimenter</b>
+      </button>
+    {%- endif -%}
+  </div>
+  {%- if labelWarning == 1 -%}
+    <div class="alert alert-danger alert-dismissible labelWarning">
+      <a href="#" class="close" data-dismiss="alert" aria-label="close">x</a>
+      <strong>Warning!</strong> Labels have been changed! <b> Either Continue or Start Again!</b>
+    </div>
+  {%- endif -%}
+  <div class="alert alert-danger alert-dismissible labelWarning hidden-element">
+    <a href="#" class="close" data-dismiss="alert" aria-label="close">x</a>
+    <strong>Warning!</strong>Labels have been changed! <b>Please refresh the screen.</b>
+    </div>
+    <div class="container">
+      <div class="row">
+        <div class="alert alert-danger alert-dismissible completeExp hidden-element col-md-6">
+          <a href="#" class="close" data-dismiss="alert" aria-label="close">x</a>
+          <strong>Voila!</strong> Annotation Process is completed! <b>You can now view the results.</b>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript">
+    $(window).on('load', function() {      
+        var undoButton = $('#undoButton');
+        var currentFileIndex = {{ currentFileIndex }};
+        var currentFile = {{ currentFile|tojson|safe }};
+        var keyBindingDict = {{ keyBindingDict|safe}};
+        if (currentFileIndex === {{ lastFile + 1}}) {
+            timeline.canvas.style.display = 'none';
+        }
+        checkLabelWarning();
+        checkThanksNote();  
+        undoButton.on('click', function() {
+            timeline.videoElement.style.display = 'unset';
+            timeline.canvas.style.display = "unset";
+            undoButton.attr("disabled", "disabled");
+            $('#doneButton').addClass('hidden-element');
+            // undo annotation request
+            var url = "{{ url_for('elan.deleteAnnotation')}}";
+            $.ajax({
+                url: url,
+                type: 'DELETE',
+                data: {
+                    'fileId': currentFile.id,
+                    'experimentId': "{{ experiment.id }}",
+                },
+                dataType: 'json',
+                success: function(response) {
+                    timeline.resetAnnotations();
+                    timeline.annotationFormCancel();
+                    if (response.annotations) {
+                        for (var i = 0; i < timeline.tracks.length; i++) {
+                            timeline.tracks[i].annotations = response?.annotations[timeline.tracks[i]?.id] || [];
+                        }
+                    }
+                    currentFile = response['currentFile'];
+                    currentFileIndex = response['currentFileIndex'];
+                    videoUrl = "/annotate_experiment/uploads/" + "{{experiment.id|string}}" + "/" + currentFile?.content;
+                    timeline.videoElement.src = videoUrl;
+                    updateProgressbar(currentFileIndex);
+                    // messages control
+                    checkLabelWarning();
+                    checkThanksNote();
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            });
+            window.setTimeout(function() {
+                undoButton.removeAttr("disabled");
+            }, [1200]);
+        });
+        
+        var nextButton = $('#nextButton');
+        nextButton.on('click', function(){
+            var annotations = timeline.tracks.reduce((acc, track) => {acc[track.id] = track.annotations; return acc;}, {});
+            var url = "{{ url_for('elan.addAnnotation')}}";
+            var req = {
+                'fileId': currentFile.id,
+                'annotations': annotations,
+                'experimentId': {{ experiment.id }},
+                };
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: JSON.stringify(req),
+                contentType: 'application/json;charset=UTF-8',
+                success: function(response) {
+                    timeline.resetAnnotations();
+                    timeline.annotationFormCancel();
+                    currentFile = response['currentFile'];
+                    currentFileIndex = response['currentFileIndex'];
+                    if (response["finished"]) {
+                        timeline.videoElement.style.display = "none";
+                        timeline.canvas.style.display = "none";
+                        checkThanksNote();
+                        checkLabelWarning();
+                    } else {
+                        videoUrl = "/annotate_experiment/uploads/" + "{{experiment.id|string}}" + "/" + currentFile?.content;
+                        timeline.videoElement.src = videoUrl;
+                        var annotations = response['annotations'];
+                        {% for level in experiment.annotation_levels | sort(attribute='level_number')%}
+                            timeline.tracks[{{loop.index - 1}}].annotations = annotations[{{level.id}}] || [];
+                        {%- endfor %}   
+
+                    }
+                    updateProgressbar(currentFileIndex);
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            }); 
+        });
+
+        // Create key binding keys for the experiment's annotation tiers
+        var tiersBindingKeys = {};
+        {% for level in experiment.annotation_levels%}
+            tiersBindingKeys[{{loop.index}}] = {{level.id}};
+        {%- endfor %}
+        
+
+        $(document).keyup(function(event) {
+            if(event.target.nodeName == "TEXTAREA" || event.target.nodeName == "INPUT" ){
+                return;
+            }
+            var x = event.charCode || event.keyCode;
+            var y = String.fromCharCode(x).toLowerCase();
+
+            if (tiersBindingKeys[+y]) {
+              document.getElementById("af-tracks-select").value = +y-1;
+            }
+            
+            var tierIndex = $('#af-tracks-select').val();
+            if (tierIndex == -1) {
+                return;
+            }
+            
+            $.each(keyBindingDict[+tierIndex+1], function( key, value ) {
+                if( y == value ) {
+                    const label = $(`option[data-label-id='${key}']`).val();
+                    document.getElementById("af-text").value = label;
+                }
+            });
+            
+            if(event.ctrlKey && y == 'z') {
+                undoButton.click();
+            }
+
+            if(x == 32){ 
+                if(space_pressed == 0){ timeline.videoElement.pause(); }
+                else{ timeline.videoElement.play(); }
+            }
+            event.stopImmediatePropagation();
+            event.preventDefault();
+
+        });
+
+        var loopingButton = $('#loopingButton');
+        loopingButton.on('click', function() {
+            var url = "{{ url_for('annotate_experiment._toggleLooping')}}";
+            var data = {};
+            var looping = loopingButton.val();
+            var localLoopingButton = $('#loop-mode-btn');
+            $.getJSON(url, data, function(response) {
+                var newText = "";
+                if(looping == "True") {
+                    newText = "Turn on looping";
+                    loopingButton.val("False");
+                } else {
+                    newText = "Turn off looping";
+                    loopingButton.val("True");
+                }
+                if (looping === "False" && localLoopingButton.text() === "On" || looping === "True" && localLoopingButton.text() === "Off") {
+                    localLoopingButton.click();
+                }
+
+                loopingButton.text(newText);
+            });
+        });
+        
+        var doneButton = $('#doneButton');
+        
+        if(currentFileIndex <= {{lastFile}}) {
+            doneButton.addClass('hidden-element');
+        }
+
+        doneButton.on('click', function(){
+            if (confirm("Press OK to Submit Annotations! Once you have submitted the results, no undo operation can be performed.")){
+                doneButton.attr("disabled", "disabled");
+                displayEnd();
+                currentFileIndex = -1;
+                window.setTimeout(function() {
+                    doneButton.removeAttr("disabled");
+                }, [500]);
+            }
+        });
+
+        function displayEnd() {
+            var data = {
+                'experimentId' :  "{{experiment.id}}",
+            };
+            $.ajax({
+                url: "{{ url_for('annotate_experiment.checkStatus')}}",
+                type: 'POST',
+                data: data,
+            });
+            $('.annotationArea').addClass('hidden-element');
+            $('.thanksNote').removeClass('hidden-element');
+            undoButton.addClass('hidden-element');
+            doneButton.addClass('hidden-element');
+            $('.toggleLooping').addClass('hidden-element');
+            $('.completeExp').removeClass('hidden-element');
+        }
+        
+        function updateProgressbar(currentFileIndex){
+            progress_value = 'Progress: ' + (currentFileIndex).toString() + ' / ' + ({{lastFile}} + 1).toString()
+            $("#prg").text(progress_value);                                                
+            var prog_width = (currentFileIndex/({{lastFile}} + 1))*100
+            prog_width = prog_width.toFixed(2)
+            $("#progress-bar").width(prog_width.toString() + '%');
+            $('#preview').text(prog_width.toString() + '%');
+        }
+        function checkLabelWarning() {
+            if ("{{ labelWarning }}" == 1) {
+                $('.labelWarning').removeClass('hidden-element');
+            } else {
+                $('.labelWarning').addClass('hidden-element');
+        }
+        }
+
+        function checkThanksNote() {
+            if (currentFileIndex > {{lastFile}}) {
+                // Reach to an end
+                $('.thanksNote').removeClass('hidden-element');
+                $('.annotationArea').addClass('hidden-element');
+                $('#doneButton').removeClass('hidden-element');
+            } else {
+                $('.thanksNote').addClass('hidden-element');
+                $('.annotationArea').removeClass('hidden-element');
+            }
+        }
+        $("#keybindingsModalButton").on('click', function() {
+            $("#keybindingsModal").show();
+            $("#keybindingsModal").focus();
+        });
+    });
+
+    $(document).ready(function(){
+        $(".send_notification").click(function(){
+            new_notification();
+            $('#notify').removeClass('hidden-element').fadeIn(600).delay(1500).fadeOut(700);
+            $('#msg2').text("Notification has been sent");
+            var input = this;
+            input.disabled = true;
+        });
+
+        function new_notification(){
+            var url = "{{ url_for('notification._addNotification')}}";
+            var data = {
+                'experimentId' : "{{experiment.id}}",
+            };
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: data,
+            });
+        };
+    });
+    
+  </script>
+  <script type="text/javascript" src="{{ url_for('static', filename='js/VideoFrame.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('static', filename='js/Elan.min.js') }}"></script>
+  <script>
+    var annotations = {{ annotations|tojson|safe }};
+    var timeline = new Timeline("video");
+    // loop over the annotation levels and add them to the timeline
+    var tracks = []
+    {% for level in experiment.annotation_levels | sort(attribute='level_number')%}
+        var options = [];
+        {% for label in level.labels %}
+            options.push({ 'id': +"{{label.id}}", 'name': "{{label.name}}", 'key': "{{label.key_binding}}"});
+        {% endfor %}
+        timeline.addTrack(+"{{level.id}}", "{{level.name}}", [], options);
+        timeline.tracks[{{loop.index - 1}}].annotations = annotations[{{level.id}}] || [];
+    {%- endfor %}
+    document.addEventListener('readystatechange', function(){
+        if(document.readyState === 'complete'){
+            {%- if current_user.looping -%}
+                document.getElementById("loop-mode-btn").click();
+            {%- endif -%}
+        }
+    })
+  </script>
+{% endblock elan_body %}
