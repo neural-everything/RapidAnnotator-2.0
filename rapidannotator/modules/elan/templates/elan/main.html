@@ -390,6 +390,7 @@
 
             if (tiersBindingKeys[+y]) {
               document.getElementById("af-tracks-select").value = +y-1;
+              document.getElementById("af-text").setAttribute("list", "af-labels-" + (+y-1));
             }
             
             var tierIndex = $('#af-tracks-select').val();
