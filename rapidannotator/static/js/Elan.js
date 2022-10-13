@@ -109,6 +109,9 @@ Timeline.prototype.addTrackDataListOptions = function (trackIndex, options) {
     option.setAttribute("data-key", options[i].key);
     option.setAttribute("title", options[i].key);
     option.setAttribute("data-label-id", options[i].id);
+    var p = document.createElement("p");
+    p.innerHTML = `(${options[i].key})`;
+    option.appendChild(p);
     annotationDataList.appendChild(option);
   }
   document.body.appendChild(annotationDataList);
