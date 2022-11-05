@@ -65,6 +65,11 @@ class AddExperimentForm(FlaskForm):
                     ('random', 'random')],
     )
 
+    advancedAnnotation = BooleanField(
+        label=_('Advanced Annotation'),
+        description=_("Check if you want to enable advanced annotation."),
+    )
+
     def validate_name(self, name):
         experiment = Experiment.query.filter_by(name=name.data).first()
         if experiment is not None:

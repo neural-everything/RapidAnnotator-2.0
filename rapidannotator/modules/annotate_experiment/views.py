@@ -543,7 +543,7 @@ def specificAnnotation(userId, experimentId, fileId):
         label = Label.query.filter_by(id=info.label_id).first()
         if not annotationAlreadyDone.get(info.annotationLevel_id, None):
             annotationAlreadyDone[info.annotationLevel_id] = []
-        annotationAlreadyDone[info.annotationLevel_id].append([info.label_id, label.name, info.label_other])
+        annotationAlreadyDone[info.annotationLevel_id].append([info.label_id, label.name, info.label_other, info.coordinates or []])
 
     isExpowner =  int((current_user in  experiment.owners))
 

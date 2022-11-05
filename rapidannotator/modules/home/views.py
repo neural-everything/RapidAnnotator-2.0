@@ -67,6 +67,7 @@ def addExperiment():
             category=addExperimentForm.category.data,
             uploadType=addExperimentForm.uploadType.data,
             displayType=addExperimentForm.displayType.data,
+            advancedAnnotation=addExperimentForm.advancedAnnotation.data,
         )
         experiment.owners.append(current_user)
         db.session.add(experiment)
@@ -282,7 +283,7 @@ def _continueExperiment():
         return jsonify({"success": False, "message": "File extension not allowed"})
     # create new experiment
     newExperiment = Experiment(name=expName, description=description, \
-            category=experiment.category,uploadType=experiment.uploadType,\
+            category=experiment.category,uploadType=experiment.uploadType, advancedAnnotation=experiment.advancedAnnotation,\
                 status="In Progress", is_done=False)
     newExperiment.owners.append(current_user)
     db.session.add(newExperiment)
