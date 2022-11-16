@@ -104,6 +104,7 @@
 
 <div class="container annotationArea">
     <div class="row">
+        {%- if experiment.advancedAnnotation -%}
         {%- if experiment.category == 'image' -%}
         {{ icons() }}
           <span>
@@ -144,6 +145,7 @@
                 <span class='glyphicon glyphicon-info-sign my-tooltip' title="Instruction"> Please follow that structure of time [hh:mm:ss] for the inputs in case of you will modifiy them manually and step size is is in seconds</span>
                 <input placeholder="time step size in seconds i.e default is (0 s)" style="width:99%" type="number" min="0" id="time-step-size">
             </div>
+        {% endif %}
         {% endif %}
         <!-- the following 5 is preLoadLimit @ line 418-->
         {% for i in range(5) %}
@@ -918,7 +920,6 @@
             else {
                 currentFileCoordinates[levelId] = {"start":startTextIndex, "end":endTextIndex}
             }
-            //console.log(currentFileCoordinates)
             _ra_regions = [];
             _via_canvas_regions = [];
             var excessFiles = (preLoadedTill - currentLoadedFile + preLoadLimit) % preLoadLimit;

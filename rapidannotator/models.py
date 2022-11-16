@@ -272,6 +272,12 @@ class Experiment(db.Model):
         server_default='fcfs',
     )
 
+    advancedAnnotation = db.Column(
+        db.Boolean(name='advancedAnnotation'),
+        nullable=False,
+        server_default='0',
+    )
+
     """ One to One relation
     ..  For Audio / Video Experiments:
     ..  details of duration of the display time of the audio / video.
