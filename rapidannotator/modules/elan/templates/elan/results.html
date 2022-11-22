@@ -64,19 +64,23 @@
         </a>
         {%- set exportResultsUrlCSV = url_for('elan.exportResults', experimentId = experiment.id, exportType="csv") %}
         {%- set exportResultsUrlXLSX = url_for('elan.exportResults', experimentId = experiment.id, exportType="xlsx") %}
+        {%- set exportResultsUrlZIP = url_for('elan.downloadAllEafResults', experimentId = experiment.id) %}
         <div class="dropdown btn-group btn-group-inline btn-space">
           <button class="btn btn-primary dropdown-toggle"
                   type="button"
-                  id="addOwners"
+                  id="DownloadResultsOptions"
                   data-toggle="dropdown">
             {{ ('Download Results') }}
             <span class="glyphicon glyphicon-download-alt"></span> &nbsp;
             <span class="caret"></span>
           </button>
           <ul class="dropdown-menu scrollable-dropdown"
-              id="addOwnersMenu"
+              id="DownloadResultsOptions"
               role="menu"
-              aria-labelledby="addOwners">
+              aria-labelledby="DownloadResultsOptions">
+            <li role="presentation">
+              <a role="menuitem" tabindex="-1" href="{{ exportResultsUrlZIP }}"><span>Download all annotations as ZIP</span></a>
+            </li>
             <li role="presentation">
               <a role="menuitem" tabindex="-1" href="{{ exportResultsUrlCSV }}"><span>Download as csv</span></a>
             </li>

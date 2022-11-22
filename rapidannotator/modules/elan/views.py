@@ -19,6 +19,7 @@ from io import BytesIO
 import xml.etree.ElementTree as etree
 import datetime
 
+import zipfile
 
 @blueprint.before_request
 def before_request():
@@ -332,7 +333,8 @@ def downloadEafFile(experimentId, userId, fileId):
     author = User.query.filter_by(id=userId).first().username
     eafXML = createEafXML(experiment, file, annotations, author)
     eafBytes = BytesIO(eafXML)
-    return send_file(eafBytes, as_attachment=True, attachment_filename='{}.eaf'.format(file.name))
+    return Response(eafBytes, mimetype="application/xml", headers={"Content-disposition": "attachment; filename={}.eaf".format(file.name)})
+    
 
 
 def createEafXML(experiment, file, annotations, author):
@@ -499,7 +501,7 @@ def downloadEafGroupedFile(experimentId, fileId):
     annotations = ElanAnnotation.query.filter_by(file_id=fileId).all()
     eafXML = createEafGroupedXML(experiment, file, annotations, annotators)
     eafBytes = BytesIO(eafXML)
-    return send_file(eafBytes, as_attachment=True, attachment_filename='{}.eaf'.format(file.name))
+    return Response(eafBytes, mimetype='text/xml', headers={'Content-Disposition': 'attachment; filename={}.eaf'.format(file.name)})
 
 def createEafGroupedXML(experiment, file, annotations, annotators):
     """
@@ -601,3 +603,20 @@ def createEafGroupedXML(experiment, file, annotations, annotators):
         eaf.append(linguisticType)
     # Return the XML as string
     return etree.tostring(eaf, encoding='utf-8')
+
+@blueprint.route('/downloadAllEafResults/<int:experimentId>', methods=['GET'])
+def downloadAllEafResults(experimentId):
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    if experiment is None:
+        abort(404)
+    files = experiment.files
+    annotators = [assoc.annotator for assoc in experiment.annotators]
+    compressedFile = BytesIO()
+    for file in files :
+        annotations = ElanAnnotation.query.filter_by(file_id=file.id).all()
+        eafXML = createEafGroupedXML(experiment, file, annotations, annotators)
+        eafBytes = BytesIO(eafXML)
+        with zipfile.ZipFile(compressedFile, 'a') as zip:
+            zip.writestr(file.name + '.eaf', eafBytes.getvalue())
+    return Response(compressedFile.getvalue(), mimetype='application/zip', headers={'Content-Disposition': 'attachment; filename={}.zip'.format(experiment.name)})
+            
