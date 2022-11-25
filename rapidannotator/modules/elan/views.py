@@ -349,7 +349,7 @@ def createEafXML(experiment, file, annotations, author):
     MEDIA_TYPE = 'video'
     MIME_TYPE = 'video/mp4'
     RELATIVE_MEDIA_URL = "file://./{}".format(file.name+".mp4")
-    if experiment.uploadType != "fromConcordance":
+    if experiment.uploadType == "manual":
         RELATIVE_MEDIA_URL = "file://./{}".format(file.name)
     # Root element
     eaf = etree.Element('ANNOTATION_DOCUMENT', AUTHOR=author, FORMAT=FORMAT, VERSION=VERSION, DATE=DATE)
@@ -522,7 +522,7 @@ def createEafGroupedXML(experiment, file, annotations, annotators):
     MEDIA_TYPE = 'video'
     MIME_TYPE = 'video/mp4'
     RELATIVE_MEDIA_URL = "file://./{}".format(file.name+".mp4")
-    if experiment.uploadType != "fromConcordance":
+    if experiment.uploadType == "manual":
         RELATIVE_MEDIA_URL = "file://./{}".format(file.name)
     # Root element
     eaf = etree.Element('ANNOTATION_DOCUMENT', FORMAT=FORMAT, VERSION=VERSION, DATE=DATE)
@@ -625,7 +625,7 @@ def downloadAllEafResults(experimentId, includeVideos=0):
             zip.writestr(file.name + '.eaf', eafBytes.getvalue())
             if includeVideos:
                 video = None
-                if experiment.uploadType == 'fromConcordance':
+                if experiment.uploadType == 'fromConcordance' or experiment.uploadType == 'viaSpreadsheet':
                 # Download the video snippet
                     try:
                         video = requests.get(file.content)

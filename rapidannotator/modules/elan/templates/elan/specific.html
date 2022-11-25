@@ -136,7 +136,7 @@
         <div id="annotationContent">
           <div id="player" class="content-entry">
             <video class="clip" id="video" width="400" controls>
-              {% if experiment.uploadType == 'fromConcordance' %}
+              {% if experiment.uploadType == 'fromConcordance' or experiment.uploadType == 'viaSpreadsheet' %}
               {% set videoUrl = currentFile.content%}
               {% else %}
               {% set videoUrl = "/annotate_experiment/uploads/" + experiment.id|string + "/" + currentFile.get('content', '') %}
