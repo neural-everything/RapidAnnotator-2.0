@@ -769,7 +769,7 @@ def addFilesFromConcordance(experimentId, concordance):
         for row in reader:
             caption = row["Context before"] + " " + row["Query item"] +  " " + row["Context after"]
             target_caption = row["Query item"]
-            if experiment.category == "video":
+            if experiment.category == "video" or experiment.category == "elan":
                 content = row["Video Snippet"]
             elif experiment.category == "audio":
                 content = row["Audio Snippet"]

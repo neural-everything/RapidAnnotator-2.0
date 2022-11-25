@@ -7,6 +7,7 @@ from rapidannotator import db
 from rapidannotator.models import User, Experiment, AnnotatorAssociation, AnnotationLevel, Label, File, ElanAnnotation, ElanAnnotation
 from rapidannotator.modules.elan import blueprint
 from math import ceil
+import requests
 
 from rapidannotator.modules.annotate_experiment.views import _getFile, _getSpecificFile, makeKeyBindingDict
 
@@ -347,7 +348,9 @@ def createEafXML(experiment, file, annotations, author):
     VERSION = '1.0'
     MEDIA_TYPE = 'video'
     MIME_TYPE = 'video/mp4'
-    RELATIVE_MEDIA_URL = "file://./{}".format(file.content)
+    RELATIVE_MEDIA_URL = "file://./{}".format(file.name+".mp4")
+    if experiment.uploadType != "fromConcordance":
+        RELATIVE_MEDIA_URL = "file://./{}".format(file.name)
     # Root element
     eaf = etree.Element('ANNOTATION_DOCUMENT', AUTHOR=author, FORMAT=FORMAT, VERSION=VERSION, DATE=DATE)
     # Header element
@@ -518,7 +521,9 @@ def createEafGroupedXML(experiment, file, annotations, annotators):
     VERSION = '1.0'
     MEDIA_TYPE = 'video'
     MIME_TYPE = 'video/mp4'
-    RELATIVE_MEDIA_URL = "file://./{}".format(file.content)
+    RELATIVE_MEDIA_URL = "file://./{}".format(file.name+".mp4")
+    if experiment.uploadType != "fromConcordance":
+        RELATIVE_MEDIA_URL = "file://./{}".format(file.name)
     # Root element
     eaf = etree.Element('ANNOTATION_DOCUMENT', FORMAT=FORMAT, VERSION=VERSION, DATE=DATE)
     # Header element
@@ -612,11 +617,18 @@ def downloadAllEafResults(experimentId):
     files = experiment.files
     annotators = [assoc.annotator for assoc in experiment.annotators]
     compressedFile = BytesIO()
-    for file in files :
+    for file in files:
         annotations = ElanAnnotation.query.filter_by(file_id=file.id).all()
         eafXML = createEafGroupedXML(experiment, file, annotations, annotators)
         eafBytes = BytesIO(eafXML)
         with zipfile.ZipFile(compressedFile, 'a') as zip:
             zip.writestr(file.name + '.eaf', eafBytes.getvalue())
+            if experiment.uploadType == 'fromConcordance':
+            # Download the video snippet
+                try:
+                    video = requests.get(file.content)
+                    zip.writestr(file.name + '.mp4', video.content)
+                except Exception as e:
+                    continue
     return Response(compressedFile.getvalue(), mimetype='application/zip', headers={'Content-Disposition': 'attachment; filename={}.zip'.format(experiment.name)})
             

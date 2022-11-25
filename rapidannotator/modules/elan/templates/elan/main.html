@@ -164,7 +164,11 @@
       <div id="annotationContent">
         <div id="player" class="content-entry">
           <video class="clip" id="video" width="400" controls>
-            {% set videoUrl = "/annotate_experiment/uploads/" + experiment.id|string + "/" + currentFile.get('content', '')%}
+            {% if experiment.uploadType == 'fromConcordance' %}
+            {% set videoUrl = currentFile.content%}
+            {% else %}
+            {% set videoUrl = "/annotate_experiment/uploads/" + experiment.id|string + "/" + currentFile.get('content', '') %}
+            {% endif %}
             <source src={{ videoUrl }} type="video/mp4"/>
             Your browser does not support HTML5 video.
           </video>
@@ -317,7 +321,10 @@
                     }
                     currentFile = response['currentFile'];
                     currentFileIndex = response['currentFileIndex'];
-                    videoUrl = "/annotate_experiment/uploads/" + "{{experiment.id|string}}" + "/" + currentFile?.content;
+                    videoUrl = currentFile?.content;
+                    if ("{{experiment.uploadType}}" != "fromConcordance") {
+                      videoUrl = "/annotate_experiment/uploads/" + "{{experiment.id|string}}" + "/" + videoUrl;
+                    }
                     timeline.videoElement.src = videoUrl;
                     updateProgressbar(currentFileIndex);
                     // messages control
