@@ -8,7 +8,7 @@ from rapidannotator.models import User, Experiment, AnnotatorAssociation, Annota
 from rapidannotator.modules.elan import blueprint
 from math import ceil
 import requests
-
+import os
 from rapidannotator.modules.annotate_experiment.views import _getFile, _getSpecificFile, makeKeyBindingDict
 
 from flask_login import current_user
@@ -609,8 +609,8 @@ def createEafGroupedXML(experiment, file, annotations, annotators):
     # Return the XML as string
     return etree.tostring(eaf, encoding='utf-8')
 
-@blueprint.route('/downloadAllEafResults/<int:experimentId>', methods=['GET'])
-def downloadAllEafResults(experimentId):
+@blueprint.route('/downloadAllEafResults/<int:experimentId>/<int:includeVideos>', methods=['GET'])
+def downloadAllEafResults(experimentId, includeVideos=0):
     experiment = Experiment.query.filter_by(id=experimentId).first()
     if experiment is None:
         abort(404)
@@ -623,12 +623,22 @@ def downloadAllEafResults(experimentId):
         eafBytes = BytesIO(eafXML)
         with zipfile.ZipFile(compressedFile, 'a') as zip:
             zip.writestr(file.name + '.eaf', eafBytes.getvalue())
-            if experiment.uploadType == 'fromConcordance':
-            # Download the video snippet
-                try:
-                    video = requests.get(file.content)
-                    zip.writestr(file.name + '.mp4', video.content)
-                except Exception as e:
-                    continue
+            if includeVideos:
+                video = None
+                if experiment.uploadType == 'fromConcordance':
+                # Download the video snippet
+                    try:
+                        video = requests.get(file.content)
+                        zip.writestr(file.name + '.mp4', video.content)
+                    except Exception as e:
+                        current_app.logger.error(e)
+                else:
+                    # read video from file
+                    video_path = os.path.join(current_app.config['UPLOAD_FOLDER'], str(experiment.id), file.content)
+                    try:
+                        video = open(video_path, 'rb')
+                        zip.writestr(file.name, video.read())
+                    except Exception as e:
+                        current_app.logger.error(e)
     return Response(compressedFile.getvalue(), mimetype='application/zip', headers={'Content-Disposition': 'attachment; filename={}.zip'.format(experiment.name)})
             

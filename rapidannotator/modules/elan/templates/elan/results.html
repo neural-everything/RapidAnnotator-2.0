@@ -64,7 +64,8 @@
         </a>
         {%- set exportResultsUrlCSV = url_for('elan.exportResults', experimentId = experiment.id, exportType="csv") %}
         {%- set exportResultsUrlXLSX = url_for('elan.exportResults', experimentId = experiment.id, exportType="xlsx") %}
-        {%- set exportResultsUrlZIP = url_for('elan.downloadAllEafResults', experimentId = experiment.id) %}
+        {%- set exportResultsUrlZIPVideosAttached = url_for('elan.downloadAllEafResults', experimentId = experiment.id, includeVideos=1) %}
+        {%- set exportResultsUrlZIPVideosNotAttached = url_for('elan.downloadAllEafResults', experimentId = experiment.id, includeVideos=0) %}
         <div class="dropdown btn-group btn-group-inline btn-space">
           <button class="btn btn-primary dropdown-toggle"
                   type="button"
@@ -79,7 +80,10 @@
               role="menu"
               aria-labelledby="DownloadResultsOptions">
             <li role="presentation">
-              <a role="menuitem" tabindex="-1" href="{{ exportResultsUrlZIP }}"><span>Download all annotations as ZIP</span></a>
+              <a role="menuitem" tabindex="-1" href="{{ exportResultsUrlZIPVideosAttached }}"><span>Annotations with videos as ZIP</span></a>
+            </li>
+            <li role="presentation">
+              <a role="menuitem" tabindex="-1" href="{{ exportResultsUrlZIPVideosNotAttached }}"><span>Annotations without videos as ZIP</span></a>
             </li>
             <li role="presentation">
               <a role="menuitem" tabindex="-1" href="{{ exportResultsUrlCSV }}"><span>Download as csv</span></a>
