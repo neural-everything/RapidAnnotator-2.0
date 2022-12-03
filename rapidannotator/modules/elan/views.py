@@ -628,7 +628,8 @@ def downloadAllEafResults(experimentId, includeVideos=0):
                 if experiment.uploadType == 'fromConcordance' or experiment.uploadType == 'viaSpreadsheet':
                 # Download the video snippet
                     try:
-                        video = requests.get(file.content)
+                        url = getVideoUrl(content=file.content, before_time=experiment.display_time.before_time, after_time=experiment.display_time.after_time)
+                        video = requests.get(url)
                         zip.writestr(file.name + '.mp4', video.content)
                     except Exception as e:
                         current_app.logger.error(e)
@@ -641,4 +642,15 @@ def downloadAllEafResults(experimentId, includeVideos=0):
                     except Exception as e:
                         current_app.logger.error(e)
     return Response(compressedFile.getvalue(), mimetype='application/zip', headers={'Content-Disposition': 'attachment; filename={}.zip'.format(experiment.name)})
-            
+
+def getVideoUrl(content, before_time=0, after_time=0):
+    content_split = content.split("&")
+    if len(content_split) < 2:
+        return content
+    starttime_list = content_split[1].split("=")
+    starttime = float(starttime_list[1]) - before_time
+    if starttime < 0:
+        starttime = 0
+    endtime_list = content_split[2].split("=")
+    endtime = float(endtime_list[1]) + after_time
+    return f'{content_split[0]}&start={starttime}&end={endtime}'

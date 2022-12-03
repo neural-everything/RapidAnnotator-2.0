@@ -104,7 +104,7 @@
             </ul>
         </div>
 
-        {%- if (experiment.category == 'audio' or experiment.category == 'video') -%}
+        {%- if (experiment.category == 'audio' or experiment.category == 'video' or experiment.category == 'elan') -%}
             <a data-toggle="modal" data-target="#displayTimeModalId"
                 class="changeDisplayTime btn btn-primary btn-group btn-group-inline btn-space">{{ ('Display Time') }}
             </a>
@@ -976,7 +976,7 @@
         category = "{{ experiment.category }}";
         uploadType = "{{experiment.uploadType}}";
         dispTime = "{{ experiment.display_time }}";
-        if( dispTime == "None" &&  uploadType != "manual" && (category  === "audio" || category === "video") ) {
+        if( dispTime == "None" &&  uploadType != "manual" && (category  === "audio" || category === "video" || category === "elan") ) {
             $('#displayTimeModalId').modal('show');
         }
 
