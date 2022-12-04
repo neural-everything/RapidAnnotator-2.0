@@ -7,7 +7,8 @@ from rapidannotator import db
 from rapidannotator.models import User, Experiment, AnnotatorAssociation, AnnotationLevel, Label, File, ElanAnnotation, ElanAnnotation
 from rapidannotator.modules.elan import blueprint
 from math import ceil
-
+import requests
+import os
 from rapidannotator.modules.annotate_experiment.views import _getFile, _getSpecificFile, makeKeyBindingDict
 
 from flask_login import current_user
@@ -19,6 +20,7 @@ from io import BytesIO
 import xml.etree.ElementTree as etree
 import datetime
 
+import zipfile
 
 @blueprint.before_request
 def before_request():
@@ -332,7 +334,8 @@ def downloadEafFile(experimentId, userId, fileId):
     author = User.query.filter_by(id=userId).first().username
     eafXML = createEafXML(experiment, file, annotations, author)
     eafBytes = BytesIO(eafXML)
-    return send_file(eafBytes, as_attachment=True, attachment_filename='{}.eaf'.format(file.name))
+    return Response(eafBytes, mimetype="application/xml", headers={"Content-disposition": "attachment; filename={}.eaf".format(file.name)})
+    
 
 
 def createEafXML(experiment, file, annotations, author):
@@ -345,7 +348,9 @@ def createEafXML(experiment, file, annotations, author):
     VERSION = '1.0'
     MEDIA_TYPE = 'video'
     MIME_TYPE = 'video/mp4'
-    RELATIVE_MEDIA_URL = "file://./{}".format(file.content)
+    RELATIVE_MEDIA_URL = "file://./{}".format(file.name+".mp4")
+    if experiment.uploadType == "manual":
+        RELATIVE_MEDIA_URL = "file://./{}".format(file.name)
     # Root element
     eaf = etree.Element('ANNOTATION_DOCUMENT', AUTHOR=author, FORMAT=FORMAT, VERSION=VERSION, DATE=DATE)
     # Header element
@@ -499,7 +504,7 @@ def downloadEafGroupedFile(experimentId, fileId):
     annotations = ElanAnnotation.query.filter_by(file_id=fileId).all()
     eafXML = createEafGroupedXML(experiment, file, annotations, annotators)
     eafBytes = BytesIO(eafXML)
-    return send_file(eafBytes, as_attachment=True, attachment_filename='{}.eaf'.format(file.name))
+    return Response(eafBytes, mimetype='text/xml', headers={'Content-Disposition': 'attachment; filename={}.eaf'.format(file.name)})
 
 def createEafGroupedXML(experiment, file, annotations, annotators):
     """
@@ -516,7 +521,9 @@ def createEafGroupedXML(experiment, file, annotations, annotators):
     VERSION = '1.0'
     MEDIA_TYPE = 'video'
     MIME_TYPE = 'video/mp4'
-    RELATIVE_MEDIA_URL = "file://./{}".format(file.content)
+    RELATIVE_MEDIA_URL = "file://./{}".format(file.name+".mp4")
+    if experiment.uploadType == "manual":
+        RELATIVE_MEDIA_URL = "file://./{}".format(file.name)
     # Root element
     eaf = etree.Element('ANNOTATION_DOCUMENT', FORMAT=FORMAT, VERSION=VERSION, DATE=DATE)
     # Header element
@@ -601,3 +608,49 @@ def createEafGroupedXML(experiment, file, annotations, annotators):
         eaf.append(linguisticType)
     # Return the XML as string
     return etree.tostring(eaf, encoding='utf-8')
+
+@blueprint.route('/downloadAllEafResults/<int:experimentId>/<int:includeVideos>', methods=['GET'])
+def downloadAllEafResults(experimentId, includeVideos=0):
+    experiment = Experiment.query.filter_by(id=experimentId).first()
+    if experiment is None:
+        abort(404)
+    files = experiment.files
+    annotators = [assoc.annotator for assoc in experiment.annotators]
+    compressedFile = BytesIO()
+    for file in files:
+        annotations = ElanAnnotation.query.filter_by(file_id=file.id).all()
+        eafXML = createEafGroupedXML(experiment, file, annotations, annotators)
+        eafBytes = BytesIO(eafXML)
+        with zipfile.ZipFile(compressedFile, 'a') as zip:
+            zip.writestr(file.name + '.eaf', eafBytes.getvalue())
+            if includeVideos:
+                video = None
+                if experiment.uploadType == 'fromConcordance' or experiment.uploadType == 'viaSpreadsheet':
+                # Download the video snippet
+                    try:
+                        url = getVideoUrl(content=file.content, before_time=experiment.display_time.before_time, after_time=experiment.display_time.after_time)
+                        video = requests.get(url)
+                        zip.writestr(file.name + '.mp4', video.content)
+                    except Exception as e:
+                        current_app.logger.error(e)
+                else:
+                    # read video from file
+                    video_path = os.path.join(current_app.config['UPLOAD_FOLDER'], str(experiment.id), file.content)
+                    try:
+                        video = open(video_path, 'rb')
+                        zip.writestr(file.name, video.read())
+                    except Exception as e:
+                        current_app.logger.error(e)
+    return Response(compressedFile.getvalue(), mimetype='application/zip', headers={'Content-Disposition': 'attachment; filename={}.zip'.format(experiment.name)})
+
+def getVideoUrl(content, before_time=0, after_time=0):
+    content_split = content.split("&")
+    if len(content_split) < 2:
+        return content
+    starttime_list = content_split[1].split("=")
+    starttime = float(starttime_list[1]) - before_time
+    if starttime < 0:
+        starttime = 0
+    endtime_list = content_split[2].split("=")
+    endtime = float(endtime_list[1]) + after_time
+    return f'{content_split[0]}&start={starttime}&end={endtime}'

@@ -136,8 +136,7 @@
         <div id="annotationContent">
           <div id="player" class="content-entry">
             <video class="clip" id="video" width="400" controls>
-              {% set videoUrl = "/annotate_experiment/uploads/" + experiment.id|string + "/" + currentFile.get('content', '')%}
-              <source src={{ videoUrl }} type="video/mp4" />
+              <source type="video/mp4" />
               Your browser does not support HTML5 video.
             </video>
           </div>
@@ -222,6 +221,11 @@
     $(window).on('load', function() {      
         var currentFile = {{ currentFile|tojson|safe }};
         var saveButton = $('#saveButton');
+        if ("{{experiment.uploadType}}" == 'fromConcordance' || "{{experiment.uploadType}}" == "viaSpreadsheet")
+            videoUrl = getVideoUrl(currentFile.content, before_time="{{experiment.display_time.before_time}}", after_time="{{experiment.display_time.after_time}}");
+        else 
+            videoUrl = "/annotate_experiment/uploads/" + "{{experiment.id|string}}" + "/" + currentFile.content
+        timeline.videoElement.src = videoUrl;
         saveButton.on('click', function(){
             var newAnnotations = timeline.tracks.reduce((acc, track) => {acc[track.id] = track.annotations; return acc;}, {});
             var url = "{{ url_for('elan.addAnnotation')}}";
@@ -280,7 +284,25 @@
             event.preventDefault();
 
         });
-
+        
+      function getVideoUrl(content, before_time, after_time) {
+          var temp_list = content.split("&");
+					var temp_starttime = (temp_list[1]).split("=");
+          var before_time = 0;
+          var after_time = 0;
+					if ("{{ experiment.display_time.before_time }}") {
+						var before_time = parseFloat("{{ experiment.display_time.before_time }}");
+					}
+					var starttime = parseFloat(temp_starttime[1]) - before_time;
+					if (starttime < 0) {starttime = 0;}
+					var temp_endtime = (temp_list[2]).split("=");
+					if ("{{ experiment.display_time.after_time }}") {
+						var after_time = parseFloat("{{ experiment.display_time.after_time }}");
+					}
+					var endtime = parseFloat(temp_endtime[1]) + after_time;
+					return temp_list[0] + "&start=" + starttime.toString() + "&end=" + endtime.toString();
+      }
+      
       function displayMessage(message){
             var snackbar = $('#snackbar');
             snackbar.text(message)

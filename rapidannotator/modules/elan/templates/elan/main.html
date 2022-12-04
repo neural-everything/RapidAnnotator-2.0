@@ -164,8 +164,7 @@
       <div id="annotationContent">
         <div id="player" class="content-entry">
           <video class="clip" id="video" width="400" controls>
-            {% set videoUrl = "/annotate_experiment/uploads/" + experiment.id|string + "/" + currentFile.get('content', '')%}
-            <source src={{ videoUrl }} type="video/mp4"/>
+            <source type="video/mp4"/>
             Your browser does not support HTML5 video.
           </video>
         </div>
@@ -292,6 +291,11 @@
         }
         checkLabelWarning();
         checkThanksNote();  
+        if ("{{experiment.uploadType}}" == 'fromConcordance' || "{{experiment.uploadType}}" == "viaSpreadsheet")
+            videoUrl = getVideoUrl(currentFile.content, before_time="{{experiment.display_time.before_time}}", after_time="{{experiment.display_time.after_time}}");
+        else 
+            videoUrl = "/annotate_experiment/uploads/" + "{{experiment.id|string}}" + "/" + currentFile.content
+        timeline.videoElement.src = videoUrl;
         undoButton.on('click', function() {
             timeline.videoElement.style.display = 'unset';
             timeline.canvas.style.display = "unset";
@@ -317,7 +321,11 @@
                     }
                     currentFile = response['currentFile'];
                     currentFileIndex = response['currentFileIndex'];
-                    videoUrl = "/annotate_experiment/uploads/" + "{{experiment.id|string}}" + "/" + currentFile?.content;
+                    if ("{{experiment.uploadType}}" != "fromConcordance") {
+                      videoUrl = "/annotate_experiment/uploads/" + "{{experiment.id|string}}" + "/" + currentFile.content;
+                    } else {
+                      videoUrl = getVideoUrl(currentFile.content, before_time="{{experiment.display_time.before_time}}", after_time="{{experiment.display_time.after_time}}")
+                    }
                     timeline.videoElement.src = videoUrl;
                     updateProgressbar(currentFileIndex);
                     // messages control
@@ -358,7 +366,11 @@
                         checkThanksNote();
                         checkLabelWarning();
                     } else {
-                        videoUrl = "/annotate_experiment/uploads/" + "{{experiment.id|string}}" + "/" + currentFile?.content;
+                        if ("{{experiment.uploadType}}" != "fromConcordance") {
+                          videoUrl = "/annotate_experiment/uploads/" + "{{experiment.id|string}}" + "/" + currentFile.content;
+                        } else {
+                          videoUrl = getVideoUrl(currentFile.content, before_time="{{experiment.display_time.before_time}}", after_time="{{experiment.display_time.after_time}}")
+                        }
                         timeline.videoElement.src = videoUrl;
                         var annotations = response['annotations'];
                         {% for level in experiment.annotation_levels | sort(attribute='level_number')%}
@@ -373,6 +385,24 @@
                 }
             }); 
         });
+
+        function getVideoUrl(content, before_time, after_time) {
+          var temp_list = content.split("&");
+					var temp_starttime = (temp_list[1]).split("=");
+          var before_time = 0;
+          var after_time = 0;
+					if ("{{ experiment.display_time.before_time }}") {
+						var before_time = parseFloat("{{ experiment.display_time.before_time }}");
+					}
+					var starttime = parseFloat(temp_starttime[1]) - before_time;
+					if (starttime < 0) {starttime = 0;}
+					var temp_endtime = (temp_list[2]).split("=");
+					if ("{{ experiment.display_time.after_time }}") {
+						var after_time = parseFloat("{{ experiment.display_time.after_time }}");
+					}
+					var endtime = parseFloat(temp_endtime[1]) + after_time;
+					return temp_list[0] + "&start=" + starttime.toString() + "&end=" + endtime.toString();
+        }
 
         // Create key binding keys for the experiment's annotation tiers
         var tiersBindingKeys = {};
