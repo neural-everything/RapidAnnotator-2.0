@@ -27,6 +27,7 @@ Red Hen’s Rapid Annotator provides a platform to users to annotate large chunk
 ## Installation and User Guide
 Please refer the following links to install the Rapid Annotator-2.0 .
 * For installation guide refer [here](https://github.com/RedHenLab/RapidAnnotator-2.0/blob/master/docs/installation_guide.md).
+* For Docker installation guide refer [here](https://github.com/RedHenLab/RapidAnnotator-2.0/blob/master/docs/installation_guide_docker.md).
 * For user guide refer [here](https://github.com/RedHenLab/RapidAnnotator-2.0/blob/master/docs/user_guide.md).
 
 ## Contributers from Google Summer of Code
