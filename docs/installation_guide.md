@@ -2,6 +2,8 @@
 
 Install and configure **apache2** for python3 on your server.
 
+`sudo apt install apache2`
+
 Install **wsgi** for python3 on your server, by running the following command
 
 `sudo apt-get install python3-pip libapache2-mod-wsgi-py3`
@@ -16,15 +18,21 @@ Install **python3-mysqldb**.
 
 Install `sudo apt-get install libmysqlclient-dev`
 
+Install `sudo apt install mysql-client-core-8.0`
+
+Install `sudo apt-get install mysql-server`
+
 Install [**virtualenv**](https://virtualenv.pypa.io/en/latest/) using the below command:
 
 `sudo pip3 install virtualenv`
 
 Run
 
-`git clone https://github.com/RedHenLab/RapidAnnotator-2.0 rapidannotator`
+`git clone https://github.com/RedHenLab/RapidAnnotator-2.0 /var/www/rapidannotator`
 
-`cd rapidannotator`
+`sudo a2enmod wsgi`
+
+`cd /var/www/rapidannotator`
 
 `virtualenv -p python3 venv`
 
@@ -113,7 +121,7 @@ Tell the server to reload the grant tables
 
 `flush privileges;`
 
-Copy config_template.py to config.py and make the required changes in the new file.
+Copy `/var/www/rapidannotator/rapidannotator/config_template.py` to `/var/www/rapidannotator/rapidannotatorconfig.py` and make the required changes in the new file.
 
 `cp config_template.py config.py`
 
@@ -133,9 +141,15 @@ flask db migrate -m "Initial migration." # OR just add your comment right there
 flask db upgrade  
 ```
 
-Run the following in the directory where rapidannotator is kept.
+Run the following **outside** the directory where rapidannotator is kept.
 
 `mkdir -p [Path_to_storage_directory]`
+
+Give ownership of the storage directory to www-data. Run, 
+
+`sudo chown www-data [path_to_storage_directory]/`
+
+`sudo chown :www-data [path_to_storage_directory]/`
 
 Change [this line](https://github.com/guptavaibhav18197/rapidannotator/blob/master/rapidannotator/config_template.py#L9) accordingly.
 
